@@ -7,6 +7,7 @@ from copy import deepcopy
 import pytest
 
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
+    APPLICABILITY_RESULT_KIND,
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
     COMPARE_RESULT_KIND,
@@ -142,6 +143,23 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
         if event.material.get("occurrence_boundary")
         == "comparison_of_ordered_path_source_position_material_compare"
     )
+    applicability_results = tuple(
+        ledger.iter_locality_kind(
+            "ordered-path-pair-population", APPLICABILITY_RESULT_KIND
+        )
+    )
+    assert all(
+        "yield_relation_identity" not in result.material
+        for result in applicability_results
+    )
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            "ordered-path-pair-population", RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "comparison_of_ordered_path_source_position_material_applicability"
+    )
     binding_occurrences = tuple(
         ledger.get(identity)
         for identity in recorded[-1].current_coordinates[
@@ -162,6 +180,27 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
         != binding_occurrences[position + 1].material["exact_act_identity"]
         for position in range(0, len(binding_occurrences), 2)
     )
+
+
+def test_repeated_applicability_result_is_refused():
+    ledger = EventLedger()
+    _path_result, recorded = _comparisons(
+        ledger, locality="repeated-applicability", exact=b"2+2=5\n"
+    )
+    comparison_result = recorded[0].result_occurrence
+    applicability = ledger.get(
+        comparison_result.material["applicability_result_event_identity"]
+    )
+    ledger.append(
+        APPLICABILITY_RESULT_KIND,
+        deepcopy(applicability.material),
+        locality_identity=applicability.locality_identity,
+    )
+
+    with pytest.raises(ValueError, match="not exact"):
+        get_recorded_ordered_path_source_position_material_comparison(
+            ledger, comparison_result.identity
+        )
 
 
 def test_three_different_path_coordinates_yield_three_differences():

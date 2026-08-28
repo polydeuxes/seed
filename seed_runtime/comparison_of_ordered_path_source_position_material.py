@@ -7,11 +7,6 @@ from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     ordered_source_position_coordinates_of_ordered_relation_path,
@@ -48,11 +43,6 @@ APPLICABILITY_ACT = (
     "Applicability of ordered path source position material to Compare"
 )
 COMPARE_ACT = "Compare ordered path source position material"
-APPLICABILITY_BOUNDARY = (
-    "comparison_of_ordered_path_source_position_material_applicability"
-)
-COMPARE_BOUNDARY = "comparison_of_ordered_path_source_position_material_compare"
-
 EVENT_KIND_BOOK_CLAUSES = {
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "04.Compare",
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "01.Current.E.1",
@@ -181,7 +171,7 @@ def _path_input(
         or measurements.get(event.identity) != _result_reference(event)
         or path.get("result_position") != 0
     ):
-        raise ValueError("current coordinates carry no exact ordered path result")
+        raise ValueError("current coordinates have no exact ordered path result")
     return {
         "event": event,
         "reference": _result_reference(event),
@@ -548,14 +538,8 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
     }
 
 
-def _recorded_result_material(
-    material: dict[str, Any], yield_relation_identity: str
-) -> dict[str, Any]:
-    return {**deepcopy(material), "yield_relation_identity": yield_relation_identity}
-
-
 def _recorded_applicability_result_material(
-    material: dict[str, Any], yield_relation_identity: str
+    material: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -589,7 +573,6 @@ def _recorded_applicability_result_material(
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -616,39 +599,37 @@ def _recorded_compare_result_material(
     }
 
 
-def _read_yielded(
+def _read_exact_result(
     ledger: EventLedger,
     event_identity: Any,
     *,
     event_kind: str,
     act: Event,
     expected: dict[str, Any],
-    occurrence_boundary: str,
-    result_kind: str,
-    occurrence_coordinate: str,
 ) -> Event:
     event = _event(
         ledger, event_identity, event_kind=event_kind, message="result is not exact"
     )
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=yield_relation_identity,
-        act_occurrence_event_identity=act.identity,
-        recorded_result_occurrence_coordinate=occurrence_coordinate,
-        yielding_act_occurrence_coordinate=occurrence_coordinate,
+    results = tuple(
+        result
+        for result in ledger.iter_locality_kind(act.locality_identity, event_kind)
+        if result.material.get("act_occurrence_event_identity") == act.identity
     )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=act.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("Applicability result does not follow its Act") from error
     if (
         event.locality_identity != act.locality_identity
-        or event.material != _recorded_result_material(expected, yield_relation_identity)
-        or yield_relation is None
-        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
-        or yield_relation.material.get("result_kind") != result_kind
-        or not all(requirements.values())
+        or event.material != expected
+        or tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
-        raise ValueError("result carries no exact Yield relation")
+        raise ValueError("Applicability result is not exact")
     return event
 
 
@@ -669,15 +650,12 @@ def _read_applicability_result(
             current_coordinates=current_coordinates,
         )
     act, binding, compare_binding, inputs = act_reading
-    event = _read_yielded(
+    event = _read_exact_result(
         ledger,
         event_identity,
         event_kind=APPLICABILITY_RESULT_KIND,
         act=act,
         expected=_applicability_result_material(act),
-        occurrence_boundary=APPLICABILITY_BOUNDARY,
-        result_kind="Applicability result of ordered path source position material",
-        occurrence_coordinate="applicability_act_occurrence_identity",
     )
     return event, act, binding, compare_binding, inputs
 
@@ -882,35 +860,6 @@ def _require_tip(ledger: EventLedger, event: Event) -> None:
         raise ValueError("source position Compare stage left its exact boundary")
 
 
-def _yield_result(
-    ledger: EventLedger,
-    *,
-    act: Event,
-    result_kind: str,
-    result_identity: str,
-    result_content: dict[str, Any],
-    exact_act: str,
-    occurrence_boundary: str,
-    occurrence_coordinate: str,
-) -> Event:
-    return _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=exact_act,
-        act_occurrence_identity=act.material[occurrence_coordinate],
-        act_occurrence_event_identity=act.identity,
-        result_kind=result_kind,
-        result_identity=result_identity,
-        result_content={
-            key: value
-            for key, value in result_content.items()
-            if key != "act_occurrence_identity"
-        },
-        occurrence_boundary=occurrence_boundary,
-        yielding_act_occurrence_coordinate=occurrence_coordinate,
-    )
-
-
 def _record_ordered_path_source_position_material_comparison(
     ledger: EventLedger,
     *,
@@ -941,7 +890,7 @@ def _record_ordered_path_source_position_material_comparison(
         current_coordinates=current_coordinates,
     )
     compare_identities = _mint_compare_identities(ledger)
-    def carry(*events: Event) -> None:
+    def establish_current(*events: Event) -> None:
         prior = current_coordinates["through_event_occurrence_identity"]
         ordered = ledger.occurrences_in_append_order(
             (prior, *(event.identity for event in events)),
@@ -954,23 +903,25 @@ def _record_ordered_path_source_position_material_comparison(
             != ledger.append_boundary()
         ):
             raise ValueError("source position Compare left its exact boundary")
-        for carried in events:
-            if carried.kind in {
+        for established in events:
+            if established.kind in {
                 COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
                 APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
             }:
                 current_coordinates["subject_to_act_binding_occurrences"][
-                    carried.identity
+                    established.identity
                 ] = None
-            elif carried.kind == APPLICABILITY_RESULT_KIND:
+            elif established.kind == APPLICABILITY_RESULT_KIND:
                 current_coordinates["applicability_result_occurrences"][
-                    carried.identity
+                    established.identity
                 ] = None
-            elif carried.kind == COMPARE_RESULT_KIND:
+            elif established.kind == COMPARE_RESULT_KIND:
                 current_coordinates["comparison_result_occurrences"][
-                    carried.identity
+                    established.identity
                 ] = None
-            current_coordinates["through_event_occurrence_identity"] = carried.identity
+            current_coordinates["through_event_occurrence_identity"] = (
+                established.identity
+            )
             current_coordinates["event_count"] += 1
 
     compare_binding = ledger.append(
@@ -978,7 +929,7 @@ def _record_ordered_path_source_position_material_comparison(
         _compare_binding_material(inputs, boundary, compare_identities),
         locality_identity=locality_identity,
     )
-    carry(compare_binding)
+    establish_current(compare_binding)
     identities = _mint_applicability_identities(ledger)
     applicability_binding = ledger.append(
         APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
@@ -990,39 +941,27 @@ def _record_ordered_path_source_position_material_comparison(
         ),
         locality_identity=locality_identity,
     )
-    carry(applicability_binding)
+    establish_current(applicability_binding)
     applicability_act = ledger.append(
         APPLICABILITY_ACT_KIND,
         _applicability_act_material(applicability_binding),
         locality_identity=locality_identity,
     )
-    carry(applicability_act)
+    establish_current(applicability_act)
     applicability_material = _applicability_result_material(applicability_act)
     _require_tip(ledger, applicability_act)
-    applicability_yield = _yield_result(
-        ledger,
-        act=applicability_act,
-        result_kind="Applicability result of ordered path source position material",
-        result_identity=applicability_material["result_identity"],
-        result_content=applicability_material,
-        exact_act=APPLICABILITY_ACT,
-        occurrence_boundary=APPLICABILITY_BOUNDARY,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-    )
     applicability = ledger.append(
         APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            applicability_material, applicability_yield.identity
-        ),
+        _recorded_applicability_result_material(applicability_material),
         locality_identity=locality_identity,
     )
-    carry(applicability_yield, applicability)
+    establish_current(applicability)
     compare_act = ledger.append(
         COMPARE_ACT_KIND,
         _compare_act_material(compare_binding, applicability),
         locality_identity=locality_identity,
     )
-    carry(compare_act)
+    establish_current(compare_act)
     result_material = _compare_result_material(compare_act, applicability, inputs)
     _require_tip(ledger, compare_act)
     result = ledger.append(
@@ -1030,7 +969,7 @@ def _record_ordered_path_source_position_material_comparison(
         _recorded_compare_result_material(result_material),
         locality_identity=locality_identity,
     )
-    carry(result)
+    establish_current(result)
     return OrderedPathSourcePositionMaterialComparison(current_coordinates, result)
 
 
