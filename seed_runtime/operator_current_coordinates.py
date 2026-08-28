@@ -1591,8 +1591,18 @@ def advance_operator_current_coordinates(
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
-            measurement_occurrences[event.identity] = (
-                _measurement_occurrence_coordinates(event)
+            measurement_occurrences[event.identity] = {
+                "recorded_occurrence_identity": event.identity,
+                "result_identity": event.material["result_identity"],
+                "act_occurrence_identity": event.material[
+                    "act_occurrence_identity"
+                ],
+                "act_occurrence_event_identity": event.material[
+                    "act_occurrence_event_identity"
+                ],
+            }
+            exact_result_occurrences[event.identity] = (
+                _subject_to_act_binding_of_exact_result(ledger, event)
             )
             continue
         if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND:
@@ -2371,7 +2381,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         != prior_through_event_occurrence_identity
     ):
         raise ValueError(
-            "position-coordinate Measurement must follow its carried Act and Yield"
+            "position-coordinate Measurement must follow its exact Act occurrence"
         )
     measurements = current_coordinates.get("measurement_occurrences")
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
@@ -2394,8 +2404,6 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
             and occurrence.get("result_occurrence_identity") == source_identity
             for occurrence in material_results
         )
-        or type(event.material.get("yield_relation_identity"))
-        is not str
         or type(event.material.get("assertions")) is not dict
         or event.identity in measurements
         or event.identity in exact_results
@@ -2404,7 +2412,14 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
     ):
         raise ValueError("position-coordinate Measurement coordinates are not exact")
     exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
-    measurements[event.identity] = _measurement_occurrence_coordinates(event)
+    measurements[event.identity] = {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material["act_occurrence_identity"],
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
+        ],
+    }
     exact_results[event.identity] = exact_result
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1

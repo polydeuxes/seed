@@ -1,4 +1,4 @@
-"""Pair occurrences Yield exact position coordinates."""
+"""Pair occurrences have exact position coordinates."""
 
 from copy import deepcopy
 
@@ -6,7 +6,6 @@ import pytest
 
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 import seed_runtime.operator_current_coordinates as standing_module
-from seed_runtime.yield_relation import _record_yield_relation
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
 )
@@ -22,7 +21,6 @@ from tests.operator_material_source_test_witness import (
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    RESULT_KIND,
     _recorded_position_assertions_for_locality_movement,
     _recorded_position_assertion_at_position_for_locality_movement,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
@@ -328,7 +326,7 @@ def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assign
     ] == source.identity
 
 
-def test_assignment_act_yield_and_result_enter_current_standing():
+def test_assignment_act_and_result_enter_current_standing_without_yield():
     ledger = EventLedger()
     source = _source(ledger)
     locality = source.locality_identity
@@ -359,10 +357,16 @@ def test_assignment_act_yield_and_result_enter_current_standing():
         ledger, act.identity
     ) == act
     assert result.identity in standing["measurement_occurrences"]
-    assert result.material["yield_relation_identity"] == (
-        standing["measurement_occurrences"][result.identity][
-            "yield_relation_identity"
-        ]
+    assert "yield_relation_identity" not in result.material
+    assert "yield_relation_identity" not in standing[
+        "measurement_occurrences"
+    ][result.identity]
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            locality, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("act_occurrence_event_identity") == act.identity
     )
 
 
@@ -408,7 +412,7 @@ def test_one_assignment_records_one_act_and_one_result():
                 ledger, assignment.locality_identity
             ),
         )
-    with pytest.raises(ValueError, match="already carries a Yield"):
+    with pytest.raises(ValueError, match="already carries a result"):
         record_byte_pair_occurrence_position_measurement_result(
             ledger,
             act_occurrence_event_identity=act.identity,
@@ -804,17 +808,7 @@ def test_addressed_source_position_from_another_exact_result_is_refused():
         )
 
 
-@pytest.mark.parametrize(
-    ("occurrence_boundary", "result_kind"),
-    (
-        ("byte_measurement", RESULT_KIND),
-        ("byte_pair_occurrence_position_measurement", "another result kind"),
-    ),
-)
-def test_result_refuses_an_intact_yield_from_another_exact_family(
-    occurrence_boundary,
-    result_kind,
-):
+def test_result_refuses_an_added_yield_coordinate():
     ledger = EventLedger()
     source = _source(ledger)
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
@@ -829,34 +823,13 @@ def test_result_refuses_an_intact_yield_from_another_exact_family(
             ledger, source.locality_identity
         ),
     )
-    act_read, assignment_read, finding = direct_position_module._read_act(
-        ledger, act.identity
-    )
-    result_material = direct_position_module._result_material(
-        finding, assignment_read
-    )
-    yield_relation = _record_yield_relation(
+    result = record_byte_pair_occurrence_position_measurement_result(
         ledger,
-        locality_identity=act.locality_identity,
-        exact_act=direct_position_module.EXACT_ACT,
-        act_occurrence_identity=assignment.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act_read.identity,
-        result_kind=result_kind,
-        result_identity=result_material["result_identity"],
-        result_content=result_material,
-        occurrence_boundary=occurrence_boundary,
+        act_occurrence_event_identity=act.identity,
     )
-    result = ledger.append(
-        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        {
-            **result_material,
-            "act_occurrence_event_identity": act.identity,
-            "yield_relation_identity": yield_relation.identity,
-        },
-        locality_identity=act.locality_identity,
-    )
+    result.material["yield_relation_identity"] = "not established"
 
-    with pytest.raises(ValueError, match="exact Yield"):
+    with pytest.raises(ValueError, match="coordinates are not exact"):
         get_recorded_byte_pair_occurrence_position_measurement(ledger, result.identity)
 
 
@@ -946,7 +919,7 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
         ledger.close()
 
 
-def test_reopened_public_result_refuses_a_second_yield(tmp_path):
+def test_reopened_public_result_refuses_a_second_result(tmp_path):
     path = tmp_path / "position-occurrence-position-duplicate.sqlite"
     ledger = SQLiteEventLedger(path)
     _source_event, _assignment, act, _result = _record(ledger)
@@ -956,7 +929,7 @@ def test_reopened_public_result_refuses_a_second_yield(tmp_path):
     reopened = SQLiteEventLedger(path)
     try:
         before = reopened.append_boundary()
-        with pytest.raises(ValueError, match="already carries a Yield"):
+        with pytest.raises(ValueError, match="already carries a result"):
             record_byte_pair_occurrence_position_measurement_result(
                 reopened,
                 act_occurrence_event_identity=act_identity,
@@ -1094,7 +1067,7 @@ def test_position_assertion_movement_requires_its_exact_source_when_carrying_the
     )
 
 
-def test_result_carries_only_its_declared_measurement_coordinates():
+def test_result_has_only_its_declared_measurement_coordinates():
     ledger = EventLedger()
     _source_event, assignment, _act, result = _record(ledger)
 
@@ -1110,7 +1083,6 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "completeness_boundary",
         "assertions",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }
     assert "standing" not in result.material["assertions"]["dimensions"]
 
@@ -1131,6 +1103,6 @@ WITNESSED_BOOK_COORDINATES = {
         test_addressed_source_position_refuses_a_changed_coordinate,
         test_equal_byte_material_at_distinct_positions_has_distinct_coordinates,
         test_addressed_source_position_from_another_exact_result_is_refused,
-        test_result_carries_only_its_declared_measurement_coordinates,
+        test_result_has_only_its_declared_measurement_coordinates,
     ),
 }

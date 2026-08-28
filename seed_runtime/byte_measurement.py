@@ -730,17 +730,18 @@ def _source_assertion_from_reference(
 
 
 def _source_measurement_current_coordinates(source_event: Event) -> dict[str, str]:
-    return {
+    coordinates = {
         "recorded_occurrence_identity": source_event.identity,
         "result_identity": source_event.material["result_identity"],
         "act_occurrence_identity": source_event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": source_event.material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": source_event.material[
-            "yield_relation_identity"
-        ],
     }
+    yield_relation_identity = source_event.material.get("yield_relation_identity")
+    if type(yield_relation_identity) is str and yield_relation_identity:
+        coordinates["yield_relation_identity"] = yield_relation_identity
+    return coordinates
 
 
 def _source_assertion_is_carried(

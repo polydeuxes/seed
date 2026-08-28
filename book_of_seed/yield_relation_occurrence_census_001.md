@@ -193,11 +193,33 @@ Measurement clause supplied that designation itself, so it could not serve as
 independent testimony. Yield is therefore not established on this tested
 Measurement road.
 
+The direct byte-pair occurrence-position Measurement then passed the same
+falsifier independently. Its separate Yield event again preceded the result
+occurrence and copied that future result's complete coordinates. Removing it
+preserved:
+
+```text
+Measurement subject-to-Act binding
+Measurement Act occurrence
+Measurement result occurrence
+```
+
+The result directly addresses its Act occurrence and binding. Its reader
+derives the exact result from those coordinates, requires Act-before-result
+order, refuses another result for the same Act, and refuses added or changed
+result coordinates. Current-coordinate replay, direct advancement, durable
+reopen, addressed source-position determination, and later shared-position
+Measurement all address the result without a Yield identity.
+
+The material source that is the subject of this Measurement still retains its
+own independently untested Yield coordinates. Their presence does not establish
+Yield for this later Measurement Act.
+
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, and one declared Measurement road. Each removed
-event occurred before its result subject and added only a copied result
+non-Locality Applicability road, and two declared Measurement roads. Each
+removed event occurred before its result subject and added only a copied result
 dictionary plus another identity.
 
 This does not withdraw Yield as a relation or from every Act road.

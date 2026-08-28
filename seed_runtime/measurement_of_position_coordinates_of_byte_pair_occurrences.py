@@ -12,11 +12,6 @@ from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
@@ -1230,22 +1225,6 @@ def _refuse_existing_byte_pair_occurrence_position_measurement_result(
     act: Event,
     act_occurrence_identity: str,
 ) -> None:
-    for prior_yield in ledger.iter_locality_kind(
-        act.locality_identity, RECORDED_YIELD_RELATION_EVENT
-    ):
-        dimensions = prior_yield.material.get("dimensions")
-        if (
-            prior_yield.material.get("act_occurrence_event_identity")
-            == act.identity
-            or (
-                type(dimensions) is dict
-                and dimensions.get("act_occurrence_identity")
-                == act_occurrence_identity
-            )
-        ):
-            raise ValueError(
-                "byte-pair position-coordinate Act already carries a Yield"
-            )
     for prior_result in ledger.iter_locality_kind(
         act.locality_identity, BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     ):
@@ -1268,17 +1247,6 @@ def _record_byte_pair_occurrence_position_measurement_result(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
 ) -> Event:
     result = _result_material(finding, binding)
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=EXACT_ACT,
-        act_occurrence_identity=binding.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="byte_pair_occurrence_position_measurement",
-    )
     return ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         {
@@ -1296,7 +1264,6 @@ def _record_byte_pair_occurrence_position_measurement_result(
             "completeness_boundary": result["completeness_boundary"],
             "assertions": result["assertions"],
             "act_occurrence_event_identity": act.identity,
-            "yield_relation_identity": yield_relation.identity,
         },
         locality_identity=act.locality_identity,
     )
@@ -1392,44 +1359,28 @@ def _read_result(
     expected = {
         **_result_material(finding, binding),
         "act_occurrence_event_identity": act.identity,
-        "yield_relation_identity": event.material.get(
-            "yield_relation_identity"
-        ),
     }
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise ValueError("byte-pair position-coordinate result coordinates are not exact")
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    try:
-        requirements = read_requirements_of_yield_relation(
-            ledger,
-            recorded_result_event_identity=event.identity,
-            yield_relation_event_identity=yield_relation_identity,
-            act_occurrence_event_identity=act.identity,
-        )
-        yield_relation = ledger.get(yield_relation_identity)
-    except (TypeError, ValueError) as error:
-        raise ValueError("byte-pair position-coordinate result carries no exact Yield") from error
-    if (
-        not all(requirements.values())
-        or yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or yield_relation.material.get("occurrence_boundary")
-        != "byte_pair_occurrence_position_measurement"
-        or yield_relation.material.get("result_kind") != RESULT_KIND
-    ):
-        raise ValueError("byte-pair position-coordinate result carries no exact Yield")
     try:
         ordered = ledger.occurrences_in_append_order(
-            (act.identity, yield_relation.identity, event.identity),
+            (act.identity, event.identity),
             locality_identity=event.locality_identity,
         )
-    except ValueError as error:
+    except (TypeError, ValueError) as error:
         raise ValueError("byte-pair position-coordinate result has false occurrence order") from error
-    if tuple(item.identity for item in ordered) != (
-        act.identity,
-        yield_relation.identity,
-        event.identity,
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
+    )
+    if (
+        tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
         raise ValueError("byte-pair position-coordinate result has false occurrence order")
     return event, finding, expected["assertions"]
