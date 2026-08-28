@@ -8,20 +8,21 @@ within its boundary.
 
 ### 01.Source.G — Operator source boundary
 
-The exact operator boundary, exact Act to preserve supplied material, boundary
-coordinates, and Locality are exact together.
+The exact coordinates of one operator-source subject-to-Act binding are the
+exact operator boundary, exact Act to preserve supplied material, boundary
+coordinates, and Locality.
 
 The exact material result is one occurrence in that exact Locality.
 
-One supplied material subject and one material result are exact together.
-Another operator boundary occurrence and another exact subject-to-Act binding
-are exact together.
+The supplied material is one exact subject of the subject-to-Act binding for
+one material result. Another operator boundary occurrence is one exact subject
+in another exact subject-to-Act binding.
 
 ### 01.Source.H — Supplied material source boundary
 
-One exact source boundary and one exact Act to preserve the supplied material
-are exact together. One exact Yield relation is from the Act occurrence as
-first subject to one exact material result as second subject. The result
+One exact source boundary is the exact subject bound to one exact Act to
+preserve the supplied material. One exact Yield relation is from the Act
+occurrence as first subject to one exact material result as second subject. The result
 preserves its source boundary, source occurrence references, Locality, and the
 exact coordinates established within that boundary.
 

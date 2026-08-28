@@ -23,8 +23,8 @@ occurrence is that boundary or is before that boundary.
 
 ### 01.Current.D — Exact relation subjects and occurrence
 
-One exact relation, its exact subjects, and its exact relation occurrence are
-exact together.
+The exact coordinates of one exact relation are its exact subjects and exact
+relation occurrence.
 
 ### 01.Current.D.1 — Result-position coordinates
 

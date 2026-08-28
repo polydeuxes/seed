@@ -1,4 +1,4 @@
-"""Each addressed byte occurrence and its exact ordered result-position references are exact together."""
+"""One addressed byte occurrence Measurement result preserves its exact ordered result-position references."""
 
 from copy import deepcopy
 

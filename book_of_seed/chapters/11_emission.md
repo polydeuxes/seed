@@ -2,8 +2,9 @@
 
 ### 07.Emission.A — Emission subject-to-Act binding
 
-One exact source material result, one exact destination boundary, one
-Locality, and one exact emission Act are exact together.
+The exact coordinates of one emission subject-to-Act binding are one exact
+source material result, one exact destination boundary, one Locality, and one
+exact emission Act.
 
 ### 07.Emission.C — Exact-material boundary write
 
@@ -19,9 +20,9 @@ result, and its reported count is one coordinate of that failure.
 
 ### 07.Emission.D — Material supplied in the destination Locality
 
-Material supplied by the addressed boundary in that exact destination Locality
-and its own exact subject and source-boundary Act coordinates are exact
-together.
+The exact coordinates of material supplied by the addressed boundary in that
+exact destination Locality are its own exact subject and source-boundary Act
+coordinates.
 
 ## References
 

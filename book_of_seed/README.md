@@ -39,8 +39,8 @@ an exact relation with its exact subjects.
 Act occurrence ── Yield ──> result
 ```
 
-Yield, its exact subjects, relation occurrence, and Locality are exact
-together.
+The exact coordinates of Yield are its exact subjects, relation occurrence,
+and Locality.
 
 The result preserves the exact coordinates established by its Act occurrence.
 

@@ -109,7 +109,7 @@ def test_compare_clause_addresses_its_exact_subjects_and_act():
 
     assert compare["subject"] == "exact_Compare_subjects"
     assert compare["exact_Act"] == "Compare"
-    assert "its exact subjects, and Locality" in (
+    assert "its exact\nsubjects, exact Compare Act, and Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")
 

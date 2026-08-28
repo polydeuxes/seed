@@ -14,8 +14,8 @@ Yield is the exact relation from one Act occurrence to its exact result:
 Act occurrence --Yield--> result
 ```
 
-The Yield relation, its first subject, second subject, relation occurrence,
-and Locality are exact together.
+The exact coordinates of the Yield relation are its first subject, second
+subject, relation occurrence, and Locality.
 
 A result preserves coordinates established by its Act occurrence.
 

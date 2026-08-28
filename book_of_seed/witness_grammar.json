@@ -243,8 +243,7 @@
     "07.Emission.D": {
       "subject": "material_supplied_by_the_addressed_boundary",
       "coordinates": [
-        "exact_subject_and_source_boundary_Act_coordinates",
-        "exact_Act_occurrence"
+        "exact_subject_and_source_boundary_Act_coordinates"
       ]
     }
   }
