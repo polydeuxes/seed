@@ -98,7 +98,7 @@ def test_changed_measured_distinction_is_refused():
     ledger = EventLedger()
     _source, result, _current_coordinates = _record_measurement(ledger)
     changed = deepcopy(result.material["findings"][0])
-    changed["recorded_finding_reference"]["subject"]["content"] = [0, 0]
+    changed["recorded_finding_reference"]["finding_position"] = 10_000
     result.material["findings"][0] = changed
 
     with pytest.raises(ValueError, match="not exact"):
@@ -373,17 +373,26 @@ def test_separate_occurrences_can_carry_equal_measured_content():
     )
 
     def measured_content(reading):
-        return tuple(
-            (
-                    finding["path_position_result_reference"][
-                        "result_position"
-                    ],
-                finding["recorded_finding_reference"]["subject"]["content"],
-                finding["recorded_finding_reference"]["finding_category"],
-                finding["recorded_finding_reference"]["subject"],
+        measured = []
+        for finding in reading["findings"]:
+            reference = finding["recorded_finding_reference"]
+            comparison = get_recorded_pair_measurement_comparison(
+                ledger,
+                reference["recorded_comparison_occurrence_identity"],
+                prior_coordinates=current_coordinates,
             )
-            for finding in reading["findings"]
-        )
+            addressed = comparison["findings"][reference["finding_category"]][
+                reference["finding_position"]
+            ]
+            measured.append(
+                (
+                    finding["path_position_result_reference"]["result_position"],
+                    addressed["subject"]["content"],
+                    reference["finding_category"],
+                    addressed["subject"],
+                )
+            )
+        return tuple(measured)
 
     readings = tuple(
         (

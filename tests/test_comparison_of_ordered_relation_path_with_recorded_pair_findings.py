@@ -603,7 +603,6 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
             "recorded_comparison_occurrence_identity",
             "finding_category",
             "finding_position",
-            "subject",
         }
         for finding in relation_findings
         for reference in finding["comparison_finding_references"]
@@ -624,7 +623,10 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
     first_count_reference = next(
         reference
         for reference in relation_findings[0]["comparison_finding_references"]
-        if reference["subject"]["result"] == "count"
+        if recorded_comparison["findings"][reference["finding_category"]][
+            reference["finding_position"]
+        ]["subject"]["result"]
+        == "count"
     )
     first_count = recorded_comparison["findings"][
         first_count_reference["finding_category"]

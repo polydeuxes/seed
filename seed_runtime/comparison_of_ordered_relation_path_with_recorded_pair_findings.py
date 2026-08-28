@@ -232,29 +232,69 @@ def _comparison_finding_references(
                 "comparison of ordered relation path with recorded pair findings requires complete comparison findings"
             )
         for position, entry in enumerate(entries):
-            subject = entry.get("subject") if type(entry) is dict else None
-            pair = subject.get("content") if type(subject) is dict else None
-            if (
-                type(subject) is not dict
-                or type(subject.get("result")) is not str
-                or type(pair) is not list
-                or len(pair) != 2
-                or any(type(value) is not int for value in pair)
-            ):
-                raise ValueError(
-                    "comparison of ordered relation path with recorded pair findings requires complete comparison findings"
-                )
-            references.append(
-                {
-                    "recorded_comparison_occurrence_identity": (
-                        comparison_event.identity
-                    ),
-                    "finding_category": category,
-                    "finding_position": position,
-                    "subject": deepcopy(subject),
-                }
+            reference = {
+                "recorded_comparison_occurrence_identity": (
+                    comparison_event.identity
+                ),
+                "finding_category": category,
+                "finding_position": position,
+            }
+            _addressed_comparison_finding(
+                comparison_event,
+                comparison,
+                reference,
             )
+            references.append(reference)
     return tuple(references)
+
+
+def _addressed_comparison_finding(
+    comparison_event: Event,
+    comparison: dict[str, Any],
+    reference: dict[str, Any],
+) -> dict[str, Any]:
+    if (
+        type(reference) is not dict
+        or set(reference)
+        != {
+            "recorded_comparison_occurrence_identity",
+            "finding_category",
+            "finding_position",
+        }
+        or reference.get("recorded_comparison_occurrence_identity")
+        != comparison_event.identity
+        or reference.get("finding_category") not in _FINDING_CATEGORIES
+        or type(reference.get("finding_position")) is not int
+        or reference["finding_position"] < 0
+    ):
+        raise ValueError(
+            "comparison finding reference requires one exact result position"
+        )
+    findings = comparison.get("findings")
+    entries = (
+        findings.get(reference["finding_category"])
+        if type(findings) is dict
+        else None
+    )
+    position = reference["finding_position"]
+    entry = (
+        entries[position]
+        if type(entries) is list and position < len(entries)
+        else None
+    )
+    subject = entry.get("subject") if type(entry) is dict else None
+    pair = subject.get("content") if type(subject) is dict else None
+    if (
+        type(subject) is not dict
+        or type(subject.get("result")) is not str
+        or type(pair) is not list
+        or len(pair) != 2
+        or any(type(value) is not int for value in pair)
+    ):
+        raise ValueError(
+            "comparison finding reference addresses no exact result content"
+        )
+    return entry
 
 
 def _comparison_input(
@@ -295,6 +335,7 @@ def _comparison_input(
     return {
         "event": event,
         "reference": _result_reference(event),
+        "result_material": material,
         "binding_event_identity": binding.identity,
         "added_occurrence_identity": binding.material[
             "added_occurrence_reference"
@@ -304,12 +345,19 @@ def _comparison_input(
 
 
 def _path_relation_findings(
-    references: tuple[dict[str, Any], ...], pair: tuple[int, int]
+    comparison: dict[str, Any], pair: tuple[int, int]
 ) -> tuple[dict[str, Any], ...]:
     return tuple(
         reference
-        for reference in references
-        if tuple(reference["subject"]["content"]) == pair
+        for reference in comparison["finding_references"]
+        if tuple(
+            _addressed_comparison_finding(
+                comparison["event"],
+                comparison["result_material"],
+                reference,
+            )["subject"]["content"]
+        )
+        == pair
     )
 
 
@@ -319,7 +367,7 @@ def _inputs_from_readings(
     if path["event"].locality_identity != comparison["event"].locality_identity:
         raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact Locality")
     matches = tuple(
-        _path_relation_findings(comparison["finding_references"], pair)
+        _path_relation_findings(comparison, pair)
         for pair in path["pair_subjects"]
     )
     return {
@@ -2030,6 +2078,18 @@ def recorded_distinction_pins_from_current_coordinates(
             or type(relation_findings) is not list
         ):
             raise ValueError("recorded distinction pin source result is not exact")
+        recorded_comparison_event = ledger.get(
+            comparison_reference["recorded_occurrence_identity"]
+        )
+        if recorded_comparison_event is None:
+            raise ValueError("recorded distinction pin source result is not exact")
+        recorded_comparison_material = (
+            _recorded_pair_measurement_comparison_reading(
+                ledger,
+                recorded_comparison_event.identity,
+                prior_coordinates=current_coordinates,
+            )[0]
+        )
         for relation_finding in relation_findings:
             position_reference = (
                 relation_finding.get("path_position_result_reference")
@@ -2058,30 +2118,17 @@ def recorded_distinction_pins_from_current_coordinates(
             ):
                 raise ValueError("recorded distinction pin coordinates are not exact")
             for reference in references:
-                if (
-                    type(reference) is not dict
-                    or set(reference)
-                    != {
-                        "recorded_comparison_occurrence_identity",
-                        "finding_category",
-                        "finding_position",
-                        "subject",
-                    }
-                    or reference.get("recorded_comparison_occurrence_identity")
-                    != comparison_reference["recorded_occurrence_identity"]
-                    or reference.get("finding_category")
-                    not in {
-                        "same_content_findings",
-                        "conflicting_findings",
-                        "findings_of_earlier_result",
-                        "findings_of_later_result",
-                    }
-                    or type(reference.get("finding_position")) is not int
-                    or reference["finding_position"] < 0
-                    or type(reference.get("subject")) is not dict
-                    or reference["subject"].get("content")
-                    != pair_subject
-                ):
+                try:
+                    addressed_finding = _addressed_comparison_finding(
+                        recorded_comparison_event,
+                        recorded_comparison_material,
+                        reference,
+                    )
+                except ValueError as error:
+                    raise ValueError(
+                        "recorded distinction pin reference is not exact"
+                    ) from error
+                if addressed_finding["subject"].get("content") != pair_subject:
                     raise ValueError("recorded distinction pin reference is not exact")
                 pins.append(
                     RecordedDistinctionPin(

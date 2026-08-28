@@ -8,6 +8,7 @@ from typing import Any
 
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    _addressed_comparison_finding,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -115,6 +116,16 @@ def _exact_distinctions(
         or type(relation_findings) is not list
     ):
         raise ValueError("Measurement requires exact Compare Distinctions")
+    recorded_comparison_event = ledger.get(
+        comparison_reference["recorded_occurrence_identity"]
+    )
+    if recorded_comparison_event is None:
+        raise ValueError("Measurement requires exact Compare Distinctions")
+    recorded_comparison = get_recorded_pair_measurement_comparison(
+        ledger,
+        recorded_comparison_event.identity,
+        prior_coordinates=current_coordinates,
+    )
 
     distinctions = []
     for relation_finding in relation_findings:
@@ -142,22 +153,17 @@ def _exact_distinctions(
         ):
             raise ValueError("Measurement requires exact Compare Distinctions")
         for reference in references:
-            if (
-                type(reference) is not dict
-                or set(reference)
-                != {
-                    "recorded_comparison_occurrence_identity",
-                    "finding_category",
-                    "finding_position",
-                    "subject",
-                }
-                or reference.get("recorded_comparison_occurrence_identity")
-                != comparison_reference["recorded_occurrence_identity"]
-                or type(reference.get("finding_position")) is not int
-                or reference["finding_position"] < 0
-                or type(reference.get("subject")) is not dict
-                or reference["subject"].get("content") != pair_subject
-            ):
+            try:
+                addressed_finding = _addressed_comparison_finding(
+                    recorded_comparison_event,
+                    recorded_comparison,
+                    reference,
+                )
+            except ValueError as error:
+                raise ValueError(
+                    "Measurement requires exact Compare Distinctions"
+                ) from error
+            if addressed_finding["subject"].get("content") != pair_subject:
                 raise ValueError("Measurement requires exact Compare Distinctions")
             distinctions.append(
                 {
