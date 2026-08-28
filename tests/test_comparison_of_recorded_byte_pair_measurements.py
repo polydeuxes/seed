@@ -22,6 +22,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
+    get_recorded_pair_measurement_comparison_applicability,
     record_recorded_pair_measurement_comparison_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_applicability_act_occurrence,
@@ -461,6 +462,32 @@ def test_changed_compare_result_is_refused_without_a_yield_event():
         match="not exact",
     ):
         get_recorded_pair_measurement_comparison(ledger, result.identity)
+
+
+def test_compare_applicability_result_is_exact_without_a_yield_event():
+    ledger, *_middle, applicability, _result = _comparison()
+    act_identity = applicability.material["act_occurrence_event_identity"]
+
+    assert "yield_relation_identity" not in applicability.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "recorded_pair_measurement_comparison_applicability"
+    )
+    assert get_recorded_pair_measurement_comparison_applicability(
+        ledger, applicability.identity
+    )["applicability"] == "applicable"
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="already has a result",
+    ):
+        record_recorded_pair_measurement_comparison_applicability_result(
+            ledger,
+            act_occurrence_event_identity=act_identity,
+        )
 
 
 def test_one_compare_act_cannot_record_two_results():

@@ -172,6 +172,14 @@ progression, governed Measurement gating, and mutation, substitution,
 corruption, and changed-input refusal. This is another Yield producer reached
 by the new exact material road.
 
+Recorded-pair Compare Applicability then passed independently. Its exact
+positive result still addresses the complete Compare subject-to-Act binding
+and its Applicability Act occurrence. Removing the separate copied event
+preserved Act-before-result order, one result for the Act, current-coordinate
+progression, the governed Compare gate, durable reread, and mutation,
+substitution, corruption, and changed-input refusal. This road is reached by
+successive exact material occurrences in the new material road.
+
 ## Measurement control
 
 Shared-position Measurement passed the independent event subtraction. Its
@@ -372,7 +380,7 @@ possible relation.
 
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls, two
+A separate Yield occurrence failed all three internal Locality controls, three
 non-Locality Applicability roads, five declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the

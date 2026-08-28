@@ -13,11 +13,6 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -1217,7 +1212,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
 
 
 def _recorded_applicability_result_material(
-    material: dict[str, Any], *, act_identity: str, yield_relation_identity: str
+    material: dict[str, Any], *, act_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1229,7 +1224,6 @@ def _recorded_applicability_result_material(
         ),
         "applicability": material["applicability"],
         "act_occurrence_event_identity": act_identity,
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -1251,21 +1245,22 @@ def record_recorded_pair_measurement_comparison_applicability_result(
 def _record_applicability_result_from_act(
     ledger: EventLedger, *, act: Event, result: dict[str, Any]
 ) -> Event:
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind="recorded pair Measurement comparison Applicability result",
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="recorded_pair_measurement_comparison_applicability",
+    existing = tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            act.locality_identity,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+        )
+        if event.material.get("act_occurrence_event_identity") == act.identity
     )
+    if existing:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison Applicability Act already has a result"
+        )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
-            result, act_identity=act.identity, yield_relation_identity=yield_relation.identity
+            result, act_identity=act.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1306,23 +1301,34 @@ def _applicability_reading(
     expected = _recorded_applicability_result_material(
         _applicability_result_material(act),
         act_identity=act.identity,
-        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material.get(
-            "yield_relation_identity"
-        ),
-        act_occurrence_event_identity=act.identity,
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison Applicability result does not follow its Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
     )
     if (
         event.locality_identity != act.locality_identity
         or event.material != expected
-        or not all(requirements.values())
+        or tuple(item.identity for item in ordered)
+        != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison Applicability carries no exact Yield"
+            "comparison Applicability result is not exact for its Act"
         )
     return deepcopy(event.material), event, act, applicability_binding_reading
 
