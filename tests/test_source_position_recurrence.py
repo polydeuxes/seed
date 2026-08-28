@@ -20,6 +20,7 @@ from seed_runtime.source_position_recurrence import (
     record_recurrent_result_material_measurements,
     record_source_position_measurements,
 )
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 import seed_runtime.source_position_recurrence as source_position_recurrence
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -386,7 +387,6 @@ def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
                 applicability_result.material["yield_relation_identity"],
                 applicability_result.identity,
                 compare_act.identity,
-                compare_result.material["yield_relation_identity"],
                 compare_result.identity,
             ),
             locality_identity="source-position-applicability-address",
@@ -398,8 +398,14 @@ def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
         applicability_result.material["yield_relation_identity"],
         applicability_result.identity,
         compare_act.identity,
-        compare_result.material["yield_relation_identity"],
         compare_result.identity,
+    )
+    assert "yield_relation_identity" not in compare_result.material
+    assert not any(
+        event.kind == RECORDED_YIELD_RELATION_EVENT
+        and event.material.get("occurrence_boundary")
+        == source_position_recurrence.COMPARE_BOUNDARY
+        for event in ledger.list_locality("source-position-applicability-address")
     )
 
 

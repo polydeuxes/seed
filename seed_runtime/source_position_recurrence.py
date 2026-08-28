@@ -307,6 +307,19 @@ def _preserved_result_material(material):
     }
 
 
+def _preserved_direct_result_material(material):
+    return {
+        "book_reference": material["book_reference"],
+        "result_identity": material["result_identity"],
+        "act_identity": material["act_identity"],
+        "act_occurrence_identity": material["act_occurrence_identity"],
+        "act_occurrence_event_identity": material[
+            "act_occurrence_event_identity"
+        ],
+        "coordinates": deepcopy(material["coordinates"]),
+    }
+
+
 def _preserved_binding_material(material):
     return {
         "book_clause_identity": material["book_clause_identity"],
@@ -356,7 +369,7 @@ def _append_compare_act(ledger, material, locality_identity):
 def _append_compare_result(ledger, material, locality_identity):
     return ledger.append(
         COMPARE_RESULT_KIND,
-        _preserved_result_material(material),
+        _preserved_direct_result_material(material),
         locality_identity=locality_identity,
     )
 
@@ -558,6 +571,49 @@ def _record_yielded_result_from_binding(
     result_payload: dict[str, Any],
     result_exact_material: bytes | None = None,
 ) -> tuple[Event, Event]:
+    act, content = _record_result_coordinates_from_binding(
+        ledger,
+        binding=binding,
+        act_kind=act_kind,
+        result_kind=result_kind,
+        exact_act=exact_act,
+        book_reference=book_reference,
+        locality_identity=locality_identity,
+        act_payload=act_payload,
+        result_payload=result_payload,
+    )
+    yielded = _record_yield_relation(
+        ledger,
+        locality_identity=locality_identity,
+        exact_act=exact_act,
+        act_occurrence_identity=act.material["act_occurrence_identity"],
+        act_occurrence_event_identity=act.identity,
+        result_kind=result_kind,
+        result_identity=content["result_identity"],
+        result_content=content,
+        occurrence_boundary=occurrence_boundary,
+        result_exact_material=result_exact_material,
+    )
+    result = _EVENT_APPENDERS[result_kind](
+        ledger,
+        {**content, "yield_relation_identity": yielded.identity},
+        locality_identity,
+    )
+    return act, result
+
+
+def _record_result_coordinates_from_binding(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    act_kind: str,
+    result_kind: str,
+    exact_act: str,
+    book_reference: str,
+    locality_identity: str,
+    act_payload: dict[str, Any],
+    result_payload: dict[str, Any],
+) -> tuple[Event, dict[str, Any]]:
     subject = act_payload.get("subject")
     _require_recorded_binding(ledger, binding)
     if (
@@ -599,22 +655,30 @@ def _record_yielded_result_from_binding(
         "act_occurrence_event_identity": act.identity,
         "coordinates": deepcopy(result_payload),
     }
-    yielded = _record_yield_relation(
+    return act, content
+
+
+def _record_compare_result_from_binding(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    locality_identity: str,
+    act_payload: dict[str, Any],
+    result_payload: dict[str, Any],
+) -> tuple[Event, Event]:
+    act, content = _record_result_coordinates_from_binding(
         ledger,
+        binding=binding,
+        act_kind=COMPARE_ACT_KIND,
+        result_kind=COMPARE_RESULT_KIND,
+        exact_act=COMPARE_ACT,
+        book_reference="04.Compare",
         locality_identity=locality_identity,
-        exact_act=exact_act,
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act.identity,
-        result_kind=result_kind,
-        result_identity=result_identity,
-        result_content=content,
-        occurrence_boundary=occurrence_boundary,
-        result_exact_material=result_exact_material,
+        act_payload=act_payload,
+        result_payload=result_payload,
     )
-    result = _EVENT_APPENDERS[result_kind](
-        ledger,
-        {**content, "yield_relation_identity": yielded.identity},
-        locality_identity,
+    result = _EVENT_APPENDERS[COMPARE_RESULT_KIND](
+        ledger, content, locality_identity
     )
     return act, result
 
@@ -650,6 +714,41 @@ def _require_yield(
         raise ValueError("recorded result carries no exact Yield relation")
     _require_act_boundary(ledger, act)
     _require_binding(ledger, act, result)
+    return act
+
+
+def _require_compare_result(ledger: EventLedger, result: Event) -> Event:
+    act = _recorded_occurrence(
+        ledger,
+        result.material.get("act_occurrence_event_identity"),
+        message="source-position Compare result carries no exact Act occurrence",
+    )
+    if (
+        result.locality_identity != act.locality_identity
+        or act.material.get("act") != COMPARE_ACT
+    ):
+        raise ValueError("source-position Compare result carries no exact Act")
+    _require_act_boundary(ledger, act)
+    _require_binding(ledger, act, result)
+    ordered = ledger.occurrences_in_append_order(
+        (act.identity, result.identity),
+        locality_identity=result.locality_identity,
+    )
+    if tuple(event.identity for event in ordered) != (
+        act.identity,
+        result.identity,
+    ):
+        raise ValueError("source-position Compare result does not follow its Act")
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            result.locality_identity, COMPARE_RESULT_KIND
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
+    )
+    if len(results) != 1 or results[0].identity != result.identity:
+        raise ValueError("source-position Compare Act has no single exact result")
     return act
 
 
@@ -910,14 +1009,9 @@ def _record_compare(
         else "difference"
     )
     applicability_result_reference = _result_reference(applicability)
-    _compare_act, result = _record_yielded_result_from_binding(
+    _compare_act, result = _record_compare_result_from_binding(
         ledger,
         binding=compare_binding,
-        act_kind=COMPARE_ACT_KIND,
-        result_kind=COMPARE_RESULT_KIND,
-        exact_act=COMPARE_ACT,
-        book_reference="04.Compare",
-        occurrence_boundary=COMPARE_BOUNDARY,
         locality_identity=locality_identity,
         act_payload={
             "subject": compare_subject,
@@ -944,12 +1038,7 @@ def get_recorded_source_position_compare(
         result_event_identity,
         message="source-position Compare result is not exact",
     )
-    act = _require_yield(
-        ledger,
-        result,
-        exact_act=COMPARE_ACT,
-        occurrence_boundary=COMPARE_BOUNDARY,
-    )
+    act = _require_compare_result(ledger, result)
     result_coordinates = _coordinates(result.material)
     subject = result_coordinates.get("subject")
     if type(subject) is not dict:
@@ -2142,6 +2231,9 @@ def validate_source_position_recurrence_event(
         raise ValueError("source-position occurrence is not exact")
     if event.kind in set(_ACT_SUBJECT_TO_ACT_BINDING_EVENTS.values()):
         return _require_recorded_binding(ledger, event)
+    if event.kind == COMPARE_RESULT_KIND:
+        get_recorded_source_position_compare(ledger, event.identity)
+        return event
     if "yield_relation_identity" in material:
         act = ledger.get(material.get("act_occurrence_event_identity"))
         exact_act = (
@@ -2153,7 +2245,6 @@ def validate_source_position_recurrence_event(
             RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT: (
                 get_recorded_recurrent_result_material_measurement
             ),
-            COMPARE_ACT: get_recorded_source_position_compare,
             SOURCE_POSITION_MEASUREMENT_ACT: get_recorded_source_position_measurement,
             RECURRENCE_MEASUREMENT_ACT: get_recorded_source_position_recurrence,
             COORDINATE_MEASUREMENT_ACT: (
