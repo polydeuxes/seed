@@ -58,9 +58,7 @@ APPLICABILITY_ACT = (
     "Measurement"
 )
 MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"
-APPLICABILITY_RESULT_KIND = "shared pair-position input Applicability result"
 MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
-APPLICABILITY_BOUNDARY = "shared_pair_position_applicability"
 MEASUREMENT_BOUNDARY = "shared_pair_position_measurement"
 D2_RESULT_REFERENCE_COORDINATE = (
     "addressed_byte_occurrence_reference_determination_result_reference"
@@ -1371,40 +1369,15 @@ def record_shared_position_applicability_result(
         binding=binding,
         inputs=inputs,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act.identity,
-        result_kind=APPLICABILITY_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in result.items()
-            if coordinate != "act_occurrence_event_identity"
-        },
-        occurrence_boundary="shared_pair_position_applicability",
-        yielding_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
-    )
     return ledger.append(
         SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            result,
-            yield_relation_identity=yield_relation.identity,
-        ),
+        _recorded_applicability_result_material(result),
         locality_identity=act.locality_identity,
     )
 
 
 def _recorded_applicability_result_material(
     result: dict[str, Any],
-    *,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1427,8 +1400,40 @@ def _recorded_applicability_result_material(
         "first_position_result": deepcopy(result["first_position_result"]),
         "second_position_result": deepcopy(result["second_position_result"]),
         "applicability": result["applicability"],
-        "yield_relation_identity": yield_relation_identity,
     }
+
+
+def _require_direct_applicability_result(
+    ledger: EventLedger,
+    *,
+    event: Event,
+    act: Event,
+) -> None:
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "Applicability result occurrence order is false"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
+    )
+    if (
+        tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise SharedPairPositionError(
+            "Applicability Act has no single exact result occurrence"
+        )
 
 
 def _require_yield(
@@ -1490,25 +1495,14 @@ def _read_applicability_result(
         binding=binding,
         inputs=inputs,
     )
-    carried = {
-        key: value
-        for key, value in event.material.items()
-        if key != "yield_relation_identity"
-    }
-    if event.locality_identity != act.locality_identity or carried != expected:
+    if event.locality_identity != act.locality_identity or event.material != expected:
         raise SharedPairPositionError("Applicability result coordinates are not exact")
-    _require_yield(
+    _require_direct_applicability_result(
         ledger,
         event=event,
         act=act,
-        occurrence_boundary=APPLICABILITY_BOUNDARY,
-        result_kind=APPLICABILITY_RESULT_KIND,
-        result_occurrence_coordinate="applicability_act_occurrence_identity",
-        yielding_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
     )
-    return event, act, binding, inputs, carried
+    return event, act, binding, inputs, deepcopy(event.material)
 
 
 def get_recorded_shared_position_applicability(

@@ -139,12 +139,36 @@ the result from the Act and binding, requires Act-before-result order, and
 refuses another result for that Act occurrence. Current coordinates preserve
 the exact result-to-binding coordinate without a Yield event.
 
+## First non-Locality subtraction
+
+Shared-position Applicability passed the next independent subtraction. Its
+active Book clause establishes an Applicability binding, Act occurrence, and
+`applicable` or `inapplicable` result; it establishes no Yield relation.
+
+The removed Yield event copied the complete future Applicability result before
+that result occurrence existed. The direct result occurrence already addresses
+its Applicability Act occurrence and exact subject-to-Act binding. Its reader
+derives the expected result from those coordinates, establishes Act-before-result
+order in the exact Locality, and refuses mutation, corruption, substitution, or
+two results for one Applicability Act.
+
+Both the ordinary producer and the bounded source-position producer now record:
+
+```text
+Applicability subject-to-Act binding
+Applicability Act occurrence
+Applicability result occurrence
+```
+
+The subsequent Measurement remains gated by the exact positive Applicability
+result. Its own separate Yield event remains under independent pressure.
+
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls. The
-removed event occurred before its result subject and added only a copied result
-dictionary plus another identity.
+A separate Yield occurrence failed all three internal Locality controls and one
+non-Locality Applicability road. Each removed event occurred before its result
+subject and added only a copied result dictionary plus another identity.
 
-This does not yet withdraw Yield from every Act. It establishes that the active
-Locality clauses must stop requiring a separate Yield event. Other Act roads
-remain under pressure independently.
+This does not withdraw Yield as a relation or from every Act road. It establishes
+that an Act result does not imply Yield without an independently established
+relation occurrence. Other Act roads remain under pressure independently.

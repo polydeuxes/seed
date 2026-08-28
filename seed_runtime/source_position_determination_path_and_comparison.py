@@ -142,36 +142,15 @@ def _record_shared_path(
         binding=applicability_binding,
         inputs=inputs,
     )
-    applicability_yield = _record_yield_relation(
-        ledger,
-        locality_identity=measurement_binding.locality_identity,
-        exact_act=shared_position.APPLICABILITY_ACT,
-        act_occurrence_identity=applicability_act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=applicability_act.identity,
-        result_kind=shared_position.APPLICABILITY_RESULT_KIND,
-        result_identity=applicability_material["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in applicability_material.items()
-            if coordinate != "act_occurrence_identity"
-        },
-        occurrence_boundary="shared_pair_position_applicability",
-        yielding_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
-    )
     applicability = ledger.append(
         shared_position.SHARED_POSITION_APPLICABILITY_RESULT_KIND,
         shared_position._recorded_applicability_result_material(
             applicability_material,
-            yield_relation_identity=applicability_yield.identity,
         ),
         locality_identity=measurement_binding.locality_identity,
     )
     current_coordinates = _advance(
-        ledger, current_coordinates, applicability_yield, applicability
+        ledger, current_coordinates, applicability
     )
     measurement_act = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,

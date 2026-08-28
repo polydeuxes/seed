@@ -68,6 +68,7 @@ from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 def _current_coordinates(ledger: EventLedger, locality: str):
@@ -1177,7 +1178,7 @@ def test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate():
         )
 
 
-def test_one_act_cannot_yield_two_shared_position_results():
+def test_one_applicability_act_cannot_record_two_results():
     ledger, locality, _source, first, second = _fixture()
     binding = _shared_binding(ledger, locality, first, second)
     act = record_shared_position_applicability_act_occurrence(
@@ -1195,6 +1196,28 @@ def test_one_act_cannot_yield_two_shared_position_results():
             ledger,
             applicability_act_occurrence_event_identity=act.identity,
         )
+
+
+def test_applicability_reader_refuses_two_results_for_one_act():
+    ledger, locality, _source, first, second = _fixture()
+    binding = _shared_binding(ledger, locality, first, second)
+    act = record_shared_position_applicability_act_occurrence(
+        ledger,
+        binding_event_identity=binding.identity,
+        current_coordinates=_current_coordinates(ledger, locality),
+    )
+    result = record_shared_position_applicability_result(
+        ledger,
+        applicability_act_occurrence_event_identity=act.identity,
+    )
+    ledger.append(
+        SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+        deepcopy(result.material),
+        locality_identity=locality,
+    )
+
+    with pytest.raises(SharedPairPositionError, match="single exact result"):
+        get_recorded_shared_position_applicability(ledger, result.identity)
 
 
 def test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions():
@@ -1326,24 +1349,31 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
     ]
 
 
-def test_corrupted_shared_position_yield_relations_are_refused():
+def test_applicability_result_is_direct_and_corrupted_measurement_yield_is_refused():
     ledger, locality, _source, first, second = _fixture()
-    _assignment_event, _applicability_act, applicability, _measurement_act, result = (
+    _assignment_event, applicability_act, applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
-    crossings = (
-        (applicability, get_recorded_shared_position_applicability),
-        (result, get_recorded_shared_position_measurement),
+    assert "yield_relation_identity" not in applicability.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            locality, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("act_occurrence_event_identity")
+        == applicability_act.identity
     )
+    assert get_recorded_shared_position_applicability(
+        ledger, applicability.identity
+    )["applicability"] == "applicable"
 
-    for event, read in crossings:
-        yield_relation = ledger.get(event.material["yield_relation_identity"])
-        assert yield_relation is not None
-        result_identity = yield_relation.material["result_identity"]
-        yield_relation.material["result_identity"] = "changed-result"
-        with pytest.raises(SharedPairPositionError):
-            read(ledger, event.identity)
-        yield_relation.material["result_identity"] = result_identity
+    yield_relation = ledger.get(result.material["yield_relation_identity"])
+    assert yield_relation is not None
+    result_identity = yield_relation.material["result_identity"]
+    yield_relation.material["result_identity"] = "changed-result"
+    with pytest.raises(SharedPairPositionError):
+        get_recorded_shared_position_measurement(ledger, result.identity)
+    yield_relation.material["result_identity"] = result_identity
 
 
 def test_shared_position_result_survives_sqlite_restart(restarted_shared_path):
