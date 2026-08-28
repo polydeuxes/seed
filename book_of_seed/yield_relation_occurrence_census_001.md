@@ -298,6 +298,15 @@ readers still refuse changed content, position addresses, counts, recurrence,
 source coordinates, Applicability, Act coordinates, corruption, or another
 result for the Act. This road is reached by the new exact material road.
 
+Recurrent byte-pair occurrence-position Measurement then passed independently.
+Its separate Yield event preceded the result and copied the complete future
+position finding. Removing it preserved the exact subject-to-Act binding,
+Measurement Act occurrence, source material, pair-result position, occurrence
+count boundary, complete result positions, Act-before-result order, one result
+for the Act, current-coordinate progression, later shared-position
+Measurement, durable reread, and mutation, substitution, corruption, and
+changed-position refusal.
+
 Compare-Distinction Measurement then passed independently. Its separate Yield
 event preceded the result and copied the complete future Measurement result.
 Removing it preserved the exact subject-to-Act binding, Measurement Act
@@ -431,7 +440,7 @@ possible relation.
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, six
-non-Locality Applicability roads, six declared Measurement roads, the exact
+non-Locality Applicability roads, seven declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, one internal Determination road, all four live internal Compare
 result families, and the

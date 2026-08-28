@@ -1,4 +1,4 @@
-"""Pair occurrences Yield exact position findings."""
+"""Exact pair occurrence position findings."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
     record_occurrence_position_measurement_subject_to_act_binding,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 def _fixture(
@@ -141,7 +141,7 @@ def test_pair_occurrence_measurement_finds_exact_positions_without_a_sign():
     }
 
 
-def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
+def test_pair_occurrence_measurement_result_preserves_the_exact_finding():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
 
     act, result = _record(ledger, locality, finding)
@@ -151,17 +151,15 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
     assert result.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
     assert read == finding
     assert result.exact_material is None
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act.identity,
+    assert "yield_relation_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            locality, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "measurement_of_recurrent_byte_pair_occurrence_position"
     )
-    assert requirements == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
     assert all(
         set(recorded_position)
         == {
@@ -218,17 +216,15 @@ def test_current_coordinates_address_exact_binding_and_distinct_lifecycle_identi
         ledger,
         act_occurrence_event_identity=act.identity,
     )
-    yield_relation = ledger.get(result.material["yield_relation_identity"])
     identities = {
         binding.identity,
         binding.material["exact_act_identity"],
         binding.material["act_occurrence_identity"],
         binding.material["measurement_result_identity"],
         act.identity,
-        yield_relation.identity,
         result.identity,
     }
-    assert len(identities) == 7
+    assert len(identities) == 6
     assert act.material["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
@@ -703,7 +699,7 @@ def test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts
     assert len(result.material["result_positions"]) == 2
 
 
-def test_current_coordinates_carry_one_exact_pair_occurrence_measurement_reference():
+def test_current_coordinates_have_one_exact_pair_occurrence_measurement_reference():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     act, result = _record(ledger, locality, finding)
     current_coordinates = read_operator_current_coordinates(
@@ -715,7 +711,6 @@ def test_current_coordinates_carry_one_exact_pair_occurrence_measurement_referen
         "result_identity": result.material["result_identity"],
         "act_occurrence_identity": result.material["act_occurrence_identity"],
         "act_occurrence_event_identity": act.identity,
-        "yield_relation_identity": result.material["yield_relation_identity"],
     }
 
 
@@ -803,21 +798,9 @@ def test_unrelated_later_material_does_not_move_the_measured_boundary():
     assert get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, result.identity) == finding
 
 
-def test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurrence_position_yield():
-    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    _act, result = _record(ledger, locality, finding)
-    yield_relation = ledger.get(result.material["yield_relation_identity"])
-    yield_relation.material["occurrence_boundary"] = "occurrence_position_measurement"
-
-    with pytest.raises(ValueError, match="no exact Yield relation"):
-        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
-            ledger, result.identity
-        )
-
-
 @pytest.mark.parametrize(
     "crossing",
-    ("act_occurrence", "yield_relation", "recorded_result", "pair_subject"),
+    ("act_occurrence", "recorded_result", "pair_subject"),
 )
 def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_corruption(
     crossing,
@@ -827,9 +810,6 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
 
     if crossing == "act_occurrence":
         act.material["occurrence_count_boundary"] += 1
-    elif crossing == "yield_relation":
-        yield_relation = ledger.get(result.material["yield_relation_identity"])
-        yield_relation.material["result"]["occurrence_count_boundary"] += 1
     elif crossing == "recorded_result":
         result.material["result_positions"][0]["dimensions"]["content"][
             "first_position"

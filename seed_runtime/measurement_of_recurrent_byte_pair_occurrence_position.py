@@ -1,12 +1,12 @@
-"""Measure where one yielded recurrent byte-pair subject occurs.
+"""Measure where one recurrent byte-pair subject occurs.
 
-This declared Measurement carries two distinct occurrence references:
+This declared Measurement has two distinct occurrence references:
 
-* the recurrence result position yielded by an earlier byte-pair Measurement; and
+* the recurrence result position in an earlier byte-pair Measurement; and
 * one later exact material result in the addressed Locality.
 
 Ordering and distance are views over the two measured positions.  The result
-carries neither a caller-supplied sign nor a grammatical meaning.
+has neither a caller-supplied sign nor a grammatical meaning.
 """
 
 from __future__ import annotations
@@ -23,11 +23,6 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
 )
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 
 
 RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND = (
@@ -42,14 +37,8 @@ RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BIND
     "operator.measurement_of_recurrent_byte_pair_occurrence_position."
     "subject_to_act_binding_recorded"
 )
-RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
-    "result of exact Measurement of recurrent byte-pair occurrence position"
-)
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "declared Measurement of byte-pair occurrence position"
-)
-MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY = (
-    "measurement_of_recurrent_byte_pair_occurrence_position"
 )
 RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = frozenset(
     {
@@ -225,7 +214,7 @@ def reference_to_recorded_recurrent_byte_pair(
     recurrence_result_position: int,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> ReferenceToRecordedRecurrentBytePair:
-    """Resolve one recurrence result position through its exact Measurement Yield."""
+    """Resolve one recurrence result position through its exact Measurement."""
 
     return _references_to_recorded_recurrent_byte_pairs(
         ledger,
@@ -1005,7 +994,7 @@ def record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_posi
     subject_to_act_binding_event_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record the Measurement Act before its Yield and result."""
+    """Record the Measurement Act before its result."""
 
     binding, finding = _read_recurrent_byte_pair_occurrence_position_measurement_binding(
         ledger, subject_to_act_binding_event_identity
@@ -1184,7 +1173,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
     act_occurrence_event_identity: str,
     current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    """Record the Yield and result for one exact pair occurrence Measurement."""
+    """Record the result for one exact pair occurrence Measurement."""
 
     if (
         type(act_occurrence_event_identity) is not str
@@ -1214,10 +1203,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         )
     act_occurrence_identity = act_occurrence.material["act_occurrence_identity"]
     for event in ledger.list_locality(act_occurrence.locality_identity):
-        if event.kind in {
-            RECORDED_YIELD_RELATION_EVENT,
-            RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-        } and (
+        if event.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND and (
             event.material.get("act_occurrence_identity")
             == act_occurrence.identity
             or event.material.get("act_occurrence_identity")
@@ -1228,17 +1214,6 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             raise ValueError("pair occurrence Measurement Act already has a result")
     result = _material_of_result_of_measurement(
         finding, binding=binding
-    )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act_occurrence.locality_identity,
-        exact_act=ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND,
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="measurement_of_recurrent_byte_pair_occurrence_position",
     )
     return ledger.append(
         RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
@@ -1263,7 +1238,6 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             ],
             "result_positions": result["result_positions"],
             "act_occurrence_event_identity": act_occurrence.identity,
-            "yield_relation_identity": yield_relation.identity,
         },
         locality_identity=act_occurrence.locality_identity,
     )
@@ -1288,7 +1262,6 @@ def _recorded_result_of_recurrent_pair_position_measurement_reading(
     if set(material) != RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT | {
         "act_occurrence_identity",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }:
         raise ValueError("pair occurrence result carries malformed coordinates")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
@@ -1317,33 +1290,36 @@ def _recorded_result_of_recurrent_pair_position_measurement_reading(
     result = _material_of_result_of_measurement(
         finding, binding=binding
     )
-    carried = {
+    result_coordinates = {
         key: value
         for key, value in material.items()
-        if key
-        not in {
-            "act_occurrence_event_identity",
-            "yield_relation_identity",
-        }
+        if key != "act_occurrence_event_identity"
     }
-    if carried != result:
+    if result_coordinates != result:
         raise ValueError("pair occurrence result differs from its exact finding")
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=material.get("yield_relation_identity"),
-        act_occurrence_event_identity=act_occurrence.identity,
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
     )
-    yield_relation = ledger.get(material.get("yield_relation_identity"))
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("pair occurrence result does not follow its Act") from error
     if (
-        not all(requirements.values())
-        or yield_relation is None
-        or yield_relation.material.get("occurrence_boundary")
-        != MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY
-        or yield_relation.material.get("result_kind")
-        != RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND
+        tuple(item.identity for item in ordered)
+        != (act_occurrence.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
-        raise ValueError("pair occurrence result carries no exact Yield relation")
+        raise ValueError("pair occurrence result is not exact")
     return event, finding
 
 
@@ -1364,7 +1340,7 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
     ledger: EventLedger,
     event_identity: str,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
-    """Read one pair-occurrence result through its exact Act and Yield."""
+    """Read one pair-occurrence result through its exact Act."""
 
     return _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger, event_identity

@@ -280,14 +280,10 @@ def _recurrent_result_coordinates(ledger, reference):
     )
     pair = ledger.get(reference.pair_measurement_occurrence_identity)
     source = ledger.get(reference.source_material_result_occurrence_identity)
-    yield_relation = ledger.get(
-        result.material["yield_relation_identity"]
-    )
     return {
         "result": result,
         "act": act,
         "binding": binding,
-        "yield_relation": yield_relation,
         "pair": pair,
         "source": source,
     }
