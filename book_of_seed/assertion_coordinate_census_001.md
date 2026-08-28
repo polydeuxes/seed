@@ -222,8 +222,34 @@ pair material, source positions, source result, Locality, and completeness
 boundary remain validated from the owning result. Missing, changed,
 substituted, out-of-range, and reordered coordinates still refuse.
 
-This result does not authorize a rename of the recurrent pair-position road or
-the Locality movement road. Both retain Assertion-shaped coordinates under
+## Recurrent pair-position address result
+
+The recurrent pair-position road then passed independently. It preserves two
+different containing results:
+
+```text
+pair Measurement result occurrence
++ recurrence result position
++ count result position
+
+recurrent pair-position result occurrence
++ one result position
+```
+
+The first address establishes which recurrence and count content is the exact
+subject of the later Measurement. The second addresses one exact position in
+that later result. Equal integer positions in the two containing results are
+not interchangeable.
+
+The recorded recurrent result now names its complete ordered
+`result_positions` population directly. Each later reference contains the
+owning result occurrence and result position; the pair subject retains the
+separate producing pair-Measurement result positions. Shared-position
+Measurement follows these addresses without an Assertion identity, address,
+reference, or subject wrapper.
+
+This result does not authorize a rename of the earlier byte-pair result reader
+or the Locality movement road. Those retain Assertion-shaped coordinates under
 their own independent pressure.
 
 ## Current finding

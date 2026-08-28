@@ -21,8 +21,8 @@ from seed_runtime.events import EventLedger
 @dataclass(frozen=True, slots=True)
 class ExactReferenceToRecurrentMaterialPair:
     recorded_occurrence_identity: str
-    recurrence_assertion_position: int
-    count_assertion_position: int
+    recurrence_result_position: int
+    count_result_position: int
     locality_identity: str
     source_occurrence_identities: tuple[str, ...]
     completeness_boundary_identity: str
@@ -32,11 +32,11 @@ class ExactReferenceToRecurrentMaterialPair:
         if (
             type(self.recorded_occurrence_identity) is not str
             or not self.recorded_occurrence_identity
-            or type(self.recurrence_assertion_position) is not int
-            or self.recurrence_assertion_position < 0
-            or type(self.count_assertion_position) is not int
-            or self.count_assertion_position < 0
-            or self.recurrence_assertion_position == self.count_assertion_position
+            or type(self.recurrence_result_position) is not int
+            or self.recurrence_result_position < 0
+            or type(self.count_result_position) is not int
+            or self.count_result_position < 0
+            or self.recurrence_result_position == self.count_result_position
             or type(self.locality_identity) is not str
             or not self.locality_identity
             or type(self.source_occurrence_identities) is not tuple
@@ -60,7 +60,7 @@ class ExactReferenceToRecurrentMaterialPair:
     def pair_identity(self) -> tuple[str, int]:
         return (
             self.recorded_occurrence_identity,
-            self.recurrence_assertion_position,
+            self.recurrence_result_position,
         )
 
 
@@ -104,8 +104,8 @@ def exact_references_to_recurrent_material_pairs(
         found.append(
             ExactReferenceToRecurrentMaterialPair(
                 recorded_occurrence_identity=event.identity,
-                recurrence_assertion_position=assertion.assertion_position,
-                count_assertion_position=support[0]["assertion_position"],
+                recurrence_result_position=assertion.assertion_position,
+                count_result_position=support[0]["assertion_position"],
                 locality_identity=event.locality_identity,
                 source_occurrence_identities=source_occurrence_identities,
                 completeness_boundary_identity=completeness_boundary_identity,

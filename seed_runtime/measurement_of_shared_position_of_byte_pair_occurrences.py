@@ -176,14 +176,9 @@ def _reference_material(
 def _result_position_reference(
     reference: RecordedPairPositionReference,
 ) -> dict[str, Any]:
-    result_position = (
-        reference.result_position
-        if type(reference) is ReferenceToRecordedPositionOfBytePairOccurrence
-        else reference.assertion_position
-    )
     return {
         "recorded_occurrence_identity": reference.recorded_occurrence_identity,
-        "result_position": result_position,
+        "result_position": reference.result_position,
     }
 
 
@@ -275,7 +270,7 @@ def _resolve_references(
                 get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
                     ledger, result.identity
                 ),
-                assertion_positions=result_positions,
+                result_positions=result_positions,
             )
         except (TypeError, ValueError) as error:
             raise SharedPairPositionError(
@@ -323,7 +318,7 @@ def _inputs(
             first, second = (
                 _references_to_addressed_recorded_recurrent_pair_position_results(
                     ledger,
-                    result_and_assertion_positions=(
+                    result_and_result_positions=(
                         (
                             _identity(
                                 first_result_occurrence_identity,

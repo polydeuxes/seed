@@ -326,7 +326,7 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
     findings = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
-        recurrence_assertion_positions=(recurrence[(97, 98)], recurrence[(98, 99)]),
+        recurrence_result_positions=(recurrence[(97, 98)], recurrence[(98, 99)]),
         source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
         through=ledger.append_boundary(),
@@ -371,9 +371,9 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_result_position=first.assertion_address,
+        first_result_position=first.result_position,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_result_position=second.assertion_address,
+        second_result_position=second.result_position,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
