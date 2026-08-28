@@ -33,6 +33,7 @@ from seed_runtime.source_position_determination_path_and_comparison import (
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 def _path(ledger, *, locality, exact, position=1):
@@ -128,9 +129,18 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
     )
     assert all(
         comparison.result_occurrence.kind == COMPARE_RESULT_KIND
+        and "yield_relation_identity" not in comparison.result_occurrence.material
         and comparison.result_occurrence.identity
         in comparison.current_coordinates["comparison_result_occurrences"]
         for comparison in recorded
+    )
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            "ordered-path-pair-population", RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "comparison_of_ordered_path_source_position_material_compare"
     )
     binding_occurrences = tuple(
         ledger.get(identity)

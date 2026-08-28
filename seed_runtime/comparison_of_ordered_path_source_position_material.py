@@ -594,7 +594,7 @@ def _recorded_applicability_result_material(
 
 
 def _recorded_compare_result_material(
-    material: dict[str, Any], yield_relation_identity: str
+    material: dict[str, Any]
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -613,7 +613,6 @@ def _recorded_compare_result_material(
         "act_occurrence_event_identity": material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -800,16 +799,39 @@ def _read_compare_result(
         else None,
         current_coordinates=current_coordinates,
     )
-    event = _read_yielded(
+    event = _event(
         ledger,
         event_identity,
         event_kind=COMPARE_RESULT_KIND,
-        act=act,
-        expected=_compare_result_material(act, applicability, inputs),
-        occurrence_boundary=COMPARE_BOUNDARY,
-        result_kind="Compare result of ordered path source position material",
-        occurrence_coordinate="act_occurrence_identity",
+        message="source position Compare result is not exact",
     )
+    if (
+        event.locality_identity != act.locality_identity
+        or event.material
+        != _recorded_compare_result_material(
+            _compare_result_material(act, applicability, inputs)
+        )
+    ):
+        raise ValueError("source position Compare result is not exact")
+    ordered = ledger.occurrences_in_append_order(
+        (act.identity, event.identity),
+        locality_identity=event.locality_identity,
+    )
+    if [occurrence.identity for occurrence in ordered] != [
+        act.identity,
+        event.identity,
+    ]:
+        raise ValueError("source position Compare result does not follow its Act")
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity, COMPARE_RESULT_KIND
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
+    )
+    if len(results) != 1 or results[0].identity != event.identity:
+        raise ValueError("source position Compare Act has no single exact result")
     return event, act, compare_binding, applicability, inputs
 
 
@@ -1003,22 +1025,12 @@ def _record_ordered_path_source_position_material_comparison(
     carry(compare_act)
     result_material = _compare_result_material(compare_act, applicability, inputs)
     _require_tip(ledger, compare_act)
-    result_yield = _yield_result(
-        ledger,
-        act=compare_act,
-        result_kind="Compare result of ordered path source position material",
-        result_identity=result_material["result_identity"],
-        result_content=result_material,
-        exact_act=COMPARE_ACT,
-        occurrence_boundary=COMPARE_BOUNDARY,
-        occurrence_coordinate="act_occurrence_identity",
-    )
     result = ledger.append(
         COMPARE_RESULT_KIND,
-        _recorded_compare_result_material(result_material, result_yield.identity),
+        _recorded_compare_result_material(result_material),
         locality_identity=locality_identity,
     )
-    carry(result_yield, result)
+    carry(result)
     return OrderedPathSourcePositionMaterialComparison(current_coordinates, result)
 
 

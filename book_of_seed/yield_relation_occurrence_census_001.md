@@ -289,6 +289,18 @@ the removed event again copied the future result.
 separately recorded event under independent pressure. The source-position
 Compare implementation of generic `04.Compare` also remains under independent
 pressure.
+
+The source-position Compare implementation of generic `04.Compare` passed the
+same falsifier. Each path-position pair still produces one exact finding result
+that addresses its exact binding, positive Applicability result, Compare Act,
+path result, source-position coordinates, and Locality. The reader requires
+Act-before-result order, one result for the Act, exact findings, durable reopen,
+and current-coordinate advancement without a Compare Yield event.
+
+All three live internal Compare result families inspected by this campaign now
+establish binding, Applicability, Compare Act occurrence, and exact result
+without Yield. Their Applicability events remain separate, independently
+untested physiology.
 The source now records:
 
 ```text
