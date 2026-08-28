@@ -486,7 +486,7 @@ def test_references_preserve_every_exact_pair_occurrence():
         (reference.exact_pair, reference.first_position, reference.second_position)
         for reference in references
     ) == ((b"aa", 0, 1), (b"aa", 1, 2))
-    assert tuple(reference.assertion_position for reference in references) == (0, 1)
+    assert tuple(reference.result_position for reference in references) == (0, 1)
     assert (
         references[0].second_position_coordinate_reference
         == references[1].first_position_coordinate_reference
@@ -520,13 +520,13 @@ def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed
         _recorded_position_assertion_at_position_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
-            assertion_position=reference.assertion_position,
+                assertion_position=reference.result_position,
         )
         for reference in references
     )
     assert tuple(
         assertion["dimensions"]["position"] for assertion in assertions
-    ) == tuple(reference.assertion_position for reference in references)
+    ) == tuple(reference.result_position for reference in references)
     assert all(
         set(assertion)
         == {
@@ -602,8 +602,8 @@ def test_addressed_references_use_requested_result_local_positions():
             ledger,
             result.identity,
             (
-                all_references[0].assertion_position,
-                all_references[1].assertion_position,
+                all_references[0].result_position,
+                all_references[1].result_position,
             ),
         )
     )
@@ -1046,7 +1046,12 @@ def _assert_position_assertion_movement_requires_its_exact_source(
     with pytest.raises((ByteMeasurementError, ValueError)):
         move_recorded_position_assertion_to_locality(
             ledger,
-            source_assertion_reference=reference.assertion_reference,
+            source_assertion_reference={
+                "recorded_occurrence_identity": (
+                    reference.recorded_occurrence_identity
+                ),
+                "assertion_position": reference.result_position,
+            },
             destination_locality="calculator-relation-construction",
         )
 

@@ -1593,8 +1593,8 @@ def _determination_result_material(
                 "completeness_boundary_identity"
             ]
         },
-        "ordered_assertion_references": [
-            reference.assertion_reference for reference in references
+        "ordered_result_position_references": [
+            reference.result_position_reference for reference in references
         ],
     }
 
@@ -1622,8 +1622,8 @@ def _recorded_determination_result_material(
             material["addressed_source_byte_position_coordinate_reference"]
         ),
         "completeness_boundary": deepcopy(material["completeness_boundary"]),
-        "ordered_assertion_references": deepcopy(
-            material["ordered_assertion_references"]
+        "ordered_result_position_references": deepcopy(
+            material["ordered_result_position_references"]
         ),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,

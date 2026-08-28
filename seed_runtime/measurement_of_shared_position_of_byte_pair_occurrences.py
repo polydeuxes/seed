@@ -176,9 +176,14 @@ def _reference_material(
 def _result_position_reference(
     reference: RecordedPairPositionReference,
 ) -> dict[str, Any]:
+    result_position = (
+        reference.result_position
+        if type(reference) is ReferenceToRecordedPositionOfBytePairOccurrence
+        else reference.assertion_position
+    )
     return {
         "recorded_occurrence_identity": reference.recorded_occurrence_identity,
-        "result_position": reference.assertion_position,
+        "result_position": result_position,
     }
 
 

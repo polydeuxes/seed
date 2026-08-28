@@ -200,7 +200,9 @@ def _yield_source_position_determinations_paths_and_comparisons(
                     mutate_current_coordinates=True,
                 )
             )
-            if len(determination.material["ordered_assertion_references"]) != 2:
+            if len(
+                determination.material["ordered_result_position_references"]
+            ) != 2:
                 path = None
             else:
                 current_coordinates, path = _record_shared_path(

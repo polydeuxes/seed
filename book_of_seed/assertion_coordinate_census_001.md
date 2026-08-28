@@ -201,6 +201,31 @@ The repository therefore has recording occurrences that contain addressed
 content, but no separately occurring Assertion preservation road established
 by `05.Recording.A` alone.
 
+## Direct pair-position address result
+
+The direct byte-pair position result reference passed subtraction. Its runtime
+address is now:
+
+```text
+recorded result occurrence identity
++ result position
+```
+
+The former `assertion_position`, `assertion_address`, and
+`assertion_reference` surfaces added no independently occurring coordinate.
+Addressed-byte determination now records the complete ordered population as
+`ordered_result_position_references`; each reference contains only its owning
+result occurrence and result position.
+
+The higher shared-position reader follows those coordinates directly. Exact
+pair material, source positions, source result, Locality, and completeness
+boundary remain validated from the owning result. Missing, changed,
+substituted, out-of-range, and reordered coordinates still refuse.
+
+This result does not authorize a rename of the recurrent pair-position road or
+the Locality movement road. Both retain Assertion-shaped coordinates under
+their own independent pressure.
+
 ## Current finding
 
 Live runtime testimony establishes:

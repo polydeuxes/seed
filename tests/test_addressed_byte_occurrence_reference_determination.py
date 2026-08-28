@@ -185,8 +185,8 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         ledger, recorded["result"].identity
     )
 
-    assert material["ordered_assertion_references"] == [
-        reference.assertion_reference for reference in expected
+    assert material["ordered_result_position_references"] == [
+        reference.result_position_reference for reference in expected
     ]
     assert [reference.exact_pair for reference in expected] == [b"2=", b"=5"]
     applicability_finding = recorded["applicability"].material[
@@ -231,7 +231,7 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "direct_pair_position_result_reference",
         "addressed_source_byte_position_coordinate_reference",
         "completeness_boundary",
-        "ordered_assertion_references",
+        "ordered_result_position_references",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     }
@@ -250,15 +250,17 @@ def test_boundary_and_single_byte_addresses_have_exact_reference_population(
     material = get_recorded_addressed_byte_occurrence_reference_determination(
         ledger, recorded["result"].identity
     )
-    assert len(material["ordered_assertion_references"]) == expected_count
+    assert len(material["ordered_result_position_references"]) == expected_count
 
 
-def test_repeated_byte_occurrences_remain_distinct_by_position_assertion():
+def test_repeated_byte_occurrences_remain_distinct_by_result_position():
     ledger = EventLedger()
     recorded = _record(ledger, exact=b"aaa", position=1)
-    references = recorded["result"].material["ordered_assertion_references"]
+    references = recorded["result"].material[
+        "ordered_result_position_references"
+    ]
     assert len(references) == 2
-    assert tuple(reference["assertion_position"] for reference in references) == (0, 1)
+    assert tuple(reference["result_position"] for reference in references) == (0, 1)
 
 
 def test_binding_refuses_stale_changed_and_other_result_coordinates_atomically():
@@ -538,7 +540,7 @@ def test_determination_uses_addressed_kernel_without_full_reference_scan(monkeyp
         current_coordinates=current_coordinates,
     )
     assert calls == [direct_result.identity, direct_result.identity]
-    assert "ordered_assertion_references" not in determination_binding.material
+    assert "ordered_result_position_references" not in determination_binding.material
 
 
 def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(

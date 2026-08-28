@@ -897,9 +897,9 @@ def test_shared_position_binding_refuses_raw_direct_result_inputs_atomically():
         record_shared_position_subject_to_act_binding(
             ledger,
             first_result_occurrence_identity=direct_result.identity,
-            first_result_position=first.assertion_address,
+            first_result_position=first.result_position,
             second_result_occurrence_identity=direct_result.identity,
-            second_result_position=second.assertion_address,
+            second_result_position=second.result_position,
             current_coordinates=_current_coordinates(ledger, locality),
         )
     assert len(ledger.list()) == before

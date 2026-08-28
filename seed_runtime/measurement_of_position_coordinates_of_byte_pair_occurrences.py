@@ -88,7 +88,7 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     NamedTuple
 ):
     recorded_occurrence_identity: str
-    assertion_position: int
+    result_position: int
     source_material_result_occurrence_identity: str
     locality_identity: str
     completeness_boundary_identity: str
@@ -97,14 +97,10 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     second_position: int
 
     @property
-    def assertion_address(self) -> int:
-        return self.assertion_position
-
-    @property
-    def assertion_reference(self) -> dict[str, Any]:
+    def result_position_reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_position": self.assertion_position,
+            "result_position": self.result_position,
         }
 
     @property
@@ -1463,7 +1459,7 @@ def _recorded_position_reference(
 ) -> ReferenceToRecordedPositionOfBytePairOccurrence:
     return ReferenceToRecordedPositionOfBytePairOccurrence(
         recorded_occurrence_identity=event.identity,
-        assertion_position=first_position,
+        result_position=first_position,
         source_material_result_occurrence_identity=(
             finding.source_material_result_occurrence_identity
         ),
@@ -1479,14 +1475,14 @@ def _reference_at_exact_coordinates(
     event: Event,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
-    assertion_position: int,
+    result_position: int,
     exact_pair: bytes,
     first_position: int,
     second_position: int,
 ) -> ReferenceToRecordedPositionOfBytePairOccurrence:
     if (
-        type(assertion_position) is not int
-        or assertion_position < 0
+        type(result_position) is not int
+        or result_position < 0
         or type(exact_pair) is not bytes
         or len(exact_pair) != 2
         or type(first_position) is not int
@@ -1499,9 +1495,9 @@ def _reference_at_exact_coordinates(
         second_position >= len(finding.exact_material)
         or finding.exact_material[first_position : second_position + 1]
         != exact_pair
-        or assertion_position != first_position
+        or result_position != first_position
     ):
-        raise ValueError("position result carries no addressed Assertion")
+        raise ValueError("position result has no exact addressed result position")
     return _recorded_position_reference(
         event,
         finding,
@@ -1572,7 +1568,7 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]:
-    """Read pair Assertions carrying one exact addressed source coordinate."""
+    """Read pair result positions with one exact addressed source coordinate."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("addressed source position requires one EventLedger")
@@ -1608,30 +1604,30 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
 def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
     ledger: EventLedger,
     result_event_identity: str,
-    assertion_positions: tuple[int, ...],
+    result_positions: tuple[int, ...],
     *,
     exact_coordinates: tuple[tuple[bytes, int, int], ...] | None = None,
 ) -> tuple[
     ReferenceToRecordedPositionOfBytePairOccurrence, ...
 ]:
-    """Resolve exact addressed Assertions with one bounded result read."""
+    """Resolve exact addressed result positions with one bounded result read."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("position references require one EventLedger")
     if type(result_event_identity) is not str or not result_event_identity:
         raise ValueError("position references require one result occurrence")
     if (
-        type(assertion_positions) is not tuple
-        or not assertion_positions
-        or any(type(position) is not int or position < 0 for position in assertion_positions)
-        or len(set(assertion_positions)) != len(assertion_positions)
+        type(result_positions) is not tuple
+        or not result_positions
+        or any(type(position) is not int or position < 0 for position in result_positions)
+        or len(set(result_positions)) != len(result_positions)
     ):
-        raise ValueError("position references require distinct Assertion positions")
+        raise ValueError("position references require distinct result positions")
     if (
         exact_coordinates is not None
         and (
             type(exact_coordinates) is not tuple
-            or len(exact_coordinates) != len(assertion_positions)
+            or len(exact_coordinates) != len(result_positions)
             or any(
                 type(coordinates) is not tuple or len(coordinates) != 3
                 for coordinates in exact_coordinates
@@ -1647,20 +1643,20 @@ def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrenc
             _reference_at_exact_coordinates(
                 event,
                 finding,
-                assertion_position=assertion_position,
+                result_position=result_position,
                 exact_pair=coordinates[0],
                 first_position=coordinates[1],
                 second_position=coordinates[2],
             )
-            for assertion_position, coordinates in zip(
-                assertion_positions, exact_coordinates, strict=True
+            for result_position, coordinates in zip(
+                result_positions, exact_coordinates, strict=True
             )
         )
     references = []
-    for first_position in assertion_positions:
+    for first_position in result_positions:
         second_position = first_position + 1
         if second_position >= len(finding.exact_material):
-            raise ValueError("position result carries no addressed Assertion")
+            raise ValueError("position result has no exact addressed result position")
         exact_pair = finding.exact_material[first_position : second_position + 1]
         references.append(
             _recorded_position_reference(
