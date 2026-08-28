@@ -68,6 +68,7 @@ from seed_runtime.operator_current_coordinates import (
     read_operator_current_coordinates,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 from tests.binary_input import binary_input
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -873,6 +874,24 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
         in recorded.current_coordinates["applicability_result_occurrences"]
         for result in results
     )
+    assert all(
+        "yield_relation_identity" not in result.material for result in results
+    )
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability"
+    )
+    with pytest.raises(ValueError, match="already has a result"):
+        record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+            ledger,
+            act_occurrence_event_identity=results[0].material[
+                "act_occurrence_event_identity"
+            ],
+        )
 
 
 def test_holding_one_input_exact_does_not_determine_applicability():

@@ -11,11 +11,6 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     get_recorded_shared_position_measurement,
@@ -47,9 +42,6 @@ APPLICABILITY_ACT = (
 COMPARE_ACT = (
     "Compare each relation of one ordered path with complete recorded findings "
     "of the same exact pair subject"
-)
-APPLICABILITY_RESULT_KIND = (
-    "Applicability result of ordered relation path and recorded pair findings"
 )
 COMPARE_RESULT_KIND = (
     "Compare result of ordered relation path and recorded pair findings"
@@ -765,9 +757,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
         )
         results_by_binding[binding.identity] = result
         recorded.append(result)
-        recorded_result_identities.extend(
-            (result.material["yield_relation_identity"], result.identity)
-        )
+        recorded_result_identities.append(result.identity)
     if recorded_result_identities:
         current_coordinates = _advance_current_coordinates(
             ledger,
@@ -1480,7 +1470,7 @@ def _applicability_result_material(
 
 
 def _recorded_applicability_result_material(
-    result: dict[str, Any], *, yield_relation_identity: str
+    result: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1501,25 +1491,13 @@ def _recorded_applicability_result_material(
             "act_occurrence_event_identity"
         ],
         "applicability": result["applicability"],
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
 def _refuse_result(ledger: EventLedger, act: Event, result_kind: str) -> None:
-    act_occurrence = (
-        act.material.get("applicability_act_occurrence_identity")
-        or act.material.get("act_occurrence_identity")
-    )
-    for occurrence in ledger.list_locality(act.locality_identity):
-        if occurrence.kind not in {result_kind, RECORDED_YIELD_RELATION_EVENT}:
-            continue
-        if (
-            occurrence.material.get("act_occurrence_event_identity") == act.identity
-            or occurrence.material.get("act_occurrence_identity") == act_occurrence
-            or occurrence.material.get("applicability_act_occurrence_identity")
-            == act_occurrence
-        ):
-            raise ValueError("one comparison of ordered relation path with recorded pair findings Act cannot Yield twice")
+    for occurrence in ledger.iter_locality_kind(act.locality_identity, result_kind):
+        if occurrence.material.get("act_occurrence_event_identity") == act.identity:
+            raise ValueError("Applicability Act already has a result")
 
 
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
@@ -1555,71 +1533,42 @@ def _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appl
         act,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act.identity,
-        result_kind=APPLICABILITY_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            key: value
-            for key, value in result.items()
-            if key != "act_occurrence_identity"
-        },
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
-        yielding_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
-    )
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            result, yield_relation_identity=yield_relation.identity
-        ),
+        _recorded_applicability_result_material(result),
         locality_identity=act.locality_identity,
     )
 
 
-def _read_yielded(
+def _read_exact_result(
     ledger: EventLedger,
     event_identity: Any,
     *,
     kind: str,
     act: Event,
     expected: dict[str, Any],
-    occurrence_boundary: str,
-    result_name: str,
-    occurrence_coordinate: str = "act_occurrence_identity",
 ) -> Event:
-    event = _event(ledger, event_identity, kind=kind, message="yielded result is absent")
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    result_coordinates = {
-        key: value
-        for key, value in event.material.items()
-        if key != "yield_relation_identity"
-    }
-    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=yield_relation_identity,
-        act_occurrence_event_identity=act.identity,
-        recorded_result_occurrence_coordinate=occurrence_coordinate,
-        yielding_act_occurrence_coordinate=occurrence_coordinate,
+    event = _event(ledger, event_identity, kind=kind, message="result is absent")
+    results = tuple(
+        result
+        for result in ledger.iter_locality_kind(act.locality_identity, kind)
+        if result.material.get("act_occurrence_event_identity") == act.identity
     )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=act.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("Applicability result does not follow its Act") from error
     if (
         event.locality_identity != act.locality_identity
-        or result_coordinates != expected
-        or yield_relation is None
-        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
-        or yield_relation.material.get("result_kind") != result_name
-        or not all(requirements.values())
+        or event.material != expected
+        or tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
-        raise ValueError("yielded result carries no exact Yield relation")
+        raise ValueError("Applicability result is not exact")
     return event
 
 
@@ -1653,15 +1602,12 @@ def _read_applicability_result(
         comparison_binding_reading=comparison_binding_reading,
         prior_coordinates=prior_coordinates,
     )
-    event = _read_yielded(
+    event = _read_exact_result(
         ledger,
         event_identity,
         kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
         act=act,
         expected=_applicability_result_material(act, binding, inputs),
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
-        result_name=APPLICABILITY_RESULT_KIND,
-        occurrence_coordinate="applicability_act_occurrence_identity",
     )
     return event, act, binding, inputs, comparison_binding_reading
 

@@ -180,6 +180,15 @@ progression, the governed Compare gate, durable reread, and mutation,
 substitution, corruption, and changed-input refusal. This road is reached by
 successive exact material occurrences in the new material road.
 
+Ordered-relation-path Compare Applicability then passed independently. Its
+exact positive and negative results still address the complete Compare
+subject-to-Act bindings and their Applicability Act occurrences. Removing the
+separate copied events preserved the complete path and pair-finding inputs,
+Act-before-result order, one result for each Act, current-coordinate
+progression, positive-result governance of Compare, durable reread, and
+mutation, substitution, corruption, and changed-input refusal. This road is
+reached by the new exact material road.
+
 ## Measurement control
 
 Shared-position Measurement passed the independent event subtraction. Its
@@ -389,7 +398,7 @@ possible relation.
 
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls, three
+A separate Yield occurrence failed all three internal Locality controls, four
 non-Locality Applicability roads, six declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
