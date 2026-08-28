@@ -352,13 +352,14 @@ def exact_byte_material_references(
     )
     return tuple(
         ExactMaterialReference(
-            recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-            assertion_address=assertion.result_position,
+            recorded_occurrence_identity=event.identity,
+            assertion_address=result_position["dimensions"]["position"],
             locality_identity=event.locality_identity,
-            exact_material=bytes((assertion.content,)),
+            exact_material=bytes((result_position["subject"]["content"],)),
         )
-        for assertion in result_positions or ()
-        if assertion.result == "count" and assertion.content is not None
+        for result_position in result_positions or ()
+        if result_position["result"] == "count"
+        and result_position["subject"]["content"] is not None
     )
 
 
@@ -378,17 +379,36 @@ def moved_exact_byte_material_references(
     result_positions = result_positions_of_recorded_byte_measurement(
         ledger, measurement_occurrence_identity
     )
-    sources = tuple(
-        assertion
-        for assertion in result_positions or ()
-        if assertion.result == "count" and assertion.content is not None
+    count_positions = tuple(
+        result_position
+        for result_position in result_positions or ()
+        if result_position["result"] == "count"
+        and result_position["subject"]["content"] is not None
     )
+    sources = tuple(
+        {
+            "recorded_occurrence_identity": event.identity,
+            "result_position": result_position["dimensions"]["position"],
+            "locality_movement_event_identity": None,
+        }
+        for result_position in count_positions
+    )
+    content_by_position = {
+        result_position["dimensions"]["position"]: result_position["subject"][
+            "content"
+        ]
+        for result_position in count_positions
+    }
     moved_sources = move_recorded_byte_result_positions_to_locality(
         ledger, sources=sources, destination_locality=destination_locality
     )
     found = []
     for moved in moved_sources:
-        movement_identity = moved.locality_movement_event_identity
+        movement_identity = moved["locality_movement_event_identity"]
+        reference = {
+            "recorded_occurrence_identity": moved["recorded_occurrence_identity"],
+            "result_position": moved["result_position"],
+        }
         if event.locality_identity == destination_locality:
             if movement_identity is not None:
                 raise ValueError("same-Locality material acquired a movement")
@@ -399,17 +419,21 @@ def moved_exact_byte_material_references(
                 or movement.kind != RESULT_POSITION_LOCALITY_MOVEMENT_KIND
                 or movement.locality_identity != destination_locality
                 or movement.material.get("source_result_position_reference")
-                != moved.reference
+                != reference
                 or movement.material.get("destination_locality")
                 != destination_locality
             ):
                 raise ValueError("byte material movement is not exact")
         found.append(
             ExactMaterialReference(
-                recorded_occurrence_identity=moved.recorded_occurrence_identity,
-                assertion_address=moved.result_position,
+                recorded_occurrence_identity=moved[
+                    "recorded_occurrence_identity"
+                ],
+                assertion_address=moved["result_position"],
                 locality_identity=destination_locality,
-                exact_material=bytes((moved.content,)),
+                exact_material=bytes(
+                    (content_by_position[moved["result_position"]],)
+                ),
                 locality_movement_event_identity=(
                     movement_identity
                 ),

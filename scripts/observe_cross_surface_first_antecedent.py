@@ -82,9 +82,11 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     if result_positions is None:
         raise ValueError("exact-byte Measurement result is absent")
     count_findings = {
-        finding.content: finding.material["dimensions"]["content"]["count"]
-        for finding in result_positions
-        if finding.result == "count"
+        result_position["subject"]["content"]: result_position["dimensions"][
+            "content"
+        ]["count"]
+        for result_position in result_positions
+        if result_position["result"] == "count"
     }
     if None in count_findings:
         raise ValueError("one exact-byte count finding carries no byte material")

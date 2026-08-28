@@ -10,7 +10,7 @@ external Witness work or Emission.
 
 ## Recorded order
 
-Every inspected road records:
+At the start of this census, every inspected road recorded:
 
 ```text
 subject-to-Act binding
