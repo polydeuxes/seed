@@ -207,6 +207,14 @@ positive-result governance of Determination, durable reread, and mutation,
 substitution, corruption, changed-coordinate, and repeated-result refusal. This
 road is reached by the new exact material road.
 
+Source-position Compare Applicability then passed independently. Its exact
+positive result still addresses the complete source-position Compare binding
+and its Applicability Act occurrence. Removing the separate copied event
+preserved exact source coordinates, Act-before-result order, one result for the
+Act, current-coordinate progression, positive-result governance of Compare,
+durable reread, and mutation, substitution, corruption, and changed-coordinate
+refusal.
+
 ## Measurement control
 
 Shared-position Measurement passed the independent event subtraction. Its
@@ -315,6 +323,16 @@ Compare result, Locality, Act-before-result order, one result for the Act,
 current-coordinate progression, and durable reread. The reader still refuses
 changed findings, sources, boundaries, Act coordinates, corruption, or another
 result for the Act. This road is reached by the new exact material road.
+
+The four remaining source-position Measurement families then passed through
+their shared producer and their independent readers: complete source-position
+Measurement, source-position recurrence Measurement, corresponding-coordinate
+Measurement, and recurrent-result exact-material Measurement. Removing their
+separate copied events preserved every exact binding, Act occurrence, source
+coordinate, completeness boundary, recurrence finding, exact material result,
+Act-before-result order, one result for each Act, current-coordinate
+progression, durable reread, and mutation, substitution, corruption, and
+changed-coordinate refusal.
 
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
@@ -431,29 +449,28 @@ replay, durable restart between lifecycle stages, same-Locality refusal, and
 mutation, substitution, and source-change refusal. The active Movement clause
 therefore establishes no Yield.
 
-The tested internal source, Compare, Measurement, Applicability, Locality,
-Recording, and Movement roads consistently establish no Yield merely from an
-Act occurrence followed by its exact result. Remaining Yield events require
-their own independent falsifiers; this census does not withdraw Yield as a
-possible relation.
+The tested internal source, Compare, Measurement, Applicability, Determination,
+Locality, Recording, and Movement roads consistently establish no Yield merely
+from an Act occurrence followed by its exact result. The residual producer
+census finds no internal runtime producer outside the Yield helper itself. This
+census does not withdraw Yield as a possible relation.
 
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls, six
-non-Locality Applicability roads, seven declared Measurement roads, the exact
+A separate Yield occurrence failed all three internal Locality controls, seven
+non-Locality Applicability roads, eleven declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, one internal Determination road, all four live internal Compare
-result families, and the
-result-position Movement road. Each removed event occurred before its result
+result families, and the result-position Movement road. Each removed event
+occurred before its result
 subject and added only a copied result dictionary plus another identity.
 
 The active current-result grammar no longer projects Yield merely because one
 Act occurrence has one result. Supplied-material Measurement prose now
 addresses the exact material result directly.
 
-This does not withdraw Yield as a relation or from every Act road.
-Applicability and shared-position Measurement establish that an Act result
-does not imply Yield. Remaining internal Yield producers belong to independently
-untested Measurement, Applicability, and Determination roads. The outward
-Emission clause is outside this internal census and has no live Emission
-physiology in the inspected runtime.
+This does not withdraw Yield as a possible relation. Applicability and
+shared-position Measurement establish that an Act result does not imply Yield.
+No internal runtime producer now instantiates Yield. The outward Emission clause
+is outside this internal census and has no live Emission physiology in the
+inspected runtime.

@@ -191,16 +191,17 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         and (act := ledger.get(event.material["act_occurrence_event_identity"]))
         is not None
         and act.material.get("act") in exact_acts
-        and type(event.material.get("yield_relation_identity")) is str
     )
     assert produced_results
+    assert all("yield_relation_identity" not in result.material for result in produced_results)
+    assert not any(
+        event.kind == RECORDED_YIELD_RELATION_EVENT
+        for event in ledger.list_locality("source-position-positive")
+    )
     for result in produced_results:
         act = ledger.get(result.material["act_occurrence_event_identity"])
         reference = act.material["subject_to_act_binding_reference"]
         binding = ledger.get(reference["recorded_occurrence_identity"])
-        assert recording.current_coordinates["exact_result_occurrences"][result.identity] == (
-            reference
-        )
         assert (
             recording.current_coordinates["subject_to_act_binding_occurrences"].get(
                 binding.identity, object()
@@ -279,17 +280,6 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert all(
         measurement.result_occurrence.identity
         in coordinate_measurements.current_coordinates["measurement_occurrences"]
-        for measurement in measurements
-    )
-    assert all(
-        coordinate_measurements.current_coordinates["exact_result_occurrences"][
-            measurement.result_occurrence.identity
-        ]
-        == ledger.get(
-            measurement.result_occurrence.material[
-                "act_occurrence_event_identity"
-            ]
-        ).material["subject_to_act_binding_reference"]
         for measurement in measurements
     )
     assert all(
@@ -384,7 +374,6 @@ def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
                 compare_binding.identity,
                 applicability_binding.identity,
                 applicability_act.identity,
-                applicability_result.material["yield_relation_identity"],
                 applicability_result.identity,
                 compare_act.identity,
                 compare_result.identity,
@@ -395,7 +384,6 @@ def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
         compare_binding.identity,
         applicability_binding.identity,
         applicability_act.identity,
-        applicability_result.material["yield_relation_identity"],
         applicability_result.identity,
         compare_act.identity,
         compare_result.identity,
@@ -403,8 +391,6 @@ def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
     assert "yield_relation_identity" not in compare_result.material
     assert not any(
         event.kind == RECORDED_YIELD_RELATION_EVENT
-        and event.material.get("occurrence_boundary")
-        == source_position_recurrence.COMPARE_BOUNDARY
         for event in ledger.list_locality("source-position-applicability-address")
     )
 
@@ -476,23 +462,6 @@ def test_changed_source_position_coordinate_is_refused():
     else:
         raise AssertionError("changed subject-to-Act binding ownership was accepted")
     binding.material["result_identity"] = exact_result_identity
-
-    yielded = ledger.get(result.material["yield_relation_identity"])
-    exact_yield_occurrence = yielded.material["dimensions"][
-        "act_occurrence_identity"
-    ]
-    yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
-    try:
-        read_operator_current_coordinates(
-            ledger, locality_identity="source-position-integrity"
-        )
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("changed Yield was accepted into current current coordinates")
-    yielded.material["dimensions"][
-        "act_occurrence_identity"
-    ] = exact_yield_occurrence
 
     result.material["coordinates"]["source_position_coordinates"][0][
         "exact_material"
@@ -597,7 +566,7 @@ def test_sqlite_restart_recovers_source_position_readers(tmp_path):
         sqlite_ledger.close()
 
 
-def test_recurrent_results_yield_one_exact_reusable_material_without_selection():
+def test_recurrent_results_establish_one_exact_reusable_material_without_selection():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, current_coordinates = (
         _record_material_measurements(
@@ -642,9 +611,6 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     assert current_coordinates["measurement_occurrences"][event.identity][
         "result_identity"
     ] == event.material["result_identity"]
-    assert current_coordinates["exact_result_occurrences"][event.identity] == (
-        ownership
-    )
     assert binding.material["subject_reference"] == reading["subject"]
     assert binding.material["result_identity"] == reading[
         "result_identity"
@@ -670,7 +636,7 @@ def test_exact_reusable_material_result_is_not_a_source_result_position():
     assert exact_material_result.material.get("result_positions") is None
 
 
-def test_varying_coordinate_material_yields_no_common_exact_material():
+def test_varying_coordinate_material_has_no_common_exact_material():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
@@ -694,7 +660,7 @@ def test_varying_coordinate_material_yields_no_common_exact_material():
     )
 
 
-def test_recurrent_result_material_refuses_changed_source_material_order_owner_and_yield():
+def test_recurrent_result_material_refuses_changed_source_material_order_and_owner():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
@@ -767,18 +733,6 @@ def test_recurrent_result_material_refuses_changed_source_material_order_owner_a
         raise AssertionError("changed subject-to-Act binding ownership was accepted")
     binding.material["result_identity"] = result_identity
 
-    yielded = ledger.get(event.material["yield_relation_identity"])
-    act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
-    yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
-    try:
-        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("changed Yield was accepted")
-    yielded.material["dimensions"]["act_occurrence_identity"] = act_occurrence
-
-
 def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_path):
     database = tmp_path / "recurrent-result-material.sqlite"
     ledger = EventLedger()
@@ -792,9 +746,9 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
     recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
     finding = _target_finding(ledger, recurrence)
     event, expected = _material_for_finding(ledger, material_measurements, finding)
-    expected_ownership = current_coordinates["exact_result_occurrences"][
-        event.identity
-    ]
+    expected_ownership = ledger.get(
+        event.material["act_occurrence_event_identity"]
+    ).material["subject_to_act_binding_reference"]
     event_identity = event.identity
     durable = SQLiteEventLedger(str(database))
     durable.append_many(ledger.list())

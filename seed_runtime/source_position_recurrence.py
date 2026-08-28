@@ -24,10 +24,6 @@ from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.yield_relation import (
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     source_position_coordinate_references_of_recorded_position_measurement,
 )
@@ -116,23 +112,11 @@ RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
 )
 COORDINATE_MEASUREMENT_ACT = (
-    "Measure corresponding carried material across exact recurrence source results"
+    "Measure corresponding exact material across exact recurrence source results"
 )
 RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT = (
     "Measure exact material shared by every exact recurrent result"
 )
-
-COMPARE_APPLICABILITY_BOUNDARY = "source_position_compare_applicability"
-COMPARE_BOUNDARY = "source_position_compare"
-SOURCE_POSITION_MEASUREMENT_BOUNDARY = "source_position_measurement"
-RECURRENCE_MEASUREMENT_BOUNDARY = "source_position_recurrence_measurement"
-COORDINATE_MEASUREMENT_BOUNDARY = (
-    "recurrence_corresponding_source_position_material_measurement"
-)
-RECURRENT_RESULT_MATERIAL_MEASUREMENT_BOUNDARY = (
-    "recurrent_result_exact_material_measurement"
-)
-
 
 class SourcePositionMeasurementStep(NamedTuple):
     coordinate_count: int
@@ -204,15 +188,13 @@ def _require_preserved_result(
     result: Event,
     *,
     exact_act: str,
-    occurrence_boundary: str,
 ) -> tuple[Event, dict[str, Any]]:
     """Read one exact produced result without replaying its input history."""
 
-    act = _require_yield(
+    act = _require_result(
         ledger,
         result,
         exact_act=exact_act,
-        occurrence_boundary=occurrence_boundary,
     )
     coordinates = deepcopy(_coordinates(result.material))
     if _coordinates(act.material).get("subject") != coordinates:
@@ -301,9 +283,6 @@ def _preserved_result_material(material):
             "act_occurrence_event_identity"
         ],
         "coordinates": deepcopy(material["coordinates"]),
-        "yield_relation_identity": material[
-            "yield_relation_identity"
-        ],
     }
 
 
@@ -504,19 +483,17 @@ def _record_subject_to_act_binding(
     )
 
 
-def _record_yielded_result(
+def _record_result(
     ledger: EventLedger,
     *,
     act_kind: str,
     result_kind: str,
     exact_act: str,
     book_reference: str,
-    occurrence_boundary: str,
     locality_identity: str,
     act_payload: dict[str, Any],
     result_payload: dict[str, Any],
     identity_prefix: str,
-    result_exact_material: bytes | None = None,
 ) -> tuple[Event, Event]:
     latest_locality_event = ledger.latest_locality_event(locality_identity)
     if latest_locality_event is None:
@@ -542,22 +519,20 @@ def _record_yielded_result(
         result_identity=result_identity,
         subject=subject,
     )
-    return _record_yielded_result_from_binding(
+    return _record_result_from_binding(
         ledger,
         binding=binding,
         act_kind=act_kind,
         result_kind=result_kind,
         exact_act=exact_act,
         book_reference=book_reference,
-        occurrence_boundary=occurrence_boundary,
         locality_identity=locality_identity,
         act_payload=act_payload,
         result_payload=result_payload,
-        result_exact_material=result_exact_material,
     )
 
 
-def _record_yielded_result_from_binding(
+def _record_result_from_binding(
     ledger: EventLedger,
     *,
     binding: Event,
@@ -565,11 +540,9 @@ def _record_yielded_result_from_binding(
     result_kind: str,
     exact_act: str,
     book_reference: str,
-    occurrence_boundary: str,
     locality_identity: str,
     act_payload: dict[str, Any],
     result_payload: dict[str, Any],
-    result_exact_material: bytes | None = None,
 ) -> tuple[Event, Event]:
     act, content = _record_result_coordinates_from_binding(
         ledger,
@@ -582,21 +555,9 @@ def _record_yielded_result_from_binding(
         act_payload=act_payload,
         result_payload=result_payload,
     )
-    yielded = _record_yield_relation(
-        ledger,
-        locality_identity=locality_identity,
-        exact_act=exact_act,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=result_kind,
-        result_identity=content["result_identity"],
-        result_content=content,
-        occurrence_boundary=occurrence_boundary,
-        result_exact_material=result_exact_material,
-    )
     result = _EVENT_APPENDERS[result_kind](
         ledger,
-        {**content, "yield_relation_identity": yielded.identity},
+        content,
         locality_identity,
     )
     return act, result
@@ -683,35 +644,39 @@ def _record_compare_result_from_binding(
     return act, result
 
 
-def _require_yield(
+def _require_result(
     ledger: EventLedger,
     result: Event,
     *,
     exact_act: str,
-    occurrence_boundary: str,
 ) -> Event:
     act = _recorded_occurrence(
         ledger,
         result.material.get("act_occurrence_event_identity"),
-        message="recorded result carries no exact Act occurrence",
+        message="recorded result has no exact Act occurrence",
     )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material.get(
-            "yield_relation_identity"
-        ),
-        act_occurrence_event_identity=act.identity,
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            result.locality_identity, result.kind
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
     )
-    yielded = ledger.get(result.material.get("yield_relation_identity"))
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, result.identity),
+            locality_identity=result.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("recorded result does not follow its exact Act") from error
     if (
         result.locality_identity != act.locality_identity
         or act.material.get("act") != exact_act
-        or yielded is None
-        or yielded.material.get("occurrence_boundary") != occurrence_boundary
-        or not all(requirements.values())
+        or tuple(item.identity for item in ordered) != (act.identity, result.identity)
+        or len(results) != 1
+        or results[0].identity != result.identity
     ):
-        raise ValueError("recorded result carries no exact Yield relation")
+        raise ValueError("recorded result is not exact")
     _require_act_boundary(ledger, act)
     _require_binding(ledger, act, result)
     return act
@@ -987,13 +952,12 @@ def _record_compare(
             compare_binding
         ),
     }
-    _applicability_act, applicability = _record_yielded_result(
+    _applicability_act, applicability = _record_result(
         ledger,
         act_kind=COMPARE_APPLICABILITY_ACT_KIND,
         result_kind=COMPARE_APPLICABILITY_RESULT_KIND,
         exact_act=COMPARE_APPLICABILITY_ACT,
         book_reference="01.Current.E.1",
-        occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         locality_identity=locality_identity,
         act_payload={"subject": applicability_subject},
         result_payload={
@@ -1067,11 +1031,10 @@ def get_recorded_source_position_compare(
         ),
         message="source-position Compare carries no exact Applicability result",
     )
-    applicability_act = _require_yield(
+    applicability_act = _require_result(
         ledger,
         applicability,
         exact_act=COMPARE_APPLICABILITY_ACT,
-        occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
     )
     finding = result_coordinates.get("finding")
     expected_result = (
@@ -1172,13 +1135,12 @@ def _record_source_position_result(
         "prior_result_reference": prior_reference,
         "complete_compare_findings": signature,
     }
-    _act, result = _record_yielded_result(
+    _act, result = _record_result(
         ledger,
         act_kind=SOURCE_POSITION_MEASUREMENT_ACT_KIND,
         result_kind=SOURCE_POSITION_MEASUREMENT_RESULT_KIND,
         exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
         book_reference="01.Source.D",
-        occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
         locality_identity=coordinates[0]["locality_identity"],
         act_payload={"subject": payload},
         result_payload=payload,
@@ -1196,11 +1158,10 @@ def get_recorded_source_position_measurement(
         result_event_identity,
         message="source-position result is not exact",
     )
-    act = _require_yield(
+    act = _require_result(
         ledger,
         result,
         exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
-        occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
     direct_coordinates = _direct_coordinates(
@@ -1279,7 +1240,6 @@ def get_recorded_source_position_measurement(
                 "act_identity",
                 "act_occurrence_identity",
                 "act_occurrence_identity",
-                "yield_relation_identity",
             }
         }
     ):
@@ -1307,7 +1267,6 @@ def _source_position_results_at_boundary(
             and type(coordinates.get("source_position_coordinates")) is list
             and type(coordinates.get("compare_result_references")) is list
             and type(event.material.get("act_occurrence_event_identity")) is str
-            and type(event.material.get("yield_relation_identity")) is str
         ):
             get_recorded_source_position_measurement(ledger, event.identity)
             events.append(event)
@@ -1376,13 +1335,12 @@ def _record_recurrence_measurement(
         ],
         "findings": findings,
     }
-    _act, result = _record_yielded_result(
+    _act, result = _record_result(
         ledger,
         act_kind=RECURRENCE_MEASUREMENT_ACT_KIND,
         result_kind=RECURRENCE_MEASUREMENT_RESULT_KIND,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
         book_reference="01.Source.D",
-        occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
         locality_identity=locality_identity,
         act_payload={"subject": payload},
         result_payload=payload,
@@ -1400,11 +1358,10 @@ def get_recorded_source_position_recurrence(
         result_event_identity,
         message="source-position recurrence result is not exact",
     )
-    act = _require_yield(
+    act = _require_result(
         ledger,
         result,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
-        occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
     boundary_identity = material.get("completeness_boundary_reference")
@@ -1440,7 +1397,6 @@ def get_recorded_source_position_recurrence(
             "act_identity",
             "act_occurrence_identity",
             "act_occurrence_identity",
-            "yield_relation_identity",
         }
     }
     if (
@@ -1715,13 +1671,12 @@ def _record_corresponding_coordinate_material_measurements(
             ],
             "findings": _coordinate_findings(ledger, finding),
         }
-        _act, result = _record_yielded_result(
+        _act, result = _record_result(
             ledger,
             act_kind=COORDINATE_MEASUREMENT_ACT_KIND,
             result_kind=COORDINATE_MEASUREMENT_RESULT_KIND,
             exact_act=COORDINATE_MEASUREMENT_ACT,
             book_reference="01.Source.D.1",
-            occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
             locality_identity=locality_identity,
             act_payload={"subject": payload},
             result_payload=payload,
@@ -1762,11 +1717,10 @@ def get_recorded_corresponding_coordinate_material_measurement(
         result_event_identity,
         message="corresponding-coordinate Measurement result is not exact",
     )
-    act = _require_yield(
+    act = _require_result(
         ledger,
         result,
         exact_act=COORDINATE_MEASUREMENT_ACT,
-        occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
     source_reference = material.get("source_recurrence_result_reference")
@@ -1809,7 +1763,6 @@ def get_recorded_corresponding_coordinate_material_measurement(
             "act_identity",
             "act_occurrence_identity",
             "act_occurrence_identity",
-            "yield_relation_identity",
         }
     }
     if carried_payload != payload or _coordinates(act.material).get("subject") != payload:
@@ -1881,7 +1834,6 @@ def _recurrent_result_material_payload(
             ledger,
             production_event,
             exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
-            occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
         )
         coordinates = production.get("source_position_coordinates")
         if (
@@ -2013,7 +1965,6 @@ def _coordinate_measurements_for_recurrence(
             or type(coordinates.get("source_recurrence_finding_position")) is not int
             or type(coordinates.get("findings")) is not list
             or type(event.material.get("act_occurrence_event_identity")) is not str
-            or type(event.material.get("yield_relation_identity")) is not str
         ):
             continue
         if event.identity not in carried_measurements:
@@ -2091,18 +2042,16 @@ def _record_recurrent_result_material_measurements(
         )
         if payload is None:
             continue
-        _act, result = _record_yielded_result(
+        _act, result = _record_result(
             ledger,
             act_kind=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT_KIND,
             result_kind=RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND,
             exact_act=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT,
             book_reference="01.Source.D",
-            occurrence_boundary=RECURRENT_RESULT_MATERIAL_MEASUREMENT_BOUNDARY,
             locality_identity=recurrence_event.locality_identity,
             act_payload={"subject": payload["subject"]},
             result_payload=payload,
             identity_prefix="recurrent_result_exact_material_measurement",
-            result_exact_material=bytes(payload["exact_material"]),
         )
         recorded.append(
             RecurrentResultMaterialMeasurement(finding["finding_position"], result)
@@ -2147,11 +2096,10 @@ def get_recorded_recurrent_result_material_measurement(
         or ledger.integrity_of(result.identity) == CORRUPTED
     ):
         raise ValueError("exact-material Measurement result is not exact")
-    act = _require_yield(
+    act = _require_result(
         ledger,
         result,
         exact_act=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT,
-        occurrence_boundary=RECURRENT_RESULT_MATERIAL_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
     subject = material.get("subject")
@@ -2170,7 +2118,6 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         recurrence_event,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
-        occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
     )
     if recurrence_reference.get("result_reference") != recurrence["result_identity"]:
         raise ValueError("exact-material Measurement carries no exact recurrence result")
@@ -2192,7 +2139,6 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         coordinate_event,
         exact_act=COORDINATE_MEASUREMENT_ACT,
-        occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
     )
     if coordinate_reference.get("result_reference") != coordinate_measurement[
         "result_identity"
@@ -2234,7 +2180,13 @@ def validate_source_position_recurrence_event(
     if event.kind == COMPARE_RESULT_KIND:
         get_recorded_source_position_compare(ledger, event.identity)
         return event
-    if "yield_relation_identity" in material:
+    if event.kind in {
+        COMPARE_APPLICABILITY_RESULT_KIND,
+        SOURCE_POSITION_MEASUREMENT_RESULT_KIND,
+        RECURRENCE_MEASUREMENT_RESULT_KIND,
+        COORDINATE_MEASUREMENT_RESULT_KIND,
+        RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND,
+    }:
         act = ledger.get(material.get("act_occurrence_event_identity"))
         exact_act = (
             act.material.get("act")
@@ -2257,11 +2209,10 @@ def validate_source_position_recurrence_event(
             return event
         if exact_act != COMPARE_APPLICABILITY_ACT:
             raise ValueError("source-position result carries no exact Act")
-        act = _require_yield(
+        act = _require_result(
             ledger,
             event,
             exact_act=COMPARE_APPLICABILITY_ACT,
-            occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         )
         coordinates = _coordinates(event.material)
         subject = coordinates.get("subject")
@@ -2329,7 +2280,7 @@ def iter_recurrent_coordinate_material_findings(
     ledger: EventLedger,
     measurements: tuple[CorrespondingCoordinateMeasurement, ...],
 ) -> Iterator[dict[str, Any]]:
-    """Yield exact material recurrence findings from all corresponding Measurements."""
+    """Exact material recurrence findings from all corresponding Measurements."""
 
     for measurement in measurements:
         material = get_recorded_corresponding_coordinate_material_measurement(
