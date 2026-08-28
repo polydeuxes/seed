@@ -1574,9 +1574,16 @@ def advance_operator_current_coordinates(
                 event.identity,
                 prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            measurement_occurrences[event.identity] = (
-                _measurement_occurrence_coordinates(event)
-            )
+            measurement_occurrences[event.identity] = {
+                "recorded_occurrence_identity": event.identity,
+                "result_identity": event.material["result_identity"],
+                "act_occurrence_identity": event.material[
+                    "act_occurrence_identity"
+                ],
+                "act_occurrence_event_identity": event.material[
+                    "act_occurrence_event_identity"
+                ],
+            }
             continue
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
             get_recorded_byte_pair_occurrence_position_measurement(

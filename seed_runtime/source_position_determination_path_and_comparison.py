@@ -12,9 +12,6 @@ from seed_runtime.comparison_of_ordered_path_source_position_material import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.yield_relation import (
-    _record_yield_relation,
-)
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     source_position_coordinate_references_of_recorded_position_measurement,
@@ -73,9 +70,6 @@ def _advance(
                 "act_occurrence_identity": event.material["act_occurrence_identity"],
                 "act_occurrence_event_identity": event.material[
                     "act_occurrence_event_identity"
-                ],
-                "yield_relation_identity": event.material[
-                    "yield_relation_identity"
                 ],
             }
         current_coordinates["through_event_occurrence_identity"] = event.identity
@@ -171,32 +165,12 @@ def _record_shared_path(
         applicability=applicability,
         inputs=inputs,
     )
-    path_yield = _record_yield_relation(
-        ledger,
-        locality_identity=measurement_binding.locality_identity,
-        exact_act=shared_position.MEASUREMENT_ACT,
-        act_occurrence_identity=measurement_act.material[
-            "act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=measurement_act.identity,
-        result_kind=shared_position.MEASUREMENT_RESULT_KIND,
-        result_identity=result_material["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in result_material.items()
-            if coordinate != "act_occurrence_identity"
-        },
-        occurrence_boundary="shared_pair_position_measurement",
-    )
     path = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-        shared_position._recorded_measurement_result_material(
-            result_material,
-            yield_relation_identity=path_yield.identity,
-        ),
+        shared_position._recorded_measurement_result_material(result_material),
         locality_identity=measurement_binding.locality_identity,
     )
-    return _advance(ledger, current_coordinates, path_yield, path), path
+    return _advance(ledger, current_coordinates, path), path
 
 
 def _yield_source_position_determinations_paths_and_comparisons(

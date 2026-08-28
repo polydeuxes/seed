@@ -7,11 +7,6 @@ from typing import Any, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _determination_result_reference,
     _read_determination_result,
@@ -59,7 +54,6 @@ APPLICABILITY_ACT = (
 )
 MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"
 MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
-MEASUREMENT_BOUNDARY = "shared_pair_position_measurement"
 D2_RESULT_REFERENCE_COORDINATE = (
     "addressed_byte_occurrence_reference_determination_result_reference"
 )
@@ -1326,10 +1320,7 @@ def _refuse_existing_result(
     )
     act_occurrence_identity = act.material[act_occurrence_coordinate]
     for event in ledger.list_locality(act.locality_identity):
-        if event.kind not in {
-            result_kind,
-            RECORDED_YIELD_RELATION_EVENT,
-        }:
+        if event.kind != result_kind:
             continue
         if (
             event.material.get("act_occurrence_event_identity") == act.identity
@@ -1403,11 +1394,12 @@ def _recorded_applicability_result_material(
     }
 
 
-def _require_direct_applicability_result(
+def _require_direct_result(
     ledger: EventLedger,
     *,
     event: Event,
     act: Event,
+    result_kind: str,
 ) -> None:
     try:
         ordered = ledger.occurrences_in_append_order(
@@ -1422,7 +1414,7 @@ def _require_direct_applicability_result(
         candidate
         for candidate in ledger.iter_locality_kind(
             event.locality_identity,
-            SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+            result_kind,
         )
         if candidate.material.get("act_occurrence_event_identity") == act.identity
     )
@@ -1432,39 +1424,8 @@ def _require_direct_applicability_result(
         or results[0].identity != event.identity
     ):
         raise SharedPairPositionError(
-            "Applicability Act has no single exact result occurrence"
+            "Act has no single exact result occurrence"
         )
-
-
-def _require_yield(
-    ledger: EventLedger,
-    *,
-    event: Event,
-    act: Event,
-    occurrence_boundary: str,
-    result_kind: str,
-    result_occurrence_coordinate: str = "act_occurrence_identity",
-    yielding_act_occurrence_coordinate: str = "act_occurrence_identity",
-) -> None:
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=yield_relation_identity,
-        act_occurrence_event_identity=act.identity,
-        recorded_result_occurrence_coordinate=result_occurrence_coordinate,
-        yielding_act_occurrence_coordinate=(
-            yielding_act_occurrence_coordinate
-        ),
-    )
-    if (
-        not all(requirements.values())
-        or yield_relation is None
-        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
-        or yield_relation.material.get("result_kind") != result_kind
-    ):
-        raise SharedPairPositionError("result carries no exact Yield relation")
 
 
 def _read_applicability_result(
@@ -1497,10 +1458,11 @@ def _read_applicability_result(
     )
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise SharedPairPositionError("Applicability result coordinates are not exact")
-    _require_direct_applicability_result(
+    _require_direct_result(
         ledger,
         event=event,
         act=act,
+        result_kind=SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     )
     return event, act, binding, inputs, deepcopy(event.material)
 
@@ -1761,35 +1723,15 @@ def record_shared_position_measurement_result(
         applicability=applicability,
         inputs=inputs,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=MEASUREMENT_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=MEASUREMENT_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in result.items()
-            if coordinate != "act_occurrence_event_identity"
-        },
-        occurrence_boundary="shared_pair_position_measurement",
-    )
     return ledger.append(
         SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-        _recorded_measurement_result_material(
-            result,
-            yield_relation_identity=yield_relation.identity,
-        ),
+        _recorded_measurement_result_material(result),
         locality_identity=act.locality_identity,
     )
 
 
 def _recorded_measurement_result_material(
     result: dict[str, Any],
-    *,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1811,7 +1753,6 @@ def _recorded_measurement_result_material(
         "first_position_result": deepcopy(result["first_position_result"]),
         "second_position_result": deepcopy(result["second_position_result"]),
         "ordered_relation_path": deepcopy(result["ordered_relation_path"]),
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -1843,19 +1784,14 @@ def _read_measurement_result(
         applicability=applicability,
         inputs=inputs,
     )
-    carried = {
-        key: value
-        for key, value in event.material.items()
-        if key != "yield_relation_identity"
-    }
+    carried = dict(event.material)
     if event.locality_identity != act.locality_identity or carried != expected:
         raise SharedPairPositionError("Measurement result coordinates are not exact")
-    _require_yield(
+    _require_direct_result(
         ledger,
         event=event,
         act=act,
-        occurrence_boundary=MEASUREMENT_BOUNDARY,
-        result_kind=MEASUREMENT_RESULT_KIND,
+        result_kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     )
     return event, carried
 

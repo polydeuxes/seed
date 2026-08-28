@@ -137,6 +137,26 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
     assert "The bounded subjects are exhaustive." in chapter
 
 
+def test_measurement_result_occurrence_establishes_its_yield_relation():
+    measurement = _grammar()["book_coordinates"]["01.Source.D"]
+    assert measurement["coordinates"] == [
+        "exact_material_result",
+        "Locality",
+    ]
+    assert measurement["Yield"] == {
+        "first_subject": "Measurement_Act_occurrence",
+        "second_subject": "declared_Measurement_result",
+        "relation_occurrence": "declared_Measurement_result_occurrence",
+    }
+    acts = (
+        CHAPTERS / "03_acts_and_occurrences.md"
+    ).read_text(encoding="utf-8")
+    assert (
+        "One Act occurrence and one result occurrence have no Yield relation"
+        in acts
+    )
+
+
 def test_positional_coordinates_name_their_exact_basis():
     coordinates = _grammar()["book_coordinates"]
 

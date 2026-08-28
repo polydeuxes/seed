@@ -14,6 +14,9 @@ subject to one result as second subject. The result preserves its exact
 subjects, source occurrences, completeness boundary, findings,
 and Locality.
 
+The recorded Measurement result occurrence is the exact Yield relation
+occurrence.
+
 One exact through-occurrence boundary is one coordinate of each exact
 Measurement subject-to-Act position.
 

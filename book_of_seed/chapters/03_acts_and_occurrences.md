@@ -17,6 +17,9 @@ Act occurrence --Yield--> result
 The exact coordinates of the Yield relation are its first subject, second
 subject, relation occurrence, and Locality.
 
+One Act occurrence and one result occurrence have no Yield relation when no
+exact Yield relation occurrence is established.
+
 A result preserves coordinates established by its Act occurrence.
 
 ## References
