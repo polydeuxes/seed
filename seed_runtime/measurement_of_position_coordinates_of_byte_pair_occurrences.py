@@ -1102,7 +1102,7 @@ def _source_position_coordinate_reference(
     }
 
 
-def _assertion_coordinates(
+def _result_position_coordinates(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
     exact_pair: bytes,
@@ -1148,14 +1148,14 @@ def _assertion_coordinates(
     return subject, content
 
 
-def _assertion(
+def _result_position_content(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
     exact_pair: bytes,
     first_position: int,
     second_position: int,
 ) -> dict[str, Any]:
-    subject, content = _assertion_coordinates(
+    subject, content = _result_position_coordinates(
         finding,
         exact_pair=exact_pair,
         first_position=first_position,
@@ -1167,11 +1167,11 @@ def _assertion(
             "content": content,
         },
         "result": "position",
-        "assertion_subject": subject,
+        "subject": subject,
     }
 
 
-def _assertion_result_coordinates(
+def _result_positions(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
 ) -> dict[str, Any]:
     return {
@@ -1215,7 +1215,7 @@ def _result_material(
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity
         },
-        "assertions": _assertion_result_coordinates(finding),
+        "result_positions": _result_positions(finding),
     }
 
 
@@ -1262,7 +1262,7 @@ def _record_byte_pair_occurrence_position_measurement_result(
                 "source_material_result_occurrence_identity"
             ],
             "completeness_boundary": result["completeness_boundary"],
-            "assertions": result["assertions"],
+            "result_positions": result["result_positions"],
             "act_occurrence_event_identity": act.identity,
         },
         locality_identity=act.locality_identity,
@@ -1383,7 +1383,7 @@ def _read_result(
         or results[0].identity != event.identity
     ):
         raise ValueError("byte-pair position-coordinate result has false occurrence order")
-    return event, finding, expected["assertions"]
+    return event, finding, expected["result_positions"]
 
 
 def get_recorded_byte_pair_occurrence_position_measurement(
@@ -1392,7 +1392,7 @@ def get_recorded_byte_pair_occurrence_position_measurement(
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    _event, finding, _assertions_read = _read_result(
+    _event, finding, _result_positions_read = _read_result(
         ledger,
         result_event_identity,
         prior_coordinates=prior_coordinates,
@@ -1525,7 +1525,7 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
         raise TypeError("addressed source position requires one EventLedger")
     if type(result_event_identity) is not str or not result_event_identity:
         raise ValueError("addressed source position requires one result occurrence")
-    event, finding, _assertion_result_coordinates_read = _read_result(
+    event, finding, _result_positions_read = _read_result(
         ledger,
         result_event_identity,
         prior_coordinates=prior_coordinates,
@@ -1586,7 +1586,7 @@ def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrenc
         )
     ):
         raise ValueError("position references require exact addressed coordinates")
-    event, finding, _assertion_result_coordinates_read = _read_result(
+    event, finding, _result_positions_read = _read_result(
         ledger, result_event_identity
     )
     if exact_coordinates is not None:
@@ -1626,7 +1626,7 @@ def references_to_recorded_position_coordinates_of_byte_pair_occurrences(
 ) -> tuple[
     ReferenceToRecordedPositionOfBytePairOccurrence, ...
 ]:
-    event, finding, _assertion_result_coordinates_read = _read_result(
+    event, finding, _result_positions_read = _read_result(
         ledger, result_event_identity
     )
     return tuple(
@@ -1651,7 +1651,7 @@ def source_position_coordinate_references_of_recorded_position_measurement(
 ) -> Iterator[dict[str, Any]]:
     """Yield the exact bounded source-position subjects from one result read."""
 
-    _event, finding, _assertion_result_coordinates_read = _read_result(
+    _event, finding, _result_positions_read = _read_result(
         ledger,
         result_event_identity,
         prior_coordinates=prior_coordinates,
@@ -1668,47 +1668,47 @@ def source_position_coordinate_references_of_recorded_position_measurement(
         )
 
 
-def _recorded_position_assertion_at_position_for_locality_movement(
+def _recorded_position_result_content_at_position_for_locality_movement(
     ledger: EventLedger,
     *,
     result_event_identity: str,
-    assertion_position: int,
+    result_position: int,
 ) -> dict[str, Any]:
-    event, finding, _assertion_result_coordinates_read = _read_result(
+    event, finding, _result_positions_read = _read_result(
         ledger, result_event_identity
     )
     if (
-        type(assertion_position) is not int
-        or assertion_position < 0
-        or assertion_position + 1 >= len(finding.exact_material)
+        type(result_position) is not int
+        or result_position < 0
+        or result_position + 1 >= len(finding.exact_material)
     ):
         raise ValueError(
             "result-position Locality movement requires exact source coordinates"
         )
-    return _assertion(
+    return _result_position_content(
         finding,
-        exact_pair=finding.exact_material[assertion_position : assertion_position + 2],
-        first_position=assertion_position,
-        second_position=assertion_position + 1,
+        exact_pair=finding.exact_material[result_position : result_position + 2],
+        first_position=result_position,
+        second_position=result_position + 1,
     )
 
 
-def _recorded_position_assertions_for_locality_movement(
+def _recorded_position_result_contents_for_locality_movement(
     ledger: EventLedger,
     *,
     result_event_identity: str,
 ) -> Iterator[dict[str, Any]]:
-    """Yield every position Assertion after one exact bounded result read.
+    """Yield every addressed position after one exact bounded result read.
 
-    The Assertions are reconstructed from the validated finding. Reading them
+    The content is reconstructed from the validated result. Reading it
     records no movement and establishes no later relation.
     """
 
-    _event, finding, _assertion_result_coordinates_read = _read_result(
+    _event, finding, _result_positions_read = _read_result(
         ledger, result_event_identity
     )
     return (
-        _assertion(
+        _result_position_content(
             finding,
             exact_pair=finding.exact_material[
                 first_position : first_position + 2

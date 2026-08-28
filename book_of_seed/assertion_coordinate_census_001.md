@@ -222,6 +222,24 @@ pair material, source positions, source result, Locality, and completeness
 boundary remain validated from the owning result. Missing, changed,
 substituted, out-of-range, and reordered coordinates still refuse.
 
+The producing direct position Measurement result then passed the remaining
+payload subtraction. It now records its bounded `result_positions` coordinates
+instead of an `assertions` wrapper. Each addressed position is reconstructed
+from the validated parent result as:
+
+```text
+parent result occurrence
++ result position
++ exact pair subject
++ first and second source-position coordinates
+```
+
+The result reader refuses changed summary coordinates, and the addressed
+reader refuses changed, absent, substituted, or out-of-range positions. The
+complete bounded result-position reader and each individually addressed read
+produce the same exact content without an Assertion subject key or reader
+identity.
+
 ## Recurrent pair-position address result
 
 The recurrent pair-position road then passed independently. It preserves two
@@ -248,9 +266,9 @@ separate producing pair-Measurement result positions. Shared-position
 Measurement follows these addresses without an Assertion identity, address,
 reference, or subject wrapper.
 
-This result does not authorize a rename of the earlier byte-pair result reader
-or the Locality movement road. Those retain Assertion-shaped coordinates under
-their own independent pressure.
+This result does not authorize a rename of the earlier byte Measurement and
+byte-pair Measurement result readers or the Locality movement road. Those
+retain Assertion-shaped coordinates under their own independent pressure.
 
 ## Current finding
 

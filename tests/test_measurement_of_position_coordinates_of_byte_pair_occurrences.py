@@ -21,8 +21,8 @@ from tests.operator_material_source_test_witness import (
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    _recorded_position_assertions_for_locality_movement,
-    _recorded_position_assertion_at_position_for_locality_movement,
+    _recorded_position_result_contents_for_locality_movement,
+    _recorded_position_result_content_at_position_for_locality_movement,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_byte_pair_occurrence_position_measurement_act_occurrence,
@@ -294,7 +294,7 @@ def test_material_without_a_byte_pair_yields_an_exact_empty_result(exact):
     )
 
     assert finding.occurrences == ()
-    assert result.material["assertions"]["occurrences"] == 0
+    assert result.material["result_positions"]["occurrences"] == 0
 
 
 def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assignment():
@@ -465,10 +465,10 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         )
 
 
-def test_result_refuses_changed_assertion_coordinates():
+def test_result_refuses_changed_result_position_coordinates():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger)
-    result.material["assertions"]["dimensions"]["content"][
+    result.material["result_positions"]["dimensions"]["content"][
         "second_position"
     ] = "position"
 
@@ -504,7 +504,7 @@ def test_references_preserve_every_exact_pair_occurrence():
     )
 
 
-def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed_read():
+def test_one_bounded_result_read_equals_each_addressed_position_read():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger, b"abcdef")
     references = (
@@ -513,36 +513,36 @@ def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed
         )
     )
 
-    assertions = tuple(
-        _recorded_position_assertions_for_locality_movement(
+    contents = tuple(
+        _recorded_position_result_contents_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
         )
     )
 
-    assert assertions == tuple(
-        _recorded_position_assertion_at_position_for_locality_movement(
+    assert contents == tuple(
+        _recorded_position_result_content_at_position_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
-                assertion_position=reference.result_position,
+            result_position=reference.result_position,
         )
         for reference in references
     )
     assert tuple(
-        assertion["dimensions"]["position"] for assertion in assertions
+        content["dimensions"]["position"] for content in contents
     ) == tuple(reference.result_position for reference in references)
     assert all(
-        set(assertion)
+        set(content)
         == {
             "dimensions",
             "result",
-            "assertion_subject",
+            "subject",
         }
-        for assertion in assertions
+        for content in contents
     )
 
 
-def test_bounded_position_assertion_result_coordinates_reads_once_in_source_order(
+def test_bounded_result_position_content_reads_once_in_source_order(
     monkeypatch,
 ):
     ledger = EventLedger()
@@ -557,35 +557,35 @@ def test_bounded_position_assertion_result_coordinates_reads_once_in_source_orde
 
     monkeypatch.setattr(direct_position_module, "_read_result", counted_result_read)
 
-    assertions = tuple(
-        _recorded_position_assertions_for_locality_movement(
+    contents = tuple(
+        _recorded_position_result_contents_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
         )
     )
 
-    assert len(assertions) == 5
+    assert len(contents) == 5
     assert result_reads == 1
-    assert tuple(item["dimensions"]["position"] for item in assertions) == tuple(
+    assert tuple(item["dimensions"]["position"] for item in contents) == tuple(
         range(5)
     )
 
 
-def test_bounded_position_assertion_result_coordinates_refuses_changed_result():
+def test_bounded_result_position_content_refuses_changed_result():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger, b"abcdef")
     unchanged = tuple(
-        _recorded_position_assertions_for_locality_movement(
+        _recorded_position_result_contents_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
         )
     )
     result.material["result_identity"] = (
-        "changed before the bounded Assertion read"
+        "changed before the bounded result-position read"
     )
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
-        _recorded_position_assertions_for_locality_movement(
+        _recorded_position_result_contents_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
         )
@@ -1081,10 +1081,10 @@ def test_result_has_only_its_declared_measurement_coordinates():
         "source_localities",
         "source_material_result_occurrence_identity",
         "completeness_boundary",
-        "assertions",
+        "result_positions",
         "act_occurrence_event_identity",
     }
-    assert "standing" not in result.material["assertions"]["dimensions"]
+    assert "standing" not in result.material["result_positions"]["dimensions"]
 
 
 
@@ -1094,7 +1094,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_each_input_pair_has_first_and_second_exact_position_coordinates,
         test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,
         test_material_without_a_byte_pair_yields_an_exact_empty_result,
-        test_result_refuses_changed_assertion_coordinates,
+        test_result_refuses_changed_result_position_coordinates,
         test_references_preserve_every_exact_pair_occurrence,
         test_addressed_references_use_requested_result_local_positions,
         test_full_reference_reader_does_not_construct_the_occurrence_tuple,

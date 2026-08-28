@@ -2404,7 +2404,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
             and occurrence.get("result_occurrence_identity") == source_identity
             for occurrence in material_results
         )
-        or type(event.material.get("assertions")) is not dict
+        or type(event.material.get("result_positions")) is not dict
         or event.identity in measurements
         or event.identity in exact_results
         or type(event_count) is not int

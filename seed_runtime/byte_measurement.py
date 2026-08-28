@@ -623,14 +623,14 @@ def _source_assertion_coordinates(
 
     from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        _recorded_position_assertion_at_position_for_locality_movement,
+        _recorded_position_result_content_at_position_for_locality_movement,
     )
 
     if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
-        return _recorded_position_assertion_at_position_for_locality_movement(
+        return _recorded_position_result_content_at_position_for_locality_movement(
             ledger,
             result_event_identity=source_event.identity,
-            assertion_position=source["assertion_position"],
+            result_position=source["assertion_position"],
         )
 
     from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
@@ -676,7 +676,7 @@ def _source_assertion_from_reference(
 
     from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        _recorded_position_assertion_at_position_for_locality_movement,
+        _recorded_position_result_content_at_position_for_locality_movement,
     )
 
     if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
@@ -686,10 +686,10 @@ def _source_assertion_from_reference(
         } or type(reference["assertion_position"]) is not int:
             raise ByteMeasurementError("Assertion movement carries no exact source")
         try:
-            coordinates = _recorded_position_assertion_at_position_for_locality_movement(
+            coordinates = _recorded_position_result_content_at_position_for_locality_movement(
                 ledger,
                 result_event_identity=source_event.identity,
-                assertion_position=reference["assertion_position"],
+                result_position=reference["assertion_position"],
             )
         except ValueError:
             pass
