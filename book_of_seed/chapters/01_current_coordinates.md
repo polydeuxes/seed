@@ -14,7 +14,7 @@ are in one Locality through that boundary.
 Current coordinates are a bounded reading that returns exactly those
 established coordinates.
 
-### 01.Current.A.1 — An Act result becomes current for its subject
+### 01.Current.A.1 — Current Act result
 
 The exact result of one Act occurrence is one current coordinate for every
 exact subject in that subject-to-Act binding. It is current through one exact
