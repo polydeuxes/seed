@@ -41,6 +41,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    get_recorded_shared_position_measurement,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -159,6 +160,18 @@ def _exact_material_distinctions_reading(
             kind=BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
             reader=lambda exact_ledger, identity: (
                 result_positions_of_recorded_byte_position_pair_measurement(
+                    exact_ledger,
+                    identity,
+                    prior_coordinates=current_coordinates,
+                )
+            ),
+        ),
+        "ordered_relation_path_measurement_results": _kind_readings(
+            ledger,
+            locality_identity=locality_identity,
+            kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+            reader=lambda exact_ledger, identity: (
+                get_recorded_shared_position_measurement(
                     exact_ledger,
                     identity,
                     prior_coordinates=current_coordinates,

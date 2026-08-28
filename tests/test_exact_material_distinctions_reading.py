@@ -101,3 +101,52 @@ def test_equal_complete_content_remains_exact_under_different_boundaries():
     )
     assert len(reading["first_exact_reading"]["material_results"]) == 1
     assert len(reading["second_exact_reading"]["material_results"]) == 2
+
+
+def test_ordered_path_reading_preserves_exact_content_and_source_occurrence():
+    one_source = exact_bounded_material_distinctions_reading(
+        (b"ATCATC",),
+        locality_identity="test-one-source-ordered-path-reading",
+    )
+    two_sources = exact_bounded_material_distinctions_reading(
+        (b"ATC", b"ATC"),
+        locality_identity="test-two-source-ordered-path-reading",
+    )
+
+    def atc_paths(reading):
+        return tuple(
+            path
+            for _identity, path in reading[
+                "ordered_relation_path_measurement_results"
+            ]
+            if path["first_position_result"]["exact_pair"] == [65, 84]
+            and path["second_position_result"]["exact_pair"] == [84, 67]
+        )
+
+    one_source_paths = atc_paths(one_source)
+    two_source_paths = atc_paths(two_sources)
+
+    assert tuple(
+        path["first_position_result"]["first_position"]
+        for path in one_source_paths
+    ) == (0, 3)
+    assert tuple(
+        path["first_position_result"]["first_position"]
+        for path in two_source_paths
+    ) == (0, 0)
+    assert len(
+        {
+            path["ordered_relation_path"]["content"][
+                "source_material_result_occurrence_identity"
+            ]
+            for path in one_source_paths
+        }
+    ) == 1
+    assert len(
+        {
+            path["ordered_relation_path"]["content"][
+                "source_material_result_occurrence_identity"
+            ]
+            for path in two_source_paths
+        }
+    ) == 2
