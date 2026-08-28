@@ -7,9 +7,8 @@ subjects, exact Compare Act, and Locality.
 Each exact subject is one exact input.
 That exact subject-to-Act binding is addressed by one Applicability Act. The
 exact result of that Applicability Act is applicable or inapplicable.
-One exact Yield relation is from the Compare Act occurrence as first subject
-to one result as second subject. The result preserves distinctions established
-by the exact Compare Act within its completeness boundary.
+The result preserves distinctions established by the exact Compare Act within
+its completeness boundary.
 
 ### 04.Compare.A — Recorded pair findings
 

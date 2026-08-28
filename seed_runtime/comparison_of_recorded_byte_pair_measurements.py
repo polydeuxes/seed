@@ -1583,7 +1583,7 @@ def _comparison_result_material(
 
 
 def _recorded_comparison_result_material(
-    material: dict[str, Any], *, act_identity: str, yield_relation_identity: str
+    material: dict[str, Any], *, act_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1598,7 +1598,6 @@ def _recorded_comparison_result_material(
         ],
         "findings": deepcopy(material["findings"]),
         "act_occurrence_event_identity": act_identity,
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -1622,21 +1621,23 @@ def record_recorded_pair_measurement_comparison_result(
 def _record_comparison_result_from_act(
     ledger: EventLedger, *, act: Event, result: dict[str, Any]
 ) -> Event:
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind="recorded pair Measurement comparison result",
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="recorded_pair_measurement_comparison",
+    prior_results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            act.locality_identity,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
     )
+    if prior_results:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison Act already has a result"
+        )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
         _recorded_comparison_result_material(
-            result, act_identity=act.identity, yield_relation_identity=yield_relation.identity
+            result, act_identity=act.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1769,23 +1770,42 @@ def _recorded_pair_measurement_comparison_reading(
             act, binding_reading
         ),
         act_identity=act.identity,
-        yield_relation_identity=event.material.get("yield_relation_identity"),
-    )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material.get(
-            "yield_relation_identity"
-        ),
-        act_occurrence_event_identity=act.identity,
     )
     if (
         event.locality_identity != act.locality_identity
         or event.material != expected
-        or not all(requirements.values())
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison result carries no exact Yield"
+            "comparison result coordinates are not exact"
+        )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except ValueError as error:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison result does not follow its Act"
+        ) from error
+    if [occurrence.identity for occurrence in ordered] != [
+        act.identity,
+        event.identity,
+    ]:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison result does not follow its Act"
+        )
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
+    )
+    if len(results) != 1 or results[0].identity != event.identity:
+        raise RecordedPairMeasurementComparisonError(
+            "comparison Act has no single exact result"
         )
     return deepcopy(event.material), binding_reading
 

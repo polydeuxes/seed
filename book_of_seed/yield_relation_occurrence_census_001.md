@@ -262,6 +262,21 @@ exact material result occurrence
 ```
 
 No independent Source Yield distinction survived either subtraction.
+
+## Compare control
+
+Recorded byte-pair Compare passed the first Compare falsifier. Its prior
+lifecycle recorded a Yield event containing the complete future finding result
+before recording that result occurrence. The Compare result already addresses
+its exact Act occurrence, subject-to-Act binding, Applicability result, complete
+findings, and Locality.
+
+Removing the separate event preserved exact earlier and later Measurement
+inputs, source occurrence order, Applicability, finding reconstruction,
+Act-before-result order, one result per Compare Act, current-coordinate replay,
+and mutation and substitution refusal. The generic Compare clause and
+`04.Compare.A` therefore establish no Yield. `04.Compare.B` retains its
+independently untested Yield coordinate.
 The source now records:
 
 ```text

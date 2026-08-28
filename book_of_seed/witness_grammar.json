@@ -135,7 +135,6 @@
     "04.Compare": {
       "subject": "exact_Compare_subjects",
       "exact_Act": "Compare",
-      "Yield": "02.Acts.A.Yield",
       "result": "exact_Compare_result",
       "Applicability": "Applicability_result"
     },
@@ -150,7 +149,6 @@
         "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
         "later_ordered_source_occurrence_references_are_earlier_ordered_source_occurrence_references_and_one_added_exact_occurrence"
       ],
-      "Yield": "02.Acts.A.Yield",
       "result": "recorded_pair_finding_Compare_result",
       "Applicability": "Applicability_result"
     },

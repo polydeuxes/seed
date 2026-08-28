@@ -39,6 +39,7 @@ from seed_runtime.operator_console import (
     run_persistent_operator_console,
 )
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 LOCALITY = "recorded-pair-comparison-locality"
@@ -443,16 +444,38 @@ def test_measurement_availability_without_current_coordinates_cannot_supply_comp
         )
 
 
-def test_corrupted_compare_yield_is_refused():
+def test_changed_compare_result_is_refused_without_a_yield_event():
     ledger, *_rest, result = _comparison()
-    yield_relation = ledger.get(result.material["yield_relation_identity"])
-    assert yield_relation is not None
-    yield_relation.material["result_identity"] = "changed-result"
+    assert "yield_relation_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "recorded_pair_measurement_comparison"
+    )
+    result.material["result_identity"] = "changed-result"
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="exact Yield",
+        match="not exact",
     ):
         get_recorded_pair_measurement_comparison(ledger, result.identity)
+
+
+def test_one_compare_act_cannot_record_two_results():
+    ledger, *_rest, result = _comparison()
+
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="already has a result",
+    ):
+        record_recorded_pair_measurement_comparison_result(
+            ledger,
+            act_occurrence_event_identity=result.material[
+                "act_occurrence_event_identity"
+            ],
+        )
 
 
 def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
