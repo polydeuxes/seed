@@ -211,9 +211,9 @@ result coordinates. Current-coordinate replay, direct advancement, durable
 reopen, addressed source-position determination, and later shared-position
 Measurement all address the result without a Yield identity.
 
-The material source that is the subject of this Measurement still retains its
-own independently untested Yield coordinates. Their presence does not establish
-Yield for this later Measurement Act.
+The material source that is the subject of this Measurement independently
+establishes its source binding, Act, result, and exact material coordinates.
+That source physiology does not establish Yield for this later Measurement Act.
 
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
@@ -230,8 +230,7 @@ binding, addressed occurrence, through-occurrence boundary, and Locality. After
 the separate Yield event and `yield_relation_identity` were removed, the reader
 still requires Act-before-result order, refuses another result for the same Act,
 survives durable restart between Act and result, and remains exact in current
-coordinates. The source material's own Yield event remains and does not become
-the recording Act's Yield.
+coordinates. The source result remains distinct from the recording Act result.
 
 No independent Recording Yield distinction survived this subtraction.
 
@@ -297,7 +296,7 @@ path result, source-position coordinates, and Locality. The reader requires
 Act-before-result order, one result for the Act, exact findings, durable reopen,
 and current-coordinate advancement without a Compare Yield event.
 
-All three live internal Compare result families inspected by this campaign now
+All four live internal Compare result families found by this campaign now
 establish binding, Applicability, Compare Act occurrence, and exact result
 without Yield. Their Applicability events remain separate, independently
 untested physiology.
@@ -322,37 +321,22 @@ Recording, and Movement roads consistently establish no Yield merely from an
 Act occurrence followed by its exact result. Remaining Yield events require
 their own independent falsifiers; this census does not withdraw Yield as a
 possible relation.
-The source now records:
-
-```text
-source subject-to-Act binding
-source Act occurrence
-exact material result occurrence
-```
-
-The exact material result directly preserves the source boundary, source
-occurrence references, boundary outcomes, read occurrences, Locality, and exact
-bytes. Its reader still traverses the exact binding and Act, requires
-binding-before-Act-before-result order, refuses another result for the same Act,
-survives durable reopen, and refuses changed, added, corrupt, substituted, or
-foreign-Locality coordinates.
-
-The common material-result reader now dispatches to this exact Witness source
-physiology without imposing Yield on every material source. The operator source
-retains its independently untested Yield event and its Yield-specific append
-validation.
-
-No independent Witness source Yield distinction survived this subtraction.
-
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, two declared Measurement roads, and the exact
-through-occurrence boundary reference recording road, and the Witness material
-source road. Each removed event occurred before its result subject and added
-only a copied result dictionary plus another identity.
+non-Locality Applicability road, two declared Measurement roads, the exact
+through-occurrence boundary reference Recording road, both internal material
+source roads, all four live internal Compare result families, and the
+result-position Movement road. Each removed event occurred before its result
+subject and added only a copied result dictionary plus another identity.
+
+The active current-result grammar no longer projects Yield merely because one
+Act occurrence has one result. Supplied-material Measurement prose now
+addresses the exact material result directly.
 
 This does not withdraw Yield as a relation or from every Act road.
 Applicability and shared-position Measurement establish that an Act result
-does not imply Yield. Other Act roads with separately recorded Yield events
-remain under pressure independently.
+does not imply Yield. Remaining internal Yield producers belong to independently
+untested Measurement, Applicability, and Determination roads. The outward
+Emission clause is outside this internal census and has no live Emission
+physiology in the inspected runtime.

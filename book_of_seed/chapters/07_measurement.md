@@ -20,7 +20,7 @@ completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
-Each exact source-byte position reference in the supplied-material Yield
+Each exact source-byte position reference in the supplied-material
 result is one exact subject bound to one exact declared Measurement Act. The
 exact byte-pair position Measurement result is current through the exact
 occurrence boundary.

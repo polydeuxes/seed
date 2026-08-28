@@ -141,11 +141,13 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
 
 def test_declared_measurement_does_not_infer_yield_from_its_result():
     measurement = _grammar()["book_coordinates"]["01.Source.D"]
+    current_result = _grammar()["book_coordinates"]["01.Current.A.1"]
     assert measurement["coordinates"] == [
         "exact_material_result",
         "Locality",
     ]
     assert "Yield" not in measurement
+    assert "Yield" not in current_result
     acts = (
         CHAPTERS / "03_acts_and_occurrences.md"
     ).read_text(encoding="utf-8")
@@ -153,6 +155,10 @@ def test_declared_measurement_does_not_infer_yield_from_its_result():
         "One Act occurrence and one result occurrence have no Yield relation"
         in acts
     )
+    measurement_chapter = (
+        CHAPTERS / "07_measurement.md"
+    ).read_text(encoding="utf-8")
+    assert "supplied-material Yield result" not in measurement_chapter
 
 
 def test_positional_coordinates_name_their_exact_basis():
