@@ -89,6 +89,18 @@ class RecordedOrderedPathPairFindingCompareResults(NamedTuple):
     compare_result_occurrences: tuple[Event, ...]
 
 
+class OrderedPathPairFindingCompareApplicabilityResultActReading(NamedTuple):
+    through_event_occurrence_identity: str | None
+    applicable_result_occurrence_identities: tuple[str, ...]
+    inapplicable_result_occurrence_identities: tuple[str, ...]
+    act_occurrences_by_applicability_result: tuple[
+        tuple[str, str], ...
+    ]
+    applicable_result_occurrence_identities_without_act_occurrence: tuple[
+        str, ...
+    ]
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -772,6 +784,161 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
     )
 
 
+def _ordered_path_pair_finding_compare_applicability_results_and_acts(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any],
+) -> tuple[
+    OrderedPathPairFindingCompareApplicabilityResultActReading,
+    tuple[
+        tuple[
+            Event,
+            Event,
+            Event,
+            dict[str, Any],
+            tuple[Event, dict[str, Any]],
+        ],
+        ...,
+    ],
+    dict[str, Event],
+]:
+    current_results = current_coordinates.get("applicability_result_occurrences")
+    if (
+        current_coordinates.get("locality_identity") != locality_identity
+        or type(current_results) is not dict
+    ):
+        raise ValueError(
+            "ordered-path Compare requires exact current coordinates"
+        )
+
+    applicability_readings = []
+    for identity in current_results:
+        event = ledger.get(identity)
+        if (
+            event is None
+            or event.kind
+            != COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
+        ):
+            continue
+        applicability_readings.append(
+            _read_applicability_result(
+                ledger,
+                event.identity,
+                prior_coordinates=current_coordinates,
+            )
+        )
+
+    through_identity = current_coordinates.get(
+        "through_event_occurrence_identity"
+    )
+    if through_identity is None:
+        bounded_events = ()
+    else:
+        through = ledger.append_boundary_through_occurrence(
+            _identity(
+                through_identity,
+                "ordered-path Compare has no exact current boundary",
+            )
+        )
+        bounded_events = tuple(
+            event
+            for event in ledger.list(through=through)
+            if event.locality_identity == locality_identity
+        )
+
+    results_by_identity = {
+        reading[0].identity: reading for reading in applicability_readings
+    }
+    acts_by_applicability: dict[str, Event] = {}
+    for occurrence in bounded_events:
+        if (
+            occurrence.kind
+            != COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT
+        ):
+            continue
+        act, _binding, applicability, _inputs_reading = _read_compare_act(
+            ledger,
+            occurrence.identity,
+            prior_coordinates=current_coordinates,
+        )
+        if applicability.identity not in results_by_identity:
+            raise ValueError(
+                "ordered-path Compare Act addresses no exact current Applicability result"
+            )
+        if applicability.identity in acts_by_applicability:
+            raise ValueError(
+                "ordered-path Compare Applicability has repeated Compare Act occurrences"
+            )
+        acts_by_applicability[applicability.identity] = act
+
+    applicable = tuple(
+        reading[0].identity
+        for reading in applicability_readings
+        if reading[0].material["applicability"] == "applicable"
+    )
+    inapplicable = tuple(
+        reading[0].identity
+        for reading in applicability_readings
+        if reading[0].material["applicability"] == "inapplicable"
+    )
+    act_occurrences = tuple(
+        (identity, acts_by_applicability[identity].identity)
+        for identity in applicable
+        if identity in acts_by_applicability
+    )
+    inapplicable_with_act = tuple(
+        identity for identity in inapplicable if identity in acts_by_applicability
+    )
+    if inapplicable_with_act:
+        raise ValueError(
+            "inapplicable ordered-path Compare results have Compare Act occurrences"
+        )
+    without_act_occurrence = tuple(
+        identity for identity in applicable if identity not in acts_by_applicability
+    )
+    return (
+        OrderedPathPairFindingCompareApplicabilityResultActReading(
+            through_event_occurrence_identity=through_identity,
+            applicable_result_occurrence_identities=applicable,
+            inapplicable_result_occurrence_identities=inapplicable,
+            act_occurrences_by_applicability_result=act_occurrences,
+            applicable_result_occurrence_identities_without_act_occurrence=(
+                without_act_occurrence
+            ),
+        ),
+        tuple(applicability_readings),
+        acts_by_applicability,
+    )
+
+
+def read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
+) -> OrderedPathPairFindingCompareApplicabilityResultActReading:
+    """Read exact Applicability results and their bound Acts through one boundary."""
+
+    if current_coordinates is None:
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates,
+        )
+
+        current_coordinates = read_operator_current_coordinates(
+            ledger,
+            locality_identity=locality_identity,
+        )
+    result_act_reading, _readings, _acts = (
+        _ordered_path_pair_finding_compare_applicability_results_and_acts(
+            ledger,
+            locality_identity=locality_identity,
+            current_coordinates=current_coordinates,
+        )
+    )
+    return result_act_reading
+
+
 def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
     ledger: EventLedger,
     *,
@@ -790,43 +957,15 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
         )
     elif current_coordinates.get("locality_identity") != locality_identity:
         raise ValueError("ordered-path Compare requires exact current Locality")
-    current_results = current_coordinates.get("applicability_result_occurrences")
-    if type(current_results) is not dict:
-        raise ValueError(
-            "ordered-path Compare requires exact current coordinates"
-        )
-    applicability_readings = []
-    for identity in current_results:
-        event = ledger.get(identity)
-        if (
-            event is None
-            or event.kind
-            != COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
-        ):
-            continue
-        applicability_readings.append(
-            _read_applicability_result(
-                ledger,
-                event.identity,
-                prior_coordinates=current_coordinates,
-            )
-        )
-
-    acts_by_applicability: dict[str, Event] = {}
-    for occurrence in ledger.iter_locality_kind(
-        locality_identity,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-    ):
-        act, _binding, applicability, _inputs_reading = _read_compare_act(
-            ledger,
-            occurrence.identity,
-            prior_coordinates=current_coordinates,
-        )
-        if applicability.identity in acts_by_applicability:
-            raise ValueError(
-                "ordered-path Compare Applicability carries repeated Compare Act occurrence"
-            )
-        acts_by_applicability[applicability.identity] = act
+    (
+        _result_act_reading,
+        applicability_readings,
+        acts_by_applicability,
+    ) = _ordered_path_pair_finding_compare_applicability_results_and_acts(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=current_coordinates,
+    )
 
     recorded: list[Event] = []
     for (
@@ -857,6 +996,18 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
             current_coordinates,
             (act.identity,),
             locality_identity=locality_identity,
+        )
+
+    result_act_reading = read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=current_coordinates,
+    )
+    if (
+        result_act_reading.applicable_result_occurrence_identities_without_act_occurrence
+    ):
+        raise ValueError(
+            "ordered-path Compare left exact applicable results without Act occurrences"
         )
 
     return RecordedOrderedPathPairFindingCompareActOccurrence(

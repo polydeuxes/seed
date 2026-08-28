@@ -591,7 +591,7 @@ def test_shared_binding_threads_explicit_prior_without_rereading_coordinates(
     )
 
     def replay_must_not_run(*_args, **_kwargs):
-        raise AssertionError("explicit shared-position coordinates were reread")
+        raise AssertionError("supplied shared-position coordinates were reread")
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
@@ -833,7 +833,7 @@ def test_direct_position_coordinates_compose_without_recurrence_support(
     monkeypatch.setattr(direct_position_module, "_read_result", read_once)
 
     def full_population_is_not_needed(*_args, **_kwargs):
-        raise AssertionError("shared position read the full direct reference population")
+        raise AssertionError("shared position read all exact direct references")
 
     monkeypatch.setattr(
         shared_position_module,

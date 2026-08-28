@@ -675,7 +675,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
         != DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability requires the governed determination binding"
+            "Applicability addresses another determination binding"
         )
     _require_stage_current_coordinates(
         ledger,

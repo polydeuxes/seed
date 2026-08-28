@@ -263,7 +263,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         for reference in finding["source_result_references"]
     ) == (0, 3)
 
-    # This explicit call from one result to the later Measurement is the
+    # This call from one result to the later Measurement is the
     # remaining hand-written call. It supplies the complete recurrence
     # result; the later Measurement chooses no finding, source position, or
     # value from it.

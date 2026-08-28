@@ -1355,7 +1355,7 @@ def _references_from_recorded_recurrent_pair_position_result(
 ) -> tuple[ReferenceToRecordedRecurrentBytePairOccurrencePosition, ...]:
     recorded_positions = event.material["result_positions"]
     if len(recorded_positions) != len(finding.occurrences):
-        raise ValueError("pair-position result has a different position population")
+        raise ValueError("pair-position result disagrees with its exact positions")
     references = []
     for result_position, (recorded, (first_position, second_position)) in enumerate(
         zip(recorded_positions, finding.occurrences)

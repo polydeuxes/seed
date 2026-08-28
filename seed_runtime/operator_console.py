@@ -114,7 +114,7 @@ def _advance_over(ledger, current_coordinates, event_identities, *, locality_ide
 def _record_occurrence_position_measurement(
     ledger, current_coordinates, *, locality_identity
 ):
-    """Record the explicitly triggered position population of this Locality."""
+    """Record exact occurrence positions in this Locality."""
 
     position_finding = measure_occurrence_position(
         ledger,
@@ -211,7 +211,7 @@ def _record_measurements_from_current_coordinates(
     *,
     locality_identity,
 ):
-    """Record declared Measurements, then the explicit Locality road."""
+    """Record declared Measurements, then occurrence-position Measurement."""
 
     recorded = _record_declared_measurements_from_carried_current_coordinates(
         ledger,

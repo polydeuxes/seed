@@ -1,5 +1,22 @@
 # Applicability and Act-occurrence boundary census 001
 
+## Amendment after bounded-population pressure
+
+The exact separation recovered here survives:
+
+```text
+Applicability result present
+!=
+Act occurrence for its exact binding present
+```
+
+The proposed search for an occurrence selecting the bound Act does not.
+`bounded_applicability_population_report_001.md` establishes that the live
+ordered-path Compare road performs brute-force work over the exact bounded
+Applicability results. Every positive result is addressed by one Compare Act
+occurrence for its binding; every negative result is addressed by none. No
+result is selected over another, so no selection owner is missing.
+
 ## Boundary
 
 This investigation begins at `595de645`, after the unsupported Participation
@@ -70,7 +87,7 @@ governed Act occurrence present
 Current Witness roads use three mechanical shapes:
 
 ```text
-one caller explicitly invokes the governed-Act recorder with an exact
+one caller invokes the governed-Act recorder with an exact
 Applicability result reference
 
 one family-local road records Applicability, tests its result, and invokes the
@@ -80,7 +97,7 @@ one current-coordinate walk reads every applicable result with no governed
 Compare occurrence and records those occurrences
 ```
 
-The last shape is explicit in the ordered relation-path Compare road. The byte
+The last shape is visible in the ordered relation-path Compare road. The byte
 pair road and source-position path road carry the second shape. Recorded-pair
 Compare, shared-position Measurement, and addressed determination expose the
 first shape through separate operations.

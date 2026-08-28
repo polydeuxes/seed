@@ -12,7 +12,7 @@ another source coordinate only while exact recurrent results make that
 coordinate addressable. No caller chooses the final coordinate count. Each Act
 has an exact preceding subject-to-Act binding. The later Measurement accepts
 the complete recurrence result, not a selected recurrence finding, source
-position, or value. The explicit call from the recurrence result to that
+position, or value. The call from the recurrence result to that
 Measurement remains visible: this module does not claim a general result-uptake
 dispatcher.
 """

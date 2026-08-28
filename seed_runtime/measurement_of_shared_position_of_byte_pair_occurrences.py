@@ -1055,7 +1055,7 @@ def record_shared_position_applicability_act_occurrence(
         != SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     ):
         raise SharedPairPositionError(
-            "shared-position Applicability requires the governed Measurement binding"
+            "shared-position Applicability addresses another Measurement binding"
         )
     boundary = _require_current_coordinates(
         ledger,

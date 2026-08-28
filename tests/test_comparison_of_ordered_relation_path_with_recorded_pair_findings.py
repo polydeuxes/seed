@@ -36,6 +36,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_ordered_path_pair_finding_compare_applicability_from_current_coordinates,
     record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates,
     record_ordered_path_pair_finding_compare_results_from_current_coordinates,
+    read_ordered_path_pair_finding_compare_applicability_results_and_acts,
     unbound_ordered_path_pair_finding_compare_subjects_in_current_coordinates,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -959,15 +960,35 @@ def test_applicability_binding_refuses_a_substituted_compare_binding_reference()
 
 
 def test_only_applicable_current_compare_results_record_act_occurrence():
-    ledger, applicability_results, _current_coordinates_read = _ledger_at_story_floor(2)
+    ledger, applicability_results, current_coordinates = _ledger_at_story_floor(2)
     bindings = tuple(
         ledger.iter_locality_kind(
             LOCALITY,
             comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
         )
     )
+    before = read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    assert before.applicable_result_occurrence_identities == (
+        applicability_results[0].identity,
+        applicability_results[3].identity,
+    )
+    assert before.inapplicable_result_occurrence_identities == (
+        applicability_results[1].identity,
+        applicability_results[2].identity,
+    )
+    assert before.act_occurrences_by_applicability_result == ()
+    assert before.applicable_result_occurrence_identities_without_act_occurrence == (
+        before.applicable_result_occurrence_identities
+    )
+
     recorded = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
-        ledger, locality_identity=LOCALITY
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
     )
     acts = recorded.compare_act_occurrence_occurrences
 
@@ -994,6 +1015,41 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         acts[-1].identity
     )
+    historical = read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    assert historical == before
+
+    after = read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=recorded.current_coordinates,
+    )
+    assert after.applicable_result_occurrence_identities == (
+        before.applicable_result_occurrence_identities
+    )
+    assert after.inapplicable_result_occurrence_identities == (
+        before.inapplicable_result_occurrence_identities
+    )
+    assert after.act_occurrences_by_applicability_result == (
+        (applicability_results[0].identity, acts[0].identity),
+        (applicability_results[3].identity, acts[1].identity),
+    )
+    assert (
+        after.applicable_result_occurrence_identities_without_act_occurrence == ()
+    )
+
+    repeated = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=recorded.current_coordinates,
+    )
+    assert repeated.compare_act_occurrence_occurrences == ()
+    assert repeated.current_coordinates == recorded.current_coordinates
+
+
 def test_every_current_compare_act_records_one_result():
     ledger, acts, _current_coordinates_read = _ledger_at_story_floor(3)
 
@@ -1379,6 +1435,20 @@ def test_ordered_path_and_recorded_findings_are_read_from_sqlite(tmp_path):
     assert result_identity in _current_coordinates(durable)["comparison_result_occurrences"]
     assert recorded_distinction_pins_from_current_coordinates(
         durable, locality_identity=LOCALITY
+    )
+    result_act_reading = (
+        read_ordered_path_pair_finding_compare_applicability_results_and_acts(
+            durable,
+            locality_identity=LOCALITY,
+        )
+    )
+    assert len(result_act_reading.applicable_result_occurrence_identities) == 1
+    assert len(
+        result_act_reading.act_occurrences_by_applicability_result
+    ) == 1
+    assert (
+        result_act_reading.applicable_result_occurrence_identities_without_act_occurrence
+        == ()
     )
     durable.close()
 

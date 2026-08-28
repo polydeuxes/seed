@@ -1,5 +1,33 @@
 # Applicability governed-Act owner census 001
 
+## Amendment after bounded-population pressure
+
+`bounded_applicability_population_report_001.md` preserves this census's exact
+stoppability result but withdraws its owner vacancy.
+
+The census correctly established:
+
+```text
+positive Applicability result
+!=
+Act occurrence for its exact binding
+```
+
+It then treated the absence of a selecting or initiating occurrence as a
+missing constitutional owner. That inference was not established. The live
+road performs brute-force work over the complete bounded Applicability results:
+one Act occurrence for the exact binding of every positive result and none for
+every negative result. No result is selected over another.
+
+The host operation remains external mechanism, but its iteration supplies no
+reason to mint Candidate, Selection, owner, enumeration, or completion
+occurrences. The active pressure is exact bounded coverage, not why one result
+was chosen.
+
+The historical title and body retain `governed` as the narration this census
+used. Active Book and Witness Grammar do not admit it: the exact
+subject-to-Act binding already identifies the Act and subjects.
+
 ## Question
 
 What exact occurrence accounts for the crossing from one positive
@@ -148,7 +176,7 @@ control flow. No existing exact occurrence accounts for that crossing.
 Freeze the vacancy.
 
 Do not make the Applicability result perform the governed Act. Do not introduce
-Scheduler, Trigger, Initiation, Selection, permission, obligation,
+Scheduler, Initiation, Selection, permission, obligation,
 Responsibility, or another transition wrapper merely to name the host call.
 
 Further growth must begin with an independently occurring coordinate that can

@@ -63,7 +63,7 @@ def _require_read_occurrence_coordinates(
 
     if type(read_occurrences) not in (tuple, list):
         raise WitnessMaterialSourceError(
-            "exact read occurrence population required"
+            "exact read occurrences are not one tuple or list"
         )
     next_start = 0
     boundaries: set[str] = set()

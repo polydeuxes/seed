@@ -771,7 +771,7 @@ class SQLiteEventLedger(EventLedger):
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [deepcopy(event) for event in events]
         self._validate_sqlite_batch(stored_events)
-        # One transaction keeps this exact ordered append population together.
+        # One transaction writes this exact ordered append sequence.
         with self._connection:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)

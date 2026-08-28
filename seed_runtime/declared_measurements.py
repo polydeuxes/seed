@@ -48,8 +48,8 @@ from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
-# The source-position proof remains explicitly invoked. Importing its first and
-# later Measurements keeps the current runtime road reachable without
+# This module invokes the source-position proof. Importing its first and later
+# Measurements keeps the current runtime road reachable without
 # pretending they are automatic declarations in the registry below.
 from seed_runtime.source_position_recurrence import (
     record_corresponding_coordinate_material_measurements,
