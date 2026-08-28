@@ -8,9 +8,7 @@ import seed_runtime.addressed_byte_occurrence_reference_determination as determi
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     APPLICABILITY_RESULT_KIND,
-    DETERMINATION_BOUNDARY,
     DETERMINATION_RESULT_KIND,
-    DETERMINATION_YIELD_RESULT_KIND,
     AddressedByteOccurrenceReferenceDeterminationError,
     get_addressed_byte_occurrence_reference_determination_act_occurrence,
     get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
@@ -39,6 +37,7 @@ from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 class InterveningActEventLedger(EventLedger):
@@ -231,7 +230,6 @@ def test_interior_address_preserves_every_and_only_ordered_result_position_refer
         "completeness_boundary",
         "ordered_result_position_references",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }
     assert not {"exact_pair", "first_position", "second_position"} & set(material)
 
@@ -376,7 +374,7 @@ def test_applicability_result_has_no_yield_and_refuses_repetition():
         event
         for event in ledger.iter_locality_kind(
             applicability.locality_identity,
-            determination_module.RECORDED_YIELD_RELATION_EVENT,
+            RECORDED_YIELD_RELATION_EVENT,
         )
         if event.material.get("occurrence_boundary")
         == "addressed_byte_occurrence_reference_determination_applicability"
@@ -393,30 +391,23 @@ def test_applicability_result_has_no_yield_and_refuses_repetition():
         )
 
 
-@pytest.mark.parametrize(
-    ("boundary", "result_kind"),
-    (
-        ("changed-boundary", DETERMINATION_YIELD_RESULT_KIND),
-        (DETERMINATION_BOUNDARY, "changed result kind"),
-    ),
-)
-def test_determination_refuses_wrong_yield_kind_or_boundary(boundary, result_kind):
+def test_determination_result_has_no_yield():
     ledger = EventLedger()
     recorded = _record(ledger)
-    yield_relation = ledger.get(
-        recorded["result"].material["yield_relation_identity"]
-    )
-    yield_relation.material["occurrence_boundary"] = boundary
-    yield_relation.material["result_kind"] = result_kind
-    with pytest.raises(
-        AddressedByteOccurrenceReferenceDeterminationError, match="exact Yield"
-    ):
-        get_recorded_addressed_byte_occurrence_reference_determination(
-            ledger, recorded["result"].identity
+    result = recorded["result"]
+
+    assert "yield_relation_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            result.locality_identity, RECORDED_YIELD_RELATION_EVENT
         )
+        if event.material.get("occurrence_boundary")
+        == "addressed_byte_occurrence_reference_determination"
+    )
 
 
-def test_one_act_refuses_a_second_yield_or_result():
+def test_one_act_refuses_a_second_result():
     ledger = EventLedger()
     recorded = _record(ledger)
     before = len(ledger.list())
@@ -711,7 +702,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     before_yields = tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
+        if event.kind == RECORDED_YIELD_RELATION_EVENT
     )
     ledger.act_during_kind_read = lambda: ledger.append(
         "test.intervening.unrelated",
@@ -733,7 +724,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     assert tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
+        if event.kind == RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert current_coordinates == prior
     assert read_operator_current_coordinates(
@@ -777,7 +768,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
     before_yields = tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
+        if event.kind == RECORDED_YIELD_RELATION_EVENT
     )
     ledger.act_during_kind_read = lambda: ledger.append(
         "test.intervening.unrelated",
@@ -799,7 +790,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
     assert tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
+        if event.kind == RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert current_coordinates == prior
     assert read_operator_current_coordinates(

@@ -354,6 +354,20 @@ exact material result occurrence
 
 No independent Source Yield distinction survived either subtraction.
 
+## Determination control
+
+Addressed-byte occurrence-reference Determination passed independently. Its
+exact result still addresses the complete Determination binding,
+Applicability result, direct pair-position result, addressed source-byte
+coordinate, completeness boundary, ordered result-position references, and
+Determination Act occurrence. Removing the separate copied event preserved
+Act-before-result order, one result for the Act, current-coordinate
+progression, later shared-position Measurement, durable reread, and mutation,
+substitution, corruption, changed-coordinate, and repeated-result refusal.
+This road is reached by the new exact material road.
+
+No independent Determination Yield distinction survived this subtraction.
+
 ## Compare control
 
 Recorded byte-pair Compare passed the first Compare falsifier. Its prior
@@ -419,7 +433,8 @@ possible relation.
 A separate Yield occurrence failed all three internal Locality controls, six
 non-Locality Applicability roads, six declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
-source roads, all four live internal Compare result families, and the
+source roads, one internal Determination road, all four live internal Compare
+result families, and the
 result-position Movement road. Each removed event occurred before its result
 subject and added only a copied result dictionary plus another identity.
 
