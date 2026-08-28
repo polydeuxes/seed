@@ -23,6 +23,6 @@ def test_live_measurement_reaches_every_first_aperture_material_and_stops():
     assert finding["known_loss"] is None
 
     assert all(
-        source["binding_precedes_Act_Yield_and_result"]
+        source["binding_precedes_Act_and_result"]
         for source in finding["sources"]
     )

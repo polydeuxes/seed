@@ -375,17 +375,20 @@ _SUPPORTED_KINDS = {
 
 
 def _measurement_occurrence_coordinates(event) -> dict[str, str]:
-    """Carry only the identities of one exact Measurement result."""
+    """Return only the identities of one exact Measurement result."""
 
-    return {
+    coordinates = {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": event.material["yield_relation_identity"],
     }
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    if type(yield_relation_identity) is str:
+        coordinates["yield_relation_identity"] = yield_relation_identity
+    return coordinates
 
 
 def _result_position_locality_movement_occurrence_coordinates(
@@ -442,8 +445,8 @@ def _result_subject_to_act_binding_coordinate(
     """Return one exact A.1 subject-to-Act binding, or its absence.
 
     Whether a result contains exact bytes or structured coordinates does not
-    determine its subject-to-Act binding. One exact source-specific result read
-    or exact Yield physiology establishes the result before its recorded
+    determine its subject-to-Act binding. One exact result read or exact Yield
+    physiology establishes the result before its recorded
     binding is resolved. An incomplete recorded reference is refused.
     """
 
@@ -1546,6 +1549,9 @@ def advance_operator_current_coordinates(
             )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
+            )
+            exact_result_occurrences[event.identity] = (
+                _subject_to_act_binding_of_exact_result(ledger, event)
             )
             continue
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:

@@ -215,6 +215,24 @@ The material source that is the subject of this Measurement independently
 establishes its source binding, Act, result, and exact material coordinates.
 That source physiology does not establish Yield for this later Measurement Act.
 
+Exact byte Measurement then passed the same falsifier independently. Its
+separate Yield event preceded the exact byte Measurement result and copied the
+complete future result. Removing that event preserved:
+
+```text
+Measurement subject-to-Act binding
+Measurement Act occurrence
+Measurement result occurrence
+```
+
+The result directly addresses its exact Act occurrence and binding. Its reader
+establishes Act-before-result order and one result for the Act, reconstructs
+the complete bounded source read, and refuses changed result identities,
+positions, source material, Locality, or completeness. Current-coordinate
+progression and durable reopen address the result without a Yield identity.
+This is the first remaining Yield producer reached by the new exact material
+road to pass independent subtraction.
+
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
 
@@ -321,10 +339,11 @@ Recording, and Movement roads consistently establish no Yield merely from an
 Act occurrence followed by its exact result. Remaining Yield events require
 their own independent falsifiers; this census does not withdraw Yield as a
 possible relation.
+
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, two declared Measurement roads, the exact
+non-Locality Applicability road, three declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
 result-position Movement road. Each removed event occurred before its result

@@ -105,11 +105,8 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     counted = {
         _digest(bytes((content,))): count for content, count in count_findings.items()
     }
-    yielded = ledger.get(result.material["yield_relation_identity"])
-    if yielded is None:
-        raise ValueError("exact-byte Measurement result carries no Yield")
     order = ledger.occurrences_in_append_order(
-        (binding.identity, act.identity, yielded.identity, result.identity),
+        (binding.identity, act.identity, result.identity),
         locality_identity=locality,
     )
     return {
@@ -133,13 +130,11 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         "projection_observer_ledger_occurrence_count": (
             projection_observer_ledger_occurrence_count
         ),
-        "binding_precedes_Act_Yield_and_result": tuple(
-            event.identity for event in order
-        )
-        == (binding.identity, act.identity, yielded.identity, result.identity),
-        "result_carried_as_Measurement_in_current_coordinates": result.identity
+        "binding_precedes_Act_and_result": tuple(event.identity for event in order)
+        == (binding.identity, act.identity, result.identity),
+        "result_is_Measurement_in_current_coordinates": result.identity
         in coordinates_after["measurement_occurrences"],
-        "result_carried_with_exact_binding_in_current_coordinates": result.identity
+        "result_has_exact_binding_in_current_coordinates": result.identity
         in coordinates_after["exact_result_occurrences"],
     }
 
@@ -168,10 +163,8 @@ def observe() -> dict:
             for source in sources
         ),
         "all_results_have_exact_current_coordinates": all(
-            source["result_carried_as_Measurement_in_current_coordinates"]
-            and source[
-                "result_carried_with_exact_binding_in_current_coordinates"
-            ]
+            source["result_is_Measurement_in_current_coordinates"]
+            and source["result_has_exact_binding_in_current_coordinates"]
             for source in sources
         ),
         "projection_observer_ledger_occurrence_count": sum(

@@ -148,15 +148,18 @@ def _measurement_ledger():
 
 
 def _measurement_coordinates(event):
-    return {
+    coordinates = {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": event.material["yield_relation_identity"],
     }
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    if type(yield_relation_identity) is str:
+        coordinates["yield_relation_identity"] = yield_relation_identity
+    return coordinates
 
 
 def _pair_lifecycle(ledger):
@@ -286,16 +289,21 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
         pair.identity,
         positions.identity,
     ]
-    assert all(
-        set(occurrence)
-        == {
-            "recorded_occurrence_identity",
-                "result_identity",
-                "act_occurrence_identity",
-                "act_occurrence_event_identity",
-            "yield_relation_identity",
-        }
-        for occurrence in standing["measurement_occurrences"].values()
+    base_coordinates = {
+        "recorded_occurrence_identity",
+        "result_identity",
+        "act_occurrence_identity",
+        "act_occurrence_event_identity",
+    }
+    assert (
+        set(standing["measurement_occurrences"][byte.identity])
+        == base_coordinates
+    )
+    assert set(standing["measurement_occurrences"][pair.identity]) == (
+        base_coordinates | {"yield_relation_identity"}
+    )
+    assert set(standing["measurement_occurrences"][positions.identity]) == (
+        base_coordinates | {"yield_relation_identity"}
     )
     assert "result_positions" not in str(standing["measurement_occurrences"])
     assert "occurrences" not in {
@@ -535,7 +543,6 @@ def test_locality_standing_refuses_a_corrupted_measurement(
 @pytest.mark.parametrize(
     ("measurement_kind", "error_type"),
     (
-        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),
@@ -554,7 +561,6 @@ def test_locality_standing_refuses_measurement_with_missing_yield(
 @pytest.mark.parametrize(
     ("measurement_kind", "error_type"),
     (
-        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),
@@ -576,7 +582,6 @@ def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
 @pytest.mark.parametrize(
     ("measurement_kind", "error_type"),
     (
-        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
         (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),

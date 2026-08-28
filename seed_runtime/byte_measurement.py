@@ -44,9 +44,7 @@ BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.measurement.byte_position_pair_measurement_subject_to_act_binding_recorded"
 )
 BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact byte-position-pair count Measurement results"
-BYTE_OCCURRENCE_PRESERVATION = (
-    "byte Measurement results with Yield"
-)
+BYTE_OCCURRENCE_PRESERVATION = "exact byte Measurement result"
 BYTE_PAIR_OCCURRENCE_PRESERVATION = (
     "byte-position-pair Measurement results with Yield"
 )
@@ -2540,7 +2538,7 @@ def _measurement_of_act_occurrence(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "byte Measurement Yield requires one exact Act occurrence"
+            "byte Measurement result requires one exact Act occurrence"
         )
     material = event.material
     binding_reference = material.get("subject_to_act_binding_reference")
@@ -2587,18 +2585,17 @@ def _measurement_of_act_occurrence(
 def _require_byte_measurement_act_without_result(
     ledger: EventLedger, act_occurrence: Event
 ) -> None:
-    for kind in (
-        RECORDED_YIELD_RELATION_EVENT,
+    for event in ledger.iter_locality_kind(
+        act_occurrence.locality_identity,
         BYTE_MEASUREMENT_RECORDED_KIND,
     ):
-        for event in ledger.iter_locality_kind(act_occurrence.locality_identity, kind):
-            if (
-                event.material.get("act_occurrence_event_identity")
-                == act_occurrence.identity
-            ):
-                raise ByteMeasurementError(
-                    "byte Measurement Act occurrence already has a Yield or result"
-                )
+        if (
+            event.material.get("act_occurrence_event_identity")
+            == act_occurrence.identity
+        ):
+            raise ByteMeasurementError(
+                "byte Measurement Act occurrence already has a result"
+            )
 
 
 def _record_byte_measurement_result_from_exact_inputs(
@@ -2633,24 +2630,10 @@ def _record_byte_measurement_result_from_exact_inputs(
         },
         "result_positions": _result_positions(measured),
     }
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act_occurrence.locality_identity,
-        exact_act="declared exact-byte Measurement",
-        act_occurrence_identity=act_occurrence.material[
-            "act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=BYTE_MEASUREMENT_RESULT_KIND,
-        result_identity=result_identity,
-        result_content=result_material,
-        occurrence_boundary="byte_measurement",
-    )
     return ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
         {
             **result_material,
-            "yield_relation_identity": yield_relation.identity,
             "act_occurrence_event_identity": act_occurrence.identity,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
@@ -2664,7 +2647,7 @@ def record_byte_measurement_result(
     act_occurrence_event_identity: str,
     current_coordinates: dict[str, Any] | None = None,
 ):
-    """Record the Yield and result of one exact recorded byte Measurement Act."""
+    """Record the result of one exact recorded byte Measurement Act."""
 
     supplied = ledger.get(act_occurrence_event_identity)
     if (
@@ -2673,7 +2656,7 @@ def record_byte_measurement_result(
         or ledger.integrity_of(supplied.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "byte Measurement Yield requires one exact Act occurrence"
+            "byte Measurement result requires one exact Act occurrence"
         )
     _require_byte_measurement_act_without_result(ledger, supplied)
 
@@ -2764,7 +2747,6 @@ def _result_positions_of_recorded_byte_measurement(
         raise ByteMeasurementError("a corrupted occurrence cannot return byte results")
     material = event.material
     if set(material) != BYTE_RESULT_COORDINATES | {
-        "yield_relation_identity",
         "act_occurrence_identity",
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -2787,24 +2769,7 @@ def _result_positions_of_recorded_byte_measurement(
         }
     ):
         raise ByteMeasurementError(
-            f"{event_identity} does not preserve its exact Measurement and "
-            "Yield relation"
-        )
-    yield_relation_identity = material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if isinstance(yield_relation_identity, str) else None
-    if (
-        yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or yield_relation.material.get("result_kind")
-        != BYTE_MEASUREMENT_RESULT_KIND
-        or yield_relation.material.get("coordinates_of_carried_result")
-        != [coordinate for coordinate in material if coordinate in BYTE_RESULT_COORDINATES]
-        or yield_relation.material.get("dimensions", {}).get("act_occurrence_identity")
-        != material["act_occurrence_identity"]
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} names no exact byte Measurement Yield relation"
+            f"{event_identity} does not preserve its exact Measurement result"
         )
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     act_occurrence = ledger.get(act_occurrence_event_identity) if isinstance(act_occurrence_event_identity, str) else None
@@ -2834,13 +2799,33 @@ def _result_positions_of_recorded_byte_measurement(
             prior_coordinates=prior_coordinates,
         )
     )
-    _require_exact_result_yield(
-        ledger,
-        event,
-        yield_relation,
-        act_occurrence,
-        result_name="byte Measurement",
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            f"{event_identity} does not follow its exact byte Measurement Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            BYTE_MEASUREMENT_RECORDED_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
     )
+    if (
+        tuple(item.identity for item in ordered)
+        != (act_occurrence.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise ByteMeasurementError(
+            f"{event_identity} is not the single exact byte Measurement result"
+        )
     boundary_value = material.get("completeness_boundary")
     localities_value = material.get("source_localities")
     if (
@@ -2858,6 +2843,12 @@ def _result_positions_of_recorded_byte_measurement(
     if (
         material.get("subject_to_act_binding_reference")
         != _byte_measurement_binding_reference(binding)
+        or material.get("result_identity")
+        != binding.material["measurement_result_identity"]
+        or material.get("addressed_act_identity")
+        != binding.material["exact_act_identity"]
+        or material.get("act_occurrence_identity")
+        != binding.material["act_occurrence_identity"]
         or measured.completeness_boundary.identity != boundary_value["identity"]
         or list(measured.source_localities) != localities_value
     ):

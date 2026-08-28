@@ -308,7 +308,7 @@ def _carry_movement_phase(
     )
 
 
-def test_act_occurrence_is_observable_before_yield_and_result():
+def test_act_occurrence_is_observable_before_result():
     ledger = _ledger(b"a\n")
 
     assignment, act_occurrence = _record_byte_measurement_binding_and_act(
@@ -332,13 +332,11 @@ def test_act_occurrence_is_observable_before_yield_and_result():
     assert [event.kind for event in events] == [
         BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
-        RECORDED_YIELD_RELATION_EVENT,
         BYTE_MEASUREMENT_RECORDED_KIND,
     ]
     assert result.material["act_occurrence_event_identity"] == act_occurrence.identity
-    assert result.material["yield_relation_identity"] == events[2].identity
     assert ledger.occurrences_in_append_order(
-        (assignment.identity, act_occurrence.identity, events[2].identity, result.identity),
+        (assignment.identity, act_occurrence.identity, result.identity),
         locality_identity="measurement",
     ) == events
 
@@ -370,17 +368,16 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
     result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    yield_relation = ledger.get(result.material["yield_relation_identity"])
     identities = {
         assignment.identity,
         assignment.material["exact_act_identity"],
         assignment.material["act_occurrence_identity"],
         assignment.material["measurement_result_identity"],
         act.identity,
-        yield_relation.identity,
         result.identity,
     }
-    assert len(identities) == 7
+    assert len(identities) == 6
+    assert "yield_relation_identity" not in result.material
     assert result.material["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
         "book_clause_identity": assignment.material["book_clause_identity"],
@@ -677,9 +674,9 @@ def test_call_local_result_rechecks_current_append_boundary_after_source_read(mo
     ) == 1
     assert sum(
         event.kind == RECORDED_YIELD_RELATION_EVENT
-        and event.material.get("act_occurrence_event_identity") == act.identity
+        and event.material.get("occurrence_boundary") == "byte_measurement"
         for event in ledger.list()
-    ) == 1
+    ) == 0
 
 
 def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
@@ -702,7 +699,7 @@ def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    with pytest.raises(ByteMeasurementError, match="already has a Yield or result"):
+    with pytest.raises(ByteMeasurementError, match="already has a result"):
         record_byte_measurement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -897,7 +894,7 @@ def test_material_appended_after_act_occurrence_cannot_enter_its_result():
     assert counts == {97: 1}
 
 
-def test_one_act_occurrence_cannot_yield_twice(monkeypatch):
+def test_one_act_occurrence_cannot_record_two_results(monkeypatch):
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"a\n")
@@ -917,7 +914,7 @@ def test_one_act_occurrence_cannot_yield_twice(monkeypatch):
 
     monkeypatch.setattr(byte_measurement, "_measure_byte_counts_through", forbidden)
 
-    with pytest.raises(ByteMeasurementError, match="already has a Yield or result"):
+    with pytest.raises(ByteMeasurementError, match="already has a result"):
         record_byte_measurement_result(
             ledger,
             act_occurrence_event_identity=act_occurrence.identity,
@@ -1042,23 +1039,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     read = result_positions_of_recorded_byte_measurement(ledger, event.identity)
     assert read
     assert read == tuple(event.material["result_positions"])
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    assert yield_relation.kind == RECORDED_YIELD_RELATION_EVENT
-    assert yield_relation.material["dimensions"]["act_occurrence_identity"] == event.material[
-        "act_occurrence_identity"
-    ]
-    assert yield_relation.material["coordinates_of_carried_result"] == [
-        "result_identity",
-        "dimensions",
-        "exact_act",
-            "addressed_act_identity",
-            "act_occurrence_identity",
-            "subject_to_act_binding_reference",
-            "source_localities",
-        "completeness_boundary",
-        "result_positions",
-    ]
-    assert "occurrence_preservation" not in yield_relation.material["coordinates_of_carried_result"]
+    assert "yield_relation_identity" not in event.material
 
     count = next(
         item
@@ -1154,11 +1135,6 @@ def test_a_self_consistent_truncated_source_result_position_is_refused():
     source["dimensions"]["content"]["source_material"] = source["dimensions"][
         "content"
     ]["source_material"][:1]
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
@@ -1178,12 +1154,6 @@ def test_changed_plain_byte_result_position_address_is_refused():
     leaf_result_position["dimensions"]["identity"] = (
         "crossed-plain-byte-result_position-address"
     )
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
@@ -1196,7 +1166,7 @@ def test_recording_occurrence_is_validated_exactly():
         recording_locality_identity="measurement",
     )
     event.material["occurrence_preservation"] = "something else"
-    with pytest.raises(ByteMeasurementError, match="exact Measurement and Yield relation"):
+    with pytest.raises(ByteMeasurementError, match="exact Measurement result"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
@@ -2670,14 +2640,13 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
-def test_byte_result_reader_refuses_changed_yield_result_identity():
+def test_byte_result_reader_refuses_changed_result_identity():
     ledger = _ledger(b"ta\n")
     event = _byte_source(ledger)
     assert result_positions_of_recorded_byte_measurement(ledger, event.identity)
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result_identity"] = "crossed-byte-result"
+    event.material["result_identity"] = "crossed-byte-result"
 
-    with pytest.raises(ByteMeasurementError, match="byte Measurement Yield relation"):
+    with pytest.raises(ByteMeasurementError, match="Measurement boundary"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
@@ -2773,7 +2742,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
         test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors,
-        test_byte_result_reader_refuses_changed_yield_result_identity,
+        test_byte_result_reader_refuses_changed_result_identity,
         test_pair_result_reader_refuses_changed_yield_result_identity,
     ),
     ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
