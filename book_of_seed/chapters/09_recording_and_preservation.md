@@ -1,17 +1,5 @@
 # Recording and Preservation
 
-### 05.Recording.E — Recording Yield
-
-One exact Yield relation is from a recording Act occurrence as first subject
-to one exact record as second subject. The result preserves the material,
-source coordinates and Locality established
-within that recording boundary.
-
-### 05.Recording.C — Recorded Measurement
-
-One preservation occurrence preserves one exact Measurement result and its
-source coordinates.
-
 ### 05.Recording.D — Through-occurrence boundary reference
 
 The exact coordinates of one recording subject-to-Act binding are one exact

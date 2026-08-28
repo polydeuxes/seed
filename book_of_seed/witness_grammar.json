@@ -167,12 +167,6 @@
       "result": "ordered_relation_path_Compare_result",
       "Applicability": "Applicability_result"
     },
-    "05.Recording.C": {
-      "subject": "exact_Measurement_result",
-      "coordinates": [
-        "source_coordinates"
-      ]
-    },
     "05.Recording.D": {
       "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
       "exact_Act": "recording",
@@ -183,16 +177,6 @@
         "addressed_occurrence",
         "through_occurrence_boundary_reference",
         "Act_occurrence",
-        "Locality"
-      ]
-    },
-    "05.Recording.E": {
-      "subject": "exact_record",
-      "exact_Act": "recording",
-      "Yield": "02.Acts.A.Yield",
-      "coordinates": [
-        "material",
-        "source_coordinates",
         "Locality"
       ]
     },

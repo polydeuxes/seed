@@ -262,7 +262,6 @@ def test_only_clauses_naming_an_Act_project_one():
     }
     assert naming_no_Act == {
         "01.Source.I",
-        "05.Recording.C",
         "07.Emission.C",
         "07.Emission.D",
         "01.Current.G",

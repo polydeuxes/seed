@@ -29,7 +29,7 @@ THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RESULT_KIND = (
     "recorded through-occurrence boundary reference result"
 )
 THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT = (
-    "Record one exact through-occurrence boundary reference"
+    "Recording of one exact through-occurrence boundary reference"
 )
 THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_BOOK_CLAUSE = "05.Recording.D"
 EVENT_KIND_BOOK_CLAUSES = {
