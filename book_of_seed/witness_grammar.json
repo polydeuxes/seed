@@ -129,7 +129,6 @@
         "destination_coordinates",
         "Locality"
       ],
-      "Yield": "02.Acts.A.Yield",
       "result": "exact_movement_result"
     },
     "04.Compare": {

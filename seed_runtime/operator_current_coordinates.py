@@ -416,9 +416,6 @@ def _result_position_locality_movement_occurrence_coordinates(
         "movement_act_occurrence_identity": event.material[
             "movement_act_occurrence_identity"
         ],
-        "yield_relation_identity": event.material[
-            "yield_relation_identity"
-        ],
     }
 
 
@@ -1903,8 +1900,6 @@ def _carry_result_position_locality_movement_result_into_current_coordinates(
         if type(current_coordinates) is dict
         else None
     )
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     try:
         current_source, current_source_event = _source_result_position_from_reference(
             ledger, _source_result_position_reference(source)
@@ -1913,20 +1908,10 @@ def _carry_result_position_locality_movement_result_into_current_coordinates(
         expected = {
             **_movement_result_material(binding),
             "act_occurrence_event_identity": act_occurrence.identity,
-            "yield_relation_identity": yield_relation_identity,
         }
-        requirements = read_requirements_of_yield_relation(
-            ledger,
-            recorded_result_event_identity=event.identity,
-            yield_relation_event_identity=yield_relation_identity,
-            act_occurrence_event_identity=act_occurrence.identity,
-            recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
-            yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
-        )
         ledger.occurrences_in_append_order(
             (
                 act_occurrence.identity,
-                yield_relation_identity,
                 event.identity,
             ),
             locality_identity=event.locality_identity,
@@ -1956,15 +1941,6 @@ def _carry_result_position_locality_movement_result_into_current_coordinates(
         != _source_result_position_reference(source)
         or event.material.get("source_result_position_reference")
         != _source_result_position_reference(source)
-        or yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or yield_relation.locality_identity != event.locality_identity
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or yield_relation.material.get("result_kind")
-        != RESULT_POSITION_LOCALITY_MOVEMENT_RESULT_KIND
-        or yield_relation.material.get("occurrence_boundary")
-        != "result_position_locality_movement"
-        or not all(requirements.values())
         or current_coordinates.get("locality_identity") != event.locality_identity
         or current_coordinates.get("through_event_occurrence_identity")
         != act_occurrence.identity

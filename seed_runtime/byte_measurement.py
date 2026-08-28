@@ -1265,15 +1265,13 @@ def record_result_position_locality_movement_result(
     act, binding, _source = _read_result_position_locality_movement_act_occurrence(
         ledger, act_occurrence_event_identity
     )
-    for kind in (
-        RECORDED_YIELD_RELATION_EVENT,
-        RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
+    for prior in ledger.iter_locality_kind(
+        binding.locality_identity, RESULT_POSITION_LOCALITY_MOVEMENT_KIND
     ):
-        for prior in ledger.iter_locality_kind(binding.locality_identity, kind):
-            if prior.material.get("act_occurrence_event_identity") == act.identity:
-                raise ByteMeasurementError(
-                    "result position movement Act already carries a Yield or result"
-                )
+        if prior.material.get("act_occurrence_event_identity") == act.identity:
+            raise ByteMeasurementError(
+                "result position movement Act already has a result"
+            )
     return _append_result_position_locality_movement_result(
         ledger, act=act, binding=binding
     )
@@ -1282,41 +1280,22 @@ def record_result_position_locality_movement_result(
 def _append_result_position_locality_movement_result(
     ledger: EventLedger, *, act: Event, binding: Event
 ) -> Event:
-    result_material = _movement_result_material(binding)
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=binding.locality_identity,
-        exact_act="result-position Locality movement",
-        act_occurrence_identity=binding.material[
-            "movement_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act.identity,
-        result_kind=RESULT_POSITION_LOCALITY_MOVEMENT_RESULT_KIND,
-        result_identity=binding.material["movement_result_identity"],
-        result_content=result_material,
-        occurrence_boundary="result_position_locality_movement",
-        yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
-        coordinates_of_recorded_result={key: (key,) for key in result_material},
-    )
     _require_exact_movement_binding_and_source(ledger, binding)
     if (
         ledger.get(act.identity) != act
         or ledger.integrity_of(act.identity) == CORRUPTED
         or act.material != _movement_act_material(binding)
-        or ledger.get(yield_relation.identity) != yield_relation
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(yield_relation.identity)
+        or ledger.append_boundary_through_occurrence(act.identity)
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "result position movement result requires exact source, Act, and Yield relation"
+            "result position movement result requires its exact source and Act"
         )
     return ledger.append(
         RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
         {
             **_movement_result_material(binding),
             "act_occurrence_event_identity": act.identity,
-            "yield_relation_identity": yield_relation.identity,
         },
         locality_identity=binding.locality_identity,
     )
@@ -1720,37 +1699,41 @@ def _validate_moved_result_position(
         raise ByteMeasurementError(
             "result position locality movement carries no exact binding"
         )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=movement.identity,
-        yield_relation_event_identity=movement.material.get("yield_relation_identity"),
-            act_occurrence_event_identity=movement.material.get(
-                "act_occurrence_event_identity"
-            ),
-        recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
-        yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
-    )
-    yield_relation = ledger.get(
-        movement.material.get("yield_relation_identity")
-    )
-    if (
-        not all(requirements.values())
-        or yield_relation is None
-        or yield_relation.material.get("result_kind")
-        != RESULT_POSITION_LOCALITY_MOVEMENT_RESULT_KIND
-        or yield_relation.material.get("occurrence_boundary")
-        != "result_position_locality_movement"
-    ):
-        raise ByteMeasurementError("result position movement Yield relation is not exact")
     expected = {
         **_movement_result_material(binding),
         "act_occurrence_event_identity": act_occurrence.identity,
-        "yield_relation_identity": movement.material.get(
-            "yield_relation_identity"
-        ),
     }
     if movement.material != expected:
         raise ByteMeasurementError("result position locality movement is not exact")
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, movement.identity),
+            locality_identity=movement.locality_identity,
+        )
+    except ValueError as error:
+        raise ByteMeasurementError(
+            "result position movement result does not follow its Act"
+        ) from error
+    if [occurrence.identity for occurrence in ordered] != [
+        act_occurrence.identity,
+        movement.identity,
+    ]:
+        raise ByteMeasurementError(
+            "result position movement result does not follow its Act"
+        )
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            movement.locality_identity,
+            RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
+    if len(results) != 1 or results[0].identity != movement.identity:
+        raise ByteMeasurementError(
+            "result position movement Act has no single exact result"
+        )
     return _result_position_addressed_by_locality_movement_result(
         movement=movement,
         binding=binding,

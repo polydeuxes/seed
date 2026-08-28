@@ -301,6 +301,27 @@ All three live internal Compare result families inspected by this campaign now
 establish binding, Applicability, Compare Act occurrence, and exact result
 without Yield. Their Applicability events remain separate, independently
 untested physiology.
+
+## Movement control
+
+Result-position Locality Movement passed the planned Movement falsifier. Its
+prior Yield event copied the complete future Movement result between the Act
+and result occurrences. The result already addresses the exact source result
+position, source and destination Localities, source and destination current
+boundaries, subject-to-Act binding, Movement Act, and source-to-destination
+relation.
+
+Removing the separate event preserved exact cross-Locality source resolution,
+Act-before-result order, one result per Act, current-coordinate advancement and
+replay, durable restart between lifecycle stages, same-Locality refusal, and
+mutation, substitution, and source-change refusal. The active Movement clause
+therefore establishes no Yield.
+
+The tested internal source, Compare, Measurement, Applicability, Locality,
+Recording, and Movement roads consistently establish no Yield merely from an
+Act occurrence followed by its exact result. Remaining Yield events require
+their own independent falsifiers; this census does not withdraw Yield as a
+possible relation.
 The source now records:
 
 ```text

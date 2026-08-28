@@ -1050,13 +1050,6 @@ def test_position_result_content_movement_requires_its_exact_source_after_act_oc
     )
 
 
-def test_position_result_content_movement_requires_its_exact_source_after_yield_relation():
-    _assert_position_result_content_movement_requires_its_exact_source(
-        RECORDED_YIELD_RELATION_EVENT,
-        0,
-    )
-
-
 def test_position_result_content_movement_requires_its_exact_source_when_carrying_the_result_into_standing():
     _assert_position_result_content_movement_requires_its_exact_source(
         RESULT_POSITION_LOCALITY_MOVEMENT_KIND,

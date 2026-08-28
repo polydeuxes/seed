@@ -2036,7 +2036,6 @@ def test_locality_movement_binding_addresses_the_exact_source():
         "destination_locality",
         "locality_relation",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }
     assert binding.kind == (
         RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
@@ -2202,7 +2201,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         ledger, act_occurrence_event_identity=act.identity
     )
     assert _validate_moved_result_position(ledger, movement.identity)
-    with pytest.raises(ByteMeasurementError, match="already carries a Yield or result"):
+    with pytest.raises(ByteMeasurementError, match="already has a result"):
         record_result_position_locality_movement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -2324,28 +2323,25 @@ def test_movement_binding_reader_refuses_corrupted_source_carrier():
         )
 
 
-@pytest.mark.parametrize(
-    ("coordinate", "changed"),
-    (
-        ("result_kind", "another result kind"),
-        ("occurrence_boundary", "another occurrence boundary"),
-    ),
-)
-def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
-    coordinate, changed
-):
+def test_movement_reader_refuses_changed_result_coordinates_without_yield():
     ledger = _ledger(b"ta\n")
     _source_result, source = _movement_source(ledger)
     moved = move_recorded_byte_result_position_to_locality(
         ledger, source=source, destination_locality="movement"
     )
     movement = ledger.get(moved["locality_movement_event_identity"])
-    yield_relation = ledger.get(
-        movement.material["yield_relation_identity"]
+    assert "yield_relation_identity" not in movement.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            "movement", RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "result_position_locality_movement"
     )
-    yield_relation.material[coordinate] = changed
+    movement.material["result_identity"] = "changed"
 
-    with pytest.raises(ByteMeasurementError, match="Yield relation is not exact"):
+    with pytest.raises(ByteMeasurementError, match="not exact"):
         _validate_moved_result_position(ledger, movement.identity)
 
 
@@ -2385,7 +2381,6 @@ def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
         ledger,
         (
             act.identity,
-            movement.material["yield_relation_identity"],
             movement.identity,
         ),
         locality_identity="movement",
