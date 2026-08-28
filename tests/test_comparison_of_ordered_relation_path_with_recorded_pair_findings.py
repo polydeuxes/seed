@@ -371,9 +371,9 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
@@ -1091,7 +1091,7 @@ def test_every_current_compare_result_exposes_every_exact_finding_reference_bran
     )
     assert all(
         set(pin.path_position_result_reference)
-        == {"recorded_occurrence_identity", "assertion_position"}
+        == {"recorded_occurrence_identity", "result_position"}
         for pin in pins
     )
     assert tuple(pin.pair_subject for pin in pins) == (
@@ -1115,7 +1115,7 @@ def test_every_current_compare_result_exposes_every_exact_finding_reference_bran
                 pin.path_position_result_reference[
                     "recorded_occurrence_identity"
                 ],
-                pin.path_position_result_reference["assertion_position"],
+                    pin.path_position_result_reference["result_position"],
                 pin.recorded_finding_reference["finding_category"],
                 pin.recorded_finding_reference["finding_position"],
             )

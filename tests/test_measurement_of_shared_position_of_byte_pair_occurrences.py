@@ -262,9 +262,9 @@ def _shared_binding(ledger, locality, first, second):
     return record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
         current_coordinates=_current_coordinates(ledger, locality),
     )
 
@@ -435,10 +435,16 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert content["source_material_result_occurrence_identity"] == source.identity
     assert path["subject"][
         "first_position_result_reference"
-    ] == first.assertion_reference
+    ] == {
+        "recorded_occurrence_identity": first.recorded_occurrence_identity,
+        "result_position": first.assertion_position,
+    }
     assert path["subject"][
         "second_position_result_reference"
-    ] == second.assertion_reference
+    ] == {
+        "recorded_occurrence_identity": second.recorded_occurrence_identity,
+        "result_position": second.assertion_position,
+    }
     assert result.exact_material is None
     assert result.identity in _current_coordinates(ledger, locality)["measurement_occurrences"]
 
@@ -458,8 +464,8 @@ def test_ordered_path_exposes_input_position_coordinates_without_pair_material()
     reading = get_recorded_shared_position_measurement(ledger, result.identity)
 
     assert path == reading["ordered_relation_path"]
-    assert first_coordinates == reading["first_position_assertion"]
-    assert second_coordinates == reading["second_position_assertion"]
+    assert first_coordinates == reading["first_position_result"]
+    assert second_coordinates == reading["second_position_result"]
     assert first_coordinates["exact_pair"] == list(first.exact_pair)
     assert second_coordinates["exact_pair"] == list(second.exact_pair)
     assert "exact_pair" not in path
@@ -544,9 +550,9 @@ def test_two_recurrent_results_share_one_exact_current_coordinate_read(monkeypat
     inputs = shared_position_module._inputs(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
     )
     second_binding = _recurrent_result_coordinates(
         ledger, second
@@ -581,9 +587,9 @@ def test_shared_binding_threads_explicit_prior_without_rereading_coordinates(
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
         current_coordinates=prior_coordinates,
     )
 
@@ -616,9 +622,9 @@ def test_shared_binding_refuses_changed_explicit_prior_coordinates(changed_prior
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
         current_coordinates=exact_prior,
     )
     changed_coordinates = deepcopy(exact_prior)
@@ -656,9 +662,9 @@ def test_shared_binding_explicit_prior_revalidates_later_input_mutation():
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
         current_coordinates=exact_prior,
     )
     changed_result = _recurrent_result_coordinates(ledger, second)["result"]
@@ -709,9 +715,9 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coord
     )
     identities = {
         "first_result_occurrence_identity": first.recorded_occurrence_identity,
-        "first_assertion_address": first.assertion_address,
+        "first_result_position": first.assertion_address,
         "second_result_occurrence_identity": second.recorded_occurrence_identity,
-        "second_assertion_address": second.assertion_address,
+        "second_result_position": second.assertion_address,
     }
     with pytest.raises((SharedPairPositionError, ValueError)):
         shared_position_module._inputs(ledger, **identities)
@@ -748,9 +754,9 @@ def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_a
     inputs = shared_position_module._inputs(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_address=first.assertion_address,
+        first_result_position=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_address=second.assertion_address,
+        second_result_position=second.assertion_address,
     )
 
     assert inputs.first == first
@@ -766,9 +772,9 @@ def test_recurrent_result_batch_requires_an_addressed_position_and_one_locality(
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_address=first_unaddressed_position,
+            first_result_position=first_unaddressed_position,
             second_result_occurrence_identity=second.recorded_occurrence_identity,
-            second_assertion_address=second.assertion_address,
+            second_result_position=second.assertion_address,
         )
 
     _ledger, _other_locality, _other_source, _other_first, other_second = (
@@ -778,11 +784,11 @@ def test_recurrent_result_batch_requires_an_addressed_position_and_one_locality(
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_address=first.assertion_address,
+            first_result_position=first.assertion_address,
             second_result_occurrence_identity=(
                 other_second.recorded_occurrence_identity
             ),
-            second_assertion_address=other_second.assertion_address,
+            second_result_position=other_second.assertion_address,
         )
 
 
@@ -797,9 +803,9 @@ def test_recurrent_result_batch_refuses_through_occurrences_without_one_order():
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_address=first.assertion_address,
+            first_result_position=first.assertion_address,
             second_result_occurrence_identity=second.recorded_occurrence_identity,
-            second_assertion_address=second.assertion_address,
+            second_result_position=second.assertion_address,
         )
 
 
@@ -890,9 +896,9 @@ def test_shared_position_binding_refuses_raw_direct_result_inputs_atomically():
         record_shared_position_subject_to_act_binding(
             ledger,
             first_result_occurrence_identity=direct_result.identity,
-            first_assertion_address=first.assertion_address,
+            first_result_position=first.assertion_address,
             second_result_occurrence_identity=direct_result.identity,
-            second_assertion_address=second.assertion_address,
+            second_result_position=second.assertion_address,
             current_coordinates=_current_coordinates(ledger, locality),
         )
     assert len(ledger.list()) == before
@@ -924,7 +930,7 @@ def test_d2_result_without_exactly_two_references_cannot_assign_shared_position(
     assert len(ledger.list()) == before
 
 
-def test_d2_repeated_material_keeps_two_source_ordered_assertion_addresses():
+def test_d2_repeated_material_keeps_two_source_ordered_result_positions():
     ledger = EventLedger()
     locality = "repeated-d2-pair-position"
     _source, _direct_result, determination_result = _direct_d2(
@@ -940,11 +946,33 @@ def test_d2_repeated_material_keeps_two_source_ordered_assertion_addresses():
         current_coordinates=_current_coordinates(ledger, locality),
     )
 
-    first = binding.material["first_position_assertion"]
-    second = binding.material["second_position_assertion"]
+    first = binding.material["first_position_result"]
+    second = binding.material["second_position_result"]
     assert first["exact_pair"] == second["exact_pair"] == [ord("a"), ord("a")]
-    assert first["assertion_reference"] != second["assertion_reference"]
+    assert first["result_position_reference"] != second["result_position_reference"]
     assert (first["first_position"], second["first_position"]) == (0, 1)
+
+
+def test_shared_position_refuses_assertion_identity_as_result_position():
+    ledger = EventLedger()
+    locality = "legacy-assertion-identity"
+    _source, _direct_result, determination_result = _direct_d2(
+        ledger, locality=locality
+    )
+    binding = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
+        ledger,
+        determination_result_event_identity=determination_result.identity,
+        current_coordinates=_current_coordinates(ledger, locality),
+    )
+    material = deepcopy(binding.material["first_position_result"])
+    reference = material["result_position_reference"]
+    material["result_position_reference"] = {
+        "recorded_occurrence_identity": reference["recorded_occurrence_identity"],
+        "assertion_identity": "legacy-assertion-identity",
+    }
+
+    with pytest.raises(SharedPairPositionError, match="result-position address"):
+        shared_position_module._result_position_from_binding_material(material)
 
 
 def test_d2_shared_binding_requires_exact_current_coordinates_atomically():
@@ -1178,11 +1206,11 @@ def test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions()
             first_result_occurrence_identity=(
                 first.pair_measurement_occurrence_identity
             ),
-            first_assertion_address=first.recurrence_assertion_position,
+            first_result_position=first.recurrence_assertion_position,
             second_result_occurrence_identity=(
                 second.recorded_occurrence_identity
             ),
-            second_assertion_address=second.assertion_address,
+            second_result_position=second.assertion_address,
             current_coordinates=_current_coordinates(ledger, locality),
         )
 
@@ -1461,7 +1489,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_exact_yielded_pair_relations_compose_at_one_shared_position,
         test_direct_position_coordinate_assertions_compose_without_recurrence_support,
         test_d2_result_without_exactly_two_references_cannot_assign_shared_position,
-        test_d2_repeated_material_keeps_two_source_ordered_assertion_addresses,
+        test_d2_repeated_material_keeps_two_source_ordered_result_positions,
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,

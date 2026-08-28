@@ -375,9 +375,9 @@ def test_separate_occurrences_can_carry_equal_measured_content():
     def measured_content(reading):
         return tuple(
             (
-                finding["path_position_result_reference"][
-                    "assertion_position"
-                ],
+                    finding["path_position_result_reference"][
+                        "result_position"
+                    ],
                 finding["recorded_finding_reference"]["subject"]["content"],
                 finding["recorded_finding_reference"]["finding_category"],
                 finding["recorded_finding_reference"]["subject"],

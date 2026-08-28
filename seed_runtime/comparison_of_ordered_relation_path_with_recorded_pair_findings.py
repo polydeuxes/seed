@@ -174,8 +174,8 @@ def _path_input(
         prior_coordinates=prior_coordinates,
     )
     path = material.get("ordered_relation_path")
-    first = material.get("first_position_assertion")
-    second = material.get("second_position_assertion")
+    first = material.get("first_position_result")
+    second = material.get("second_position_result")
     if (
         type(path) is not dict
         or path.get("result_position") != 0
@@ -184,11 +184,11 @@ def _path_input(
         or path.get("subject", {}).get(
             "first_position_result_reference"
         )
-        != first.get("assertion_reference")
+        != first.get("result_position_reference")
         or path.get("subject", {}).get(
             "second_position_result_reference"
         )
-        != second.get("assertion_reference")
+        != second.get("result_position_reference")
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact ordered path result position")
     pairs = (first.get("exact_pair"), second.get("exact_pair"))
