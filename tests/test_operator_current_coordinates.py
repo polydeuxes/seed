@@ -321,6 +321,20 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
     )
 
 
+def test_console_returns_its_exact_current_coordinates():
+    ledger = EventLedger()
+
+    current_coordinates = run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input(b"ab\nac\n"),
+    )
+
+    replayed = read_operator_current_coordinates(ledger, locality_identity="s")
+    assert current_coordinates == replayed
+    assert current_coordinates is not replayed
+
+
 def test_current_coordinates_carry_no_measurement_without_a_recorded_result():
     ledger = _measurement_ledger()
 

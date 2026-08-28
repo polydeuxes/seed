@@ -7,6 +7,7 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.byte_measurement as byte_measurement
+import seed_runtime.measurement_of_compare_distinctions as compare_distinctions
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 )
@@ -199,6 +200,34 @@ def test_material_slice_preserves_current_coordinates_through_pair_measurement(
     monkeypatch.setattr(
         byte_measurement,
         "_read_byte_measurement_subject_to_act_binding",
+        require_current_coordinates,
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+
+    assert reads > 0
+
+
+def test_material_slice_preserves_current_coordinates_through_distinction_result(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    original = compare_distinctions._read_binding
+    reads = 0
+
+    def require_current_coordinates(*args, **kwargs):
+        nonlocal reads
+        reads += 1
+        assert kwargs.get("prior_coordinates") is not None
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        compare_distinctions,
+        "_read_binding",
         require_current_coordinates,
     )
 

@@ -43,7 +43,6 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 
 LOCALITY = "exact-material-Distinctions-reading"
@@ -94,14 +93,10 @@ def _exact_material_distinctions_reading(
 ) -> tuple[EventLedger, dict[str, tuple[tuple[str, Any], ...]]]:
     exact_materials = _exact_materials(materials)
     ledger = EventLedger()
-    run_persistent_operator_console(
+    current_coordinates = run_persistent_operator_console(
         ledger=ledger,
         locality_identity=locality_identity,
         input_stream=BytesIO(b"".join(exact_materials)),
-    )
-    current_coordinates = read_operator_current_coordinates(
-        ledger,
-        locality_identity=locality_identity,
     )
     through = ledger.append_boundary()
 

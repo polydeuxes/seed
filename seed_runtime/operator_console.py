@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO, Mapping, TextIO
+from copy import deepcopy
+from typing import Any, BinaryIO, Mapping, TextIO
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -401,7 +402,7 @@ def run_persistent_operator_console(
     input_stream: BinaryIO | TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     operator_invocation_provider: OperatorInvocationProvider | None = None,
-) -> None:
+) -> dict[str, Any]:
     """Repeat exact-byte material and slash-command occurrences."""
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
@@ -464,7 +465,7 @@ def run_persistent_operator_console(
                 "operator boundary invocation appended an occurrence before its result"
             )
         if boundary_material.eof:
-            return
+            return deepcopy(current_coordinates)
         source_material = record_operator_material_source_result(
             ledger,
             act_occurrence_event_identity=source_act_occurrence.identity,

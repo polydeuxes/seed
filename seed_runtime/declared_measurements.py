@@ -450,6 +450,7 @@ def _record_compare_distinction_measurement(
     result = record_compare_distinction_measurement_result(
         ledger,
         act_occurrence_event_identity=act.identity,
+        current_coordinates=current_coordinates,
     )
     current_coordinates = _advance(
         ledger,

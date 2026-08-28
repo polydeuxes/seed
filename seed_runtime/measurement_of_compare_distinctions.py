@@ -530,12 +530,14 @@ def record_compare_distinction_measurement_result(
     ledger: EventLedger,
     *,
     act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     """Record the complete Measurement result."""
 
     act, binding, distinctions = _read_act(
         ledger,
         act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
     )
     if any(
         event.material.get("act_occurrence_event_identity") == act.identity
