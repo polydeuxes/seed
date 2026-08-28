@@ -7,15 +7,8 @@ subject-to-Act binding are exact and current through one exact occurrence
 boundary.
 
 The exact material result is the subject of one Measurement of supplied
-material. The exact result coordinates are its Yield and exact Locality.
-
-One exact Yield relation is from the Measurement Act occurrence as first
-subject to one result as second subject. The result preserves its exact
-subjects, source occurrences, completeness boundary, findings,
-and Locality.
-
-The recorded Measurement result occurrence is the exact Yield relation
-occurrence.
+material. The result preserves its exact subjects, source occurrences,
+completeness boundary, findings, and Locality.
 
 One exact through-occurrence boundary is one coordinate of each exact
 Measurement subject-to-Act position.
@@ -33,9 +26,8 @@ exact byte-pair position Measurement result is current through the exact
 occurrence boundary.
 The bounded subjects are exhaustive.
 
-One exact Yield relation is from the Act occurrence as first subject to one
-result as second subject. The result
-preserves every exact pair-position reference for that byte occurrence in source occurrence order.
+The result preserves every exact pair-position reference for that byte
+occurrence in source occurrence order.
 
 ## References
 

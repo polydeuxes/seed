@@ -17,11 +17,6 @@
         "exact_material_result",
         "Locality"
       ],
-      "Yield": {
-        "first_subject": "Measurement_Act_occurrence",
-        "second_subject": "declared_Measurement_result",
-        "relation_occurrence": "declared_Measurement_result_occurrence"
-      },
       "result": "declared_Measurement_result"
     },
     "01.Source.D.1": {

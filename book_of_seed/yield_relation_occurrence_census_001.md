@@ -165,10 +165,8 @@ result. Its own separate Yield event remains under independent pressure.
 
 ## Measurement control
 
-Shared-position Measurement passed the independent event subtraction without
-losing its Yield relation. Unlike Applicability, the active Measurement clause
-establishes Yield. The recorded Measurement result occurrence is now the exact
-Yield relation occurrence: it addresses the exact Measurement Act occurrence,
+Shared-position Measurement passed the independent event subtraction. Its
+recorded result directly addresses the exact Measurement Act occurrence,
 records the exact result identity, and occurs after that Act in the same
 Locality.
 
@@ -179,7 +177,7 @@ source-position producer now record:
 ```text
 Measurement subject-to-Act binding
 Measurement Act occurrence
-Measurement result and Yield relation occurrence
+Measurement result occurrence
 ```
 
 The reader derives the exact result from the Act and binding, requires the Act
@@ -188,6 +186,13 @@ substitution, or two results for one Measurement Act. Current coordinates
 address the result occurrence directly and no longer preserve a copied Yield
 event identity.
 
+Those are the same relation-shaped coordinates that remain after Yield is
+absent from shared-position Applicability. No runtime coordinate independently
+distinguishes the Measurement result as a Yield occurrence. The prior active
+Measurement clause supplied that designation itself, so it could not serve as
+independent testimony. Yield is therefore not established on this tested
+Measurement road.
+
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
@@ -195,8 +200,7 @@ non-Locality Applicability road, and one declared Measurement road. Each removed
 event occurred before its result subject and added only a copied result
 dictionary plus another identity.
 
-This does not withdraw Yield as a relation or from every Act road. Applicability
-establishes that an Act result does not imply Yield. Measurement establishes
-that one result occurrence may itself be the exact Yield relation occurrence
-when the Book establishes that relation and the result records its exact
-endpoints. Other Act roads remain under pressure independently.
+This does not withdraw Yield as a relation or from every Act road.
+Applicability and shared-position Measurement establish that an Act result
+does not imply Yield. Other Act roads with separately recorded Yield events
+remain under pressure independently.

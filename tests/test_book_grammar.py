@@ -137,17 +137,13 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
     assert "The bounded subjects are exhaustive." in chapter
 
 
-def test_measurement_result_occurrence_establishes_its_yield_relation():
+def test_declared_measurement_does_not_infer_yield_from_its_result():
     measurement = _grammar()["book_coordinates"]["01.Source.D"]
     assert measurement["coordinates"] == [
         "exact_material_result",
         "Locality",
     ]
-    assert measurement["Yield"] == {
-        "first_subject": "Measurement_Act_occurrence",
-        "second_subject": "declared_Measurement_result",
-        "relation_occurrence": "declared_Measurement_result_occurrence",
-    }
+    assert "Yield" not in measurement
     acts = (
         CHAPTERS / "03_acts_and_occurrences.md"
     ).read_text(encoding="utf-8")
