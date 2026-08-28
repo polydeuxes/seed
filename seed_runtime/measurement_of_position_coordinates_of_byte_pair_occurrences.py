@@ -1720,20 +1720,20 @@ def _recorded_position_result_contents_for_locality_movement(
     )
 
 
-def move_recorded_position_assertion_to_locality(
+def move_recorded_position_result_content_to_locality(
     ledger: EventLedger,
     *,
-    source_assertion_reference: dict[str, str],
+    source_result_position_reference: dict[str, str],
     destination_locality: str,
 ) -> dict[str, Any]:
-    """Carry one exact recorded position Assertion through 03.Movement.A."""
+    """Carry one exact recorded position result position through 03.Movement.A."""
 
     from seed_runtime.byte_measurement import (
-        _move_assertion_reference_to_locality,
+        _move_result_position_reference_to_locality,
     )
 
-    return _move_assertion_reference_to_locality(
+    return _move_result_position_reference_to_locality(
         ledger,
-        source_assertion_reference=source_assertion_reference,
+        source_result_position_reference=source_result_position_reference,
         destination_locality=destination_locality,
     )

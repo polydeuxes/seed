@@ -1889,11 +1889,11 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
     return deepcopy(event.material)
 
 
-def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+def _recorded_path_comparison_finding_result_content_for_locality_movement(
     ledger: EventLedger,
     *,
     result_event_identity: str,
-    assertion_position: int,
+    result_position: int,
 ) -> dict[str, Any]:
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         ledger, result_event_identity
@@ -1901,7 +1901,7 @@ def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movemen
     finding = reading.get("finding")
     if (
         type(finding) is not dict
-        or assertion_position != 0
+        or result_position != 0
     ):
         raise ValueError(
             "path-comparison finding Locality movement requires exact source coordinates"
@@ -1909,7 +1909,7 @@ def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movemen
     return deepcopy(finding)
 
 
-def move_recorded_path_comparison_finding_assertion_to_locality(
+def move_recorded_path_comparison_finding_result_content_to_locality(
     ledger: EventLedger,
     *,
     comparison_result_occurrence_identity: str,
@@ -1923,17 +1923,17 @@ def move_recorded_path_comparison_finding_assertion_to_locality(
     finding = reading.get("finding")
     if type(finding) is not dict:
         raise ValueError(
-            "path-comparison finding Assertion movement requires one exact finding"
+            "path-comparison finding result position movement requires one exact finding"
         )
     from seed_runtime.byte_measurement import (
-        _move_assertion_reference_to_locality,
+        _move_result_position_reference_to_locality,
     )
 
-    return _move_assertion_reference_to_locality(
+    return _move_result_position_reference_to_locality(
         ledger,
-        source_assertion_reference={
+        source_result_position_reference={
             "recorded_occurrence_identity": comparison_result_occurrence_identity,
-            "assertion_position": 0,
+            "result_position": 0,
         },
         destination_locality=destination_locality,
     )

@@ -14,7 +14,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
@@ -228,7 +228,7 @@ def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path)
     assert get_byte_position_pair_measurement_subject_to_act_binding(
         reopened, assignment.identity
     ).identity == assignment.identity
-    assert assertions_of_recorded_byte_position_pair_measurement(
+    assert result_positions_of_recorded_byte_position_pair_measurement(
         reopened, result.identity
     )
     reopened.close()
@@ -297,7 +297,7 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
         }
         for occurrence in standing["measurement_occurrences"].values()
     )
-    assert "assertions" not in str(standing["measurement_occurrences"])
+    assert "result_positions" not in str(standing["measurement_occurrences"])
     assert "occurrences" not in {
         key
         for occurrence in standing["measurement_occurrences"].values()

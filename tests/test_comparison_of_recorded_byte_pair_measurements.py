@@ -16,7 +16,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -207,7 +207,7 @@ def test_changed_pair_between_coordinate_read_and_recording_cannot_enter_compare
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     coordinates_before = deepcopy(current_coordinates)
     event_count_before = len(ledger.list())
-    earlier.material["assertions"][0]["dimensions"]["content"]["count"] += 1
+    earlier.material["result_positions"][0]["dimensions"]["content"]["count"] += 1
 
     with pytest.raises(
         (RecordedPairMeasurementComparisonError, ValueError),
@@ -572,17 +572,17 @@ def test_interleaved_comparisons_remain_distinct_in_current_coordinates():
     )
 
 
-def test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers(
+def test_compare_reads_exact_findings_without_rebuilding_full_result_position_readers(
     monkeypatch,
 ):
     ledger, *_rest, result = _comparison()
 
     def full_carrier_is_not_a_compare_input(*args, **kwargs):
-        raise AssertionError("Compare rebuilt one full Assertion carrier")
+        raise AssertionError("Compare rebuilt one full result position carrier")
 
     monkeypatch.setattr(
         byte_measurement_module,
-        "RecordedBytePairAssertion",
+        "RecordedBytePairResultPosition",
         full_carrier_is_not_a_compare_input,
     )
 
@@ -704,23 +704,23 @@ def test_first_exact_material_records_pair_counts(
         if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
     )
     assert len(pair_measurements) == 1
-    assertions = assertions_of_recorded_byte_position_pair_measurement(
+    result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurements[0].identity
     )
-    pair_assertions = tuple(
-        assertion
-        for assertion in assertions or ()
-        if assertion.content == tuple(exact_pair)
+    pair_result_positions = tuple(
+        result_position
+        for result_position in result_positions or ()
+        if result_position.content == tuple(exact_pair)
     )
-    count_assertion = next(
-        assertion for assertion in pair_assertions if assertion.result == "count"
+    count_result_position = next(
+        result_position for result_position in pair_result_positions if result_position.result == "count"
     )
     assert (
-        count_assertion.material["dimensions"]["content"]["count"]
+        count_result_position.material["dimensions"]["content"]["count"]
         == exact_pair_count
     )
     assert any(
-        assertion.result == "recurrence" for assertion in pair_assertions
+        result_position.result == "recurrence" for result_position in pair_result_positions
     ) is has_recurrence
 
 

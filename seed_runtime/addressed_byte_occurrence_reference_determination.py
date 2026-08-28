@@ -1,8 +1,8 @@
-"""Determine pair-position Assertions carrying one addressed byte coordinate.
+"""Determine pair-position result positions carrying one addressed byte coordinate.
 
 This D.2 lifecycle consumes one exact recorded direct pair-position Measurement
 and one exact source-byte position-coordinate reference.  It preserves every
-Assertion reference carrying that exact coordinate and no other Assertion; it
+result position reference carrying that exact coordinate and no other result position; it
 establishes no recurrence, shared position, represented relation, or other
 relation.
 """

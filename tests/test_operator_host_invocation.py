@@ -148,17 +148,17 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
     assert one_acquisition.exact_material == split_acquisition.exact_material == exact
     assert len(one_acquisition.material["read_occurrences"]) == 1
     assert len(split_acquisition.material["read_occurrences"]) == 3
-    one_assertions = dict(one_positions.material["assertions"])
-    split_assertions = dict(split_positions.material["assertions"])
+    one_result_positions = dict(one_positions.material["result_positions"])
+    split_result_positions = dict(split_positions.material["result_positions"])
     for coordinate in (
         "source_material_result_occurrence_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
     ):
-        one_assertions.pop(coordinate)
-        split_assertions.pop(coordinate)
-    assert one_assertions == split_assertions
-    assert one_assertions["occurrences"] == len(exact) - 1
+        one_result_positions.pop(coordinate)
+        split_result_positions.pop(coordinate)
+    assert one_result_positions == split_result_positions
+    assert one_result_positions["occurrences"] == len(exact) - 1
 
 
 def test_provider_cannot_append_outside_one_supplied_occurrence():

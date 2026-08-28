@@ -356,17 +356,17 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         source_locality_identity="a",
         through=boundary,
     )
-    position_assertions = position_measurement._position_assertions
-    assertion_calls = []
+    position_results = position_measurement._position_results
+    result_position_calls = []
 
-    def counted_position_assertions(*args, **kwargs):
-        assertion_calls.append(None)
-        return position_assertions(*args, **kwargs)
+    def counted_position_results(*args, **kwargs):
+        result_position_calls.append(None)
+        return position_results(*args, **kwargs)
 
     monkeypatch.setattr(
         position_measurement,
-        "_position_assertions",
-        counted_position_assertions,
+        "_position_results",
+        counted_position_results,
     )
 
     binding, act_occurrence = _record_act(ledger, finding)
@@ -380,15 +380,15 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         recorded.identity,
     ) == finding
 
-    assert len(assertion_calls) == 2
+    assert len(result_position_calls) == 2
     assert act_occurrence.material["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"
     ] == binding.identity
-    assert yielded.material["result"]["assertions"] == recorded.material[
-        "assertions"
+    assert yielded.material["result"]["result_positions"] == recorded.material[
+        "result_positions"
     ]
-    assert yielded.material["result"]["assertions"] is not recorded.material[
-        "assertions"
+    assert yielded.material["result"]["result_positions"] is not recorded.material[
+        "result_positions"
     ]
 
 
@@ -590,13 +590,13 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
 
 def test_changed_position_is_refused_by_the_unchanged_yield_relation():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    recorded.material["assertions"][0]["dimensions"]["content"]["position"] = 1
+    recorded.material["result_positions"][0]["dimensions"]["content"]["position"] = 1
 
     with pytest.raises(ValueError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-def test_result_carries_one_ordered_assertion_per_exact_position():
+def test_result_carries_one_ordered_result_position_per_exact_position():
     ledger, occurrences, boundary, _finding, recorded = recorded_road()
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
@@ -608,16 +608,16 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert recorded.material["completeness_boundary"] == {
         "identity": boundary.identity
     }
-    assertions = recorded.material["assertions"]
-    assert len(assertions) == len(occurrences)
+    result_positions = recorded.material["result_positions"]
+    assert len(result_positions) == len(occurrences)
     assert [
         (
-            item["assertion_subject"]["occurrence_identity"],
+            item["subject"]["occurrence_identity"],
             item["dimensions"]["content"]["position"],
         )
-        for item in assertions
+        for item in result_positions
     ] == [(event.identity, position) for position, event in enumerate(occurrences)]
-    assert [item["dimensions"]["identity"] for item in assertions] == [
+    assert [item["dimensions"]["identity"] for item in result_positions] == [
         event.identity for event in occurrences
     ]
     assert _current_coordinates(ledger)["measurement_occurrences"][recorded.identity] == {
@@ -636,32 +636,32 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         == {
             "dimensions",
             "result",
-            "assertion_subject",
+            "subject",
         }
         and item["result"] == "position"
-        for item in assertions
+        for item in result_positions
     )
 
 
 @pytest.mark.parametrize(
     "mutate",
     (
-        lambda assertions: assertions.pop(1),
-        lambda assertions: assertions.reverse(),
-        lambda assertions: assertions.__setitem__(1, deepcopy(assertions[0])),
-        lambda assertions: assertions[1]["assertion_subject"].__setitem__(
+        lambda result_positions: result_positions.pop(1),
+        lambda result_positions: result_positions.reverse(),
+        lambda result_positions: result_positions.__setitem__(1, deepcopy(result_positions[0])),
+        lambda result_positions: result_positions[1]["subject"].__setitem__(
             "occurrence_identity", "substituted-occurrence"
         ),
-        lambda assertions: assertions[1]["dimensions"]["content"].__setitem__(
+        lambda result_positions: result_positions[1]["dimensions"]["content"].__setitem__(
             "position", 0
         ),
     ),
 )
-def test_missing_reordered_duplicated_or_substituted_assertions_are_refused(mutate):
+def test_missing_reordered_duplicated_or_substituted_result_positions_are_refused(mutate):
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    mutate(recorded.material["assertions"])
+    mutate(recorded.material["result_positions"])
 
-    with pytest.raises(ValueError, match="malformed Assertions"):
+    with pytest.raises(ValueError, match="malformed result positions"):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -841,7 +841,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_subclass_finding_cannot_replace_the_exact_measurement_type,
         test_recording_and_reading_do_not_reconstruct_complete_result_material,
         test_changed_position_is_refused_by_the_unchanged_yield_relation,
-        test_missing_reordered_duplicated_or_substituted_assertions_are_refused,
+        test_missing_reordered_duplicated_or_substituted_result_positions_are_refused,
         test_wrong_result_boundary_coordinates_are_refused,
         test_wrong_boundary_is_refused_without_reconstructing_positions,
         test_durable_position_identities_are_not_reissued_after_reopen,

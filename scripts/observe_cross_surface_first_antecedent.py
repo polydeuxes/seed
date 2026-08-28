@@ -21,7 +21,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.byte_measurement import (
-    assertions_of_recorded_byte_measurement,
+    result_positions_of_recorded_byte_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_result,
@@ -78,12 +78,12 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     coordinates_after = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    assertions = assertions_of_recorded_byte_measurement(ledger, result.identity)
-    if assertions is None:
+    result_positions = result_positions_of_recorded_byte_measurement(ledger, result.identity)
+    if result_positions is None:
         raise ValueError("exact-byte Measurement result is absent")
     count_findings = {
         finding.content: finding.material["dimensions"]["content"]["count"]
-        for finding in assertions
+        for finding in result_positions
         if finding.result == "count"
     }
     if None in count_findings:

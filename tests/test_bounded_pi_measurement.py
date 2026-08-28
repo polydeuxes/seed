@@ -3,7 +3,7 @@
 from copy import deepcopy
 
 from seed_runtime.byte_measurement import (
-    assertions_of_recorded_byte_measurement,
+    result_positions_of_recorded_byte_measurement,
     record_byte_measurement_subject_to_act_binding,
     record_byte_position_pair_count_layer,
     record_byte_measurement_act_occurrence,
@@ -69,11 +69,11 @@ def _measure(ledger: EventLedger, source: str, result: str):
 
 def _pair_counts(event):
     return {
-        bytes(assertion["assertion_subject"]["content"]): assertion["dimensions"][
+        bytes(result_position["subject"]["content"]): result_position["dimensions"][
             "content"
         ]["count"]
-        for assertion in event.material["assertions"]
-        if assertion["result"] == "count"
+        for result_position in event.material["result_positions"]
+        if result_position["result"] == "count"
     }
 
 
@@ -82,12 +82,12 @@ def test_one_bounded_decimal_material_does_not_gain_its_human_attribution():
     _supply(ledger, "short-source", SHORT)
     byte_event, pair_event = _measure(ledger, "short-source", "short")
 
-    byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
+    byte_result_positions = result_positions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
 
     assert any(
-        assertion["assertion_subject"].get("content") == 46
-        for assertion in byte_assertions
+        result_position["subject"].get("content") == 46
+        for result_position in byte_result_positions
     )
     assert pair_counts[b"3."] == 1
     assert pair_counts[b".1"] == 1
@@ -107,8 +107,8 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     _supply(ledger, "long-source", LONG)
     long_bytes, long_pairs = _measure(ledger, "long-source", "long")
 
-    short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
-    long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
+    short_source = result_positions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
+    long_source = result_positions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
     assert (
         short_bytes.identity,
         short_source["dimensions"]["position"],

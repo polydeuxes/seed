@@ -444,7 +444,7 @@ def test_book_measurements_retain_every_exact_file_occurrence(
     acquisition_results, _, byte_measurement, pair_measurement, *_ = acquired_book_relations
     source_references = next(
         assertion["dimensions"]["content"]["source_material"]
-        for assertion in byte_measurement.material["assertions"]
+        for assertion in byte_measurement.material["result_positions"]
         if assertion["result"] == "exact_source_material_set"
     )
 
@@ -454,9 +454,9 @@ def test_book_measurements_retain_every_exact_file_occurrence(
     assert byte_measurement.material["source_localities"] == [
         "book-material-acquisition"
     ]
-    assert pair_measurement.material["source_assertion_reference"] == {
+    assert pair_measurement.material["source_result_position_reference"] == {
         "recorded_occurrence_identity": byte_measurement.identity,
-        "assertion_identity": byte_measurement.material["assertions"][0][
+        "assertion_identity": byte_measurement.material["result_positions"][0][
             "dimensions"
         ]["identity"],
     }

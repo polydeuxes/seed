@@ -10,9 +10,9 @@ from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
 )
 from seed_runtime.byte_measurement import (
-    ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
+    RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     ByteMeasurementError,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -29,7 +29,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     get_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_byte_pair_occurrence_position_measurement,
     measure_position_coordinates_of_byte_pair_occurrences,
-    move_recorded_position_assertion_to_locality,
+    move_recorded_position_result_content_to_locality,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
@@ -1003,7 +1003,7 @@ def test_refused_same_call_result_does_not_change_prior_current_coordinates():
     assert prior == unchanged
 
 
-def _assert_position_assertion_movement_requires_its_exact_source(
+def _assert_position_result_content_movement_requires_its_exact_source(
     trigger_kind, result_occurrences
 ):
     ledger = MovementSourceChangeLedger()
@@ -1017,13 +1017,13 @@ def _assert_position_assertion_movement_requires_its_exact_source(
     ledger.trigger_kind = trigger_kind
 
     with pytest.raises((ByteMeasurementError, ValueError)):
-        move_recorded_position_assertion_to_locality(
+        move_recorded_position_result_content_to_locality(
             ledger,
-            source_assertion_reference={
+            source_result_position_reference={
                 "recorded_occurrence_identity": (
                     reference.recorded_occurrence_identity
                 ),
-                "assertion_position": reference.result_position,
+                "result_position": reference.result_position,
             },
             destination_locality="calculator-relation-construction",
         )
@@ -1033,36 +1033,36 @@ def _assert_position_assertion_movement_requires_its_exact_source(
         tuple(
             ledger.iter_locality_kind(
                 "calculator-relation-construction",
-                ASSERTION_LOCALITY_MOVEMENT_KIND,
+                RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
             )
         )
     ) == result_occurrences
 
 
-def test_position_assertion_movement_requires_its_exact_source_after_subject_to_act_binding():
-    _assert_position_assertion_movement_requires_its_exact_source(
-        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+def test_position_result_content_movement_requires_its_exact_source_after_subject_to_act_binding():
+    _assert_position_result_content_movement_requires_its_exact_source(
+        RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
         0,
     )
 
 
-def test_position_assertion_movement_requires_its_exact_source_after_act_occurrence():
-    _assert_position_assertion_movement_requires_its_exact_source(
-        ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
+def test_position_result_content_movement_requires_its_exact_source_after_act_occurrence():
+    _assert_position_result_content_movement_requires_its_exact_source(
+        RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
         0,
     )
 
 
-def test_position_assertion_movement_requires_its_exact_source_after_yield_relation():
-    _assert_position_assertion_movement_requires_its_exact_source(
+def test_position_result_content_movement_requires_its_exact_source_after_yield_relation():
+    _assert_position_result_content_movement_requires_its_exact_source(
         RECORDED_YIELD_RELATION_EVENT,
         0,
     )
 
 
-def test_position_assertion_movement_requires_its_exact_source_when_carrying_the_result_into_standing():
-    _assert_position_assertion_movement_requires_its_exact_source(
-        ASSERTION_LOCALITY_MOVEMENT_KIND,
+def test_position_result_content_movement_requires_its_exact_source_when_carrying_the_result_into_standing():
+    _assert_position_result_content_movement_requires_its_exact_source(
+        RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
         1,
     )
 

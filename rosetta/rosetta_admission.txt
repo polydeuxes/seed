@@ -378,6 +378,7 @@ pointer
 pointers
 points
 position
+positions
 possible
 positive
 posture

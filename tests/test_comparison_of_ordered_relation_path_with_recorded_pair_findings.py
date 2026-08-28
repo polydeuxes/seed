@@ -14,7 +14,7 @@ from seed_runtime.byte_measurement import (
     _record_byte_measurement_act_occurrence_from_current_coordinates,
     _record_byte_measurement_result_from_current_coordinates,
     _record_byte_measurement_subject_to_act_binding_from_current_coordinates,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     _record_byte_position_pair_count_layer_from_current_coordinates,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
@@ -24,7 +24,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     OrderedPathPairFindingCompareSubject,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
-    move_recorded_path_comparison_finding_assertion_to_locality,
+    move_recorded_path_comparison_finding_result_content_to_locality,
     recorded_distinction_pins_from_current_coordinates,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
@@ -52,7 +52,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     _record_recurrent_pair_position_measurement_act_from_current_coordinates,
     _record_recurrent_pair_position_measurement_binding_from_current_coordinates,
-    measure_positions_for_recurrent_byte_pair_assertions,
+    measure_positions_for_recurrent_byte_pair_result_positions,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
@@ -312,18 +312,18 @@ def _record_pair_comparison(ledger, earlier, later, current_coordinates):
 
 
 def _record_path(ledger, pair_measurement, source, current_coordinates):
-    assertions = assertions_of_recorded_byte_position_pair_measurement(
+    result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger,
         pair_measurement.identity,
         prior_coordinates=current_coordinates,
     )
     recurrence = {
-        assertion.content: assertion.assertion_position
-        for assertion in assertions or ()
-        if assertion.result == "recurrence"
-        and assertion.content in {(97, 98), (98, 99)}
+        result_position.content: result_position.result_position
+        for result_position in result_positions or ()
+        if result_position.result == "recurrence"
+        and result_position.content in {(97, 98), (98, 99)}
     }
-    findings = measure_positions_for_recurrent_byte_pair_assertions(
+    findings = measure_positions_for_recurrent_byte_pair_result_positions(
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
         recurrence_result_positions=(recurrence[(97, 98)], recurrence[(98, 99)]),
@@ -640,7 +640,7 @@ def test_result_local_position_addresses_finding_movement():
         ledger, comparison, path
     )
 
-    moved = move_recorded_path_comparison_finding_assertion_to_locality(
+    moved = move_recorded_path_comparison_finding_result_content_to_locality(
         ledger,
         comparison_result_occurrence_identity=result.identity,
         destination_locality="finding-destination",
@@ -648,16 +648,16 @@ def test_result_local_position_addresses_finding_movement():
 
     assert {
         "recorded_occurrence_identity": moved["recorded_occurrence_identity"],
-        "assertion_position": moved["assertion_position"],
+        "result_position": moved["result_position"],
     } == {
         "recorded_occurrence_identity": result.identity,
-        "assertion_position": 0,
+        "result_position": 0,
     }
     with pytest.raises(ValueError, match="exact source coordinates"):
-        comparison_module._recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+        comparison_module._recorded_path_comparison_finding_result_content_for_locality_movement(
             ledger,
             result_event_identity=result.identity,
-            assertion_position=1,
+            result_position=1,
         )
 
 

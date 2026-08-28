@@ -11,8 +11,8 @@ import sys
 import pytest
 
 from seed_runtime.byte_measurement import (
-    assertions_of_recorded_byte_position_pair_measurement,
-    assertions_of_recorded_byte_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_measurement,
     record_byte_measurement_subject_to_act_binding,
     record_byte_position_pair_count_layer,
     record_byte_measurement_act_occurrence,
@@ -166,10 +166,10 @@ def measured_book_pairs(book_material_results):
         source_measurement_event_identity=byte_measurement.identity,
         recording_locality_identity="book-material-pairs",
     )
-    assertions = assertions_of_recorded_byte_position_pair_measurement(
+    assertions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurement.identity
     )
-    byte_assertions = assertions_of_recorded_byte_measurement(
+    byte_assertions = result_positions_of_recorded_byte_measurement(
         ledger, byte_measurement.identity
     )
     pairs = tuple(
@@ -1922,7 +1922,7 @@ def test_added_position_derives_source_order_for_the_implementation_function():
     assert supplied == [b"axb"]
 
 
-def test_equal_source_material_keeps_distinct_source_assertion_references():
+def test_equal_source_material_keeps_distinct_source_result_position_references():
     first = ExactMaterialReference(
         "source-a", "assertion-a", "fixture-locality", b"aa"
     )
@@ -3958,7 +3958,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_three_byte_results_keep_their_measured_material_references,
         test_added_position_refuses_a_different_source_order,
         test_equal_result_material_keeps_each_exact_added_position_occurrence,
-        test_equal_source_material_keeps_distinct_source_assertion_references,
+        test_equal_source_material_keeps_distinct_source_result_position_references,
         test_material_byte_count_boundary_preserves_the_exact_available_prefix,
         test_exact_material_at_the_byte_count_boundary_can_return,
     ),

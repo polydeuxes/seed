@@ -15,41 +15,41 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
     ByteMeasurementError,
     _measure_byte_counts_through,
-    _record_assertion_locality_movement_act_from_current_coordinates,
-    _record_assertion_locality_movement_result_from_current_coordinates,
+    _record_result_position_locality_movement_act_from_current_coordinates,
+    _record_result_position_locality_movement_result_from_current_coordinates,
     _record_byte_measurement_result_from_current_coordinates,
     _record_movement_binding_from_current_coordinates,
-    _validate_moved_byte_assertion,
+    _validate_moved_result_position,
     get_byte_position_pair_measurement_subject_to_act_binding,
     get_recorded_pair_input_applicability,
     get_byte_measurement_subject_to_act_binding,
-    get_assertion_locality_movement_subject_to_act_binding,
-    assertions_of_recorded_byte_measurement,
-    assertions_of_recorded_byte_position_pair_measurement,
+    get_result_position_locality_movement_subject_to_act_binding,
+    result_positions_of_recorded_byte_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     input_applicability_of_recorded_byte_position_pair_measurement,
     measure_byte_counts,
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
-    record_assertion_locality_movement_subject_to_act_binding,
-    record_assertion_locality_movement_act_occurrence,
-    record_assertion_locality_movement_result,
+    record_result_position_locality_movement_subject_to_act_binding,
+    record_result_position_locality_movement_act_occurrence,
+    record_result_position_locality_movement_result,
     _byte_result_position,
-    move_recorded_byte_assertion_to_locality,
-    move_recorded_byte_assertions_to_locality,
+    move_recorded_byte_result_position_to_locality,
+    move_recorded_byte_result_positions_to_locality,
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import (
-    _carry_assertion_locality_movement_act_into_current_coordinates,
-    _carry_assertion_locality_movement_binding_into_current_coordinates,
-    _carry_assertion_locality_movement_result_into_current_coordinates,
+    _carry_result_position_locality_movement_act_into_current_coordinates,
+    _carry_result_position_locality_movement_binding_into_current_coordinates,
+    _carry_result_position_locality_movement_result_into_current_coordinates,
     _carry_byte_measurement_binding_into_current_coordinates,
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
@@ -184,7 +184,7 @@ def _byte_source(ledger):
 
 def _recorded_byte_source(ledger, result, *, result_name="exact_source_material_set"):
     recorded = next(
-        item for item in result.material["assertions"] if item["result"] == result_name
+        item for item in result.material["result_positions"] if item["result"] == result_name
     )
     return _byte_result_position(
         ledger,
@@ -229,7 +229,7 @@ def _movement_carry_phase(ledger, phase):
     if phase == "binding":
         return state
     destination_coordinates = (
-        _carry_assertion_locality_movement_binding_into_current_coordinates(
+        _carry_result_position_locality_movement_binding_into_current_coordinates(
             ledger,
             destination_coordinates,
             binding,
@@ -238,7 +238,7 @@ def _movement_carry_phase(ledger, phase):
             source_current_coordinates=source_coordinates,
         )
     )
-    act = _record_assertion_locality_movement_act_from_current_coordinates(
+    act = _record_result_position_locality_movement_act_from_current_coordinates(
         ledger,
         binding=binding,
         destination_coordinates=destination_coordinates,
@@ -250,13 +250,13 @@ def _movement_carry_phase(ledger, phase):
     )
     if phase == "act":
         return state
-    destination_coordinates = _carry_assertion_locality_movement_act_into_current_coordinates(
+    destination_coordinates = _carry_result_position_locality_movement_act_into_current_coordinates(
         ledger,
         destination_coordinates,
         act,
         binding=binding,
     )
-    movement = _record_assertion_locality_movement_result_from_current_coordinates(
+    movement = _record_result_position_locality_movement_result_from_current_coordinates(
         ledger,
         act=act,
         binding=binding,
@@ -283,7 +283,7 @@ def _carry_movement_phase(
         else binding
     )
     if state["phase"] == "binding":
-        return _carry_assertion_locality_movement_binding_into_current_coordinates(
+        return _carry_result_position_locality_movement_binding_into_current_coordinates(
             ledger,
             state["destination_coordinates"],
             state["binding"],
@@ -292,13 +292,13 @@ def _carry_movement_phase(
             source_current_coordinates=state["source_coordinates"],
         )
     if state["phase"] == "act":
-        return _carry_assertion_locality_movement_act_into_current_coordinates(
+        return _carry_result_position_locality_movement_act_into_current_coordinates(
             ledger,
             state["destination_coordinates"],
             state["act"],
             binding=binding,
         )
-    return _carry_assertion_locality_movement_result_into_current_coordinates(
+    return _carry_result_position_locality_movement_result_into_current_coordinates(
         ledger,
         state["destination_coordinates"],
         state["movement"],
@@ -543,7 +543,7 @@ def test_binding_act_and_result_replay_across_distinct_sqlite_restarts(tmp_path)
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    assert assertions_of_recorded_byte_measurement(ledger, result.identity)
+    assert result_positions_of_recorded_byte_measurement(ledger, result.identity)
     ledger.close()
 
 
@@ -827,13 +827,13 @@ def test_each_replay_validates_each_exact_material_acquisition_and_reads_indepen
     assert all(count > 0 for count in after_result)
     assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == materials
 
-    assert assertions_of_recorded_byte_measurement(ledger, result.identity)
+    assert result_positions_of_recorded_byte_measurement(ledger, result.identity)
     after_read = [ledger.integrity_calls[acquisition_result.identity] for acquisition_result in acquisition_results]
     assert all(after > before for after, before in zip(after_read, after_result))
 
     ledger.corrupted.add(acquisition_results[0].identity)
     with pytest.raises(ByteMeasurementError, match="without intact physiology"):
-        assertions_of_recorded_byte_measurement(ledger, result.identity)
+        result_positions_of_recorded_byte_measurement(ledger, result.identity)
 
 
 def test_yield_resolves_the_exact_act_occurrence_after_reopen(tmp_path):
@@ -866,7 +866,7 @@ def test_yield_resolves_the_exact_act_occurrence_after_reopen(tmp_path):
         assert result.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ] == assignment_identity
-        assert assertions_of_recorded_byte_measurement(ledger, result.identity)
+        assert result_positions_of_recorded_byte_measurement(ledger, result.identity)
     finally:
         ledger.close()
 
@@ -890,8 +890,8 @@ def test_material_appended_after_act_occurrence_cannot_enter_its_result():
         act_occurrence_event_identity=act_occurrence.identity,
     )
     counts = {
-        item["assertion_subject"]["content"]: item["dimensions"]["content"]["count"]
-        for item in assertions_of_recorded_byte_measurement(ledger, result.identity)
+        item["subject"]["content"]: item["dimensions"]["content"]["count"]
+        for item in result_positions_of_recorded_byte_measurement(ledger, result.identity)
         if item["result"] == "count"
     }
     assert counts == {97: 1}
@@ -985,10 +985,10 @@ def test_count_and_recurrence_are_distinct_results():
         recording_locality_identity="measurement",
     )
     by_byte = {}
-    for assertion in event.material["assertions"]:
-        content = assertion["assertion_subject"].get("content")
+    for result_position in event.material["result_positions"]:
+        content = result_position["subject"].get("content")
         if content is not None:
-            by_byte.setdefault(content, []).append(assertion)
+            by_byte.setdefault(content, []).append(result_position)
 
     assert [item["result"] for item in by_byte[97]] == ["count"]
     assert by_byte[97][0]["dimensions"]["content"]["count"] == 1
@@ -1004,25 +1004,25 @@ def test_recurrence_exists_only_above_one():
     )
     results = [
         item["result"]
-        for item in event.material["assertions"]
-        if item["assertion_subject"].get("content") == 97
+        for item in event.material["result_positions"]
+        if item["subject"].get("content") == 97
     ]
     assert results == ["count", "recurrence"]
 
 
-def test_source_assertion_subject_is_the_exact_material_results():
+def test_source_result_position_subject_is_the_exact_material_results():
     event = _record_byte_measurement(
         _ledger(b"the cat\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
     source = next(
-        assertion
-        for assertion in event.material["assertions"]
-        if assertion["result"] == "exact_source_material_set"
+        result_position
+        for result_position in event.material["result_positions"]
+        if result_position["result"] == "exact_source_material_set"
     )
 
-    assert source["assertion_subject"] == {
+    assert source["subject"] == {
         "source_occurrence_references": source["dimensions"]["content"][
             "source_material"
         ],
@@ -1039,9 +1039,9 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    read = assertions_of_recorded_byte_measurement(ledger, event.identity)
+    read = result_positions_of_recorded_byte_measurement(ledger, event.identity)
     assert read
-    assert read == tuple(event.material["assertions"])
+    assert read == tuple(event.material["result_positions"])
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     assert yield_relation.kind == RECORDED_YIELD_RELATION_EVENT
     assert yield_relation.material["dimensions"]["act_occurrence_identity"] == event.material[
@@ -1056,14 +1056,14 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
             "subject_to_act_binding_reference",
             "source_localities",
         "completeness_boundary",
-        "assertions",
+        "result_positions",
     ]
     assert "occurrence_preservation" not in yield_relation.material["coordinates_of_carried_result"]
 
     count = next(
         item
         for item in read
-        if item["assertion_subject"].get("content") == 97
+        if item["subject"].get("content") == 97
         and item["result"] == "count"
     )
     assert count["dimensions"]["content"] == {
@@ -1075,16 +1075,16 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert set(count) == {
         "dimensions",
         "result",
-        "assertion_subject",
-        "referenced_assertion_positions",
+        "subject",
+        "referenced_result_positions",
     }
-    assert count["referenced_assertion_positions"] == [
-        event.material["assertions"][0]["dimensions"]["position"]
+    assert count["referenced_result_positions"] == [
+        event.material["result_positions"][0]["dimensions"]["position"]
     ]
 
     detached_material = count
     detached_material["dimensions"]["content"]["count"] = 1000
-    reread = assertions_of_recorded_byte_measurement(ledger, event.identity)
+    reread = result_positions_of_recorded_byte_measurement(ledger, event.identity)
     assert reread is not None
     reread_count = next(item for item in reread if item["result"] == "count")
     assert reread_count["dimensions"]["content"]["count"] == 2
@@ -1099,7 +1099,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert type(represented.material["dimensions"]["content"]) is dict
 
 
-def test_equal_assertion_content_at_distinct_results_has_distinct_addresses():
+def test_equal_result_content_at_distinct_results_has_distinct_addresses():
     ledger = _ledger(b"a\n")
     first_result = _record_byte_measurement(
         ledger,
@@ -1112,25 +1112,25 @@ def test_equal_assertion_content_at_distinct_results_has_distinct_addresses():
         recording_locality_identity="measurement",
     )
 
-    first = assertions_of_recorded_byte_measurement(
+    first = result_positions_of_recorded_byte_measurement(
         ledger, first_result.identity
     )
-    second = assertions_of_recorded_byte_measurement(
+    second = result_positions_of_recorded_byte_measurement(
         ledger, second_result.identity
     )
 
     assert first is not None and second is not None
     first_count = next(
-        assertion
-        for assertion in first
-        if assertion["result"] == "count"
-        and assertion["assertion_subject"]["content"] == 97
+        result_position
+        for result_position in first
+        if result_position["result"] == "count"
+        and result_position["subject"]["content"] == 97
     )
     second_count = next(
-        assertion
-        for assertion in second
-        if assertion["result"] == "count"
-        and assertion["assertion_subject"]["content"] == 97
+        result_position
+        for result_position in second
+        if result_position["result"] == "count"
+        and result_position["subject"]["content"] == 97
     )
     first_position = first_count["dimensions"]["position"]
     second_position = second_count["dimensions"]["position"]
@@ -1142,15 +1142,15 @@ def test_equal_assertion_content_at_distinct_results_has_distinct_addresses():
     )
 
 
-def test_a_self_consistent_truncated_source_assertion_is_refused():
+def test_a_self_consistent_truncated_source_result_position_is_refused():
     ledger = _ledger(b"a\nb\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    assertions = event.material["assertions"]
-    source = assertions[0]
+    result_positions = event.material["result_positions"]
+    source = result_positions[0]
     source["dimensions"]["content"]["source_material"] = source["dimensions"][
         "content"
     ]["source_material"][:1]
@@ -1160,23 +1160,23 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
         for name in yield_relation.material["coordinates_of_carried_result"]
     }
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
-        assertions_of_recorded_byte_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_changed_plain_byte_assertion_address_is_refused():
+def test_changed_plain_byte_result_position_address_is_refused():
     ledger = _ledger(b"a\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    leaf_assertion = next(
-        assertion
-        for assertion in reversed(event.material["assertions"])
-        if assertion["result"] == "count"
+    leaf_result_position = next(
+        result_position
+        for result_position in reversed(event.material["result_positions"])
+        if result_position["result"] == "count"
     )
-    leaf_assertion["dimensions"]["identity"] = (
-        "crossed-plain-byte-assertion-address"
+    leaf_result_position["dimensions"]["identity"] = (
+        "crossed-plain-byte-result_position-address"
     )
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
@@ -1185,7 +1185,7 @@ def test_changed_plain_byte_assertion_address_is_refused():
     }
 
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
-        assertions_of_recorded_byte_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
 def test_recording_occurrence_is_validated_exactly():
@@ -1197,7 +1197,7 @@ def test_recording_occurrence_is_validated_exactly():
     )
     event.material["occurrence_preservation"] = "something else"
     with pytest.raises(ByteMeasurementError, match="exact Measurement and Yield relation"):
-        assertions_of_recorded_byte_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
 def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement():
@@ -1260,8 +1260,8 @@ def test_every_overlapping_byte_position_pair_is_measured():
         recording_locality_identity="measurement",
     )
     counts = {
-            tuple(item["assertion_subject"]["content"]): item["dimensions"]["content"]
-        for item in event.material["assertions"]
+            tuple(item["subject"]["content"]): item["dimensions"]["content"]
+        for item in event.material["result_positions"]
         if item["result"] == "count"
     }
 
@@ -1280,9 +1280,9 @@ def test_byte_position_pair_results_follow_first_observed_pair_positions():
     )
 
     assert [
-        tuple(assertion["assertion_subject"]["content"])
-        for assertion in event.material["assertions"]
-        if assertion["result"] == "count"
+        tuple(result_position["subject"]["content"])
+        for result_position in event.material["result_positions"]
+        if result_position["result"] == "count"
     ] == [(116, 97), (97, 116), (97, 10)]
 
 
@@ -1295,10 +1295,10 @@ def test_position_pairs_never_cross_material_acquisition_boundaries():
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(item["assertion_subject"]["content"]): item["dimensions"]["content"][
+        tuple(item["subject"]["content"]): item["dimensions"]["content"][
             "count"
         ]
-        for item in event.material["assertions"]
+        for item in event.material["result_positions"]
         if item["result"] == "count"
     }
 
@@ -1321,8 +1321,8 @@ def test_position_pair_measurement_uses_exact_opaque_bytes():
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(item["assertion_subject"]["content"])
-        for item in event.material["assertions"]
+        tuple(item["subject"]["content"])
+        for item in event.material["result_positions"]
         if item["result"] == "count"
     }
 
@@ -1340,36 +1340,38 @@ def test_pair_count_and_recurrence_are_separate_results():
     )
     assert event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
     by_pair = {}
-    for assertion in event.material["assertions"]:
-        content = assertion["assertion_subject"].get("content")
+    for result_position in event.material["result_positions"]:
+        content = result_position["subject"].get("content")
         if content is not None:
-            by_pair.setdefault(tuple(content), []).append(assertion)
+            by_pair.setdefault(tuple(content), []).append(result_position)
 
     assert [item["result"] for item in by_pair[(116, 97)]] == ["count", "recurrence"]
     assert [item["result"] for item in by_pair[(97, 10)]] == ["count"]
-    assert by_pair[(116, 97)][1]["referenced_assertion_positions"] == [
+    assert by_pair[(116, 97)][1]["referenced_result_positions"] == [
         by_pair[(116, 97)][0]["dimensions"]["position"]
     ]
-    moved_reference = by_pair[(116, 97)][0]["referenced_assertions"][0]
+    moved_reference = by_pair[(116, 97)][0][
+        "referenced_result_position_references"
+    ][0]
     original = next(
         item
-        for item in assertions_of_recorded_byte_measurement(ledger, source.identity)
+        for item in result_positions_of_recorded_byte_measurement(ledger, source.identity)
         if item["result"] == "exact_source_material_set"
     )
-    assert moved_reference["assertion_position"] == original["dimensions"]["position"]
+    assert moved_reference["result_position"] == original["dimensions"]["position"]
     assert moved_reference["recorded_occurrence_identity"] == source.identity
     assert event.material["source_movement_event_identity"] != source.identity
     applicability = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
     assert applicability["dimensions"]["applicability"] == "applicable"
-    assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
+    assert applicability["input_result_position_reference"] == event.material["source_result_position_reference"]
     assert applicability["result_boundary"]
     assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_coordinates"] == {
         "recorded_measurement_result_occurrence_identity": source.identity,
-        "assertion_position": original["dimensions"]["position"],
+        "result_position": original["dimensions"]["position"],
         "locality_movement_result_occurrence_identity": event.material[
             "source_movement_event_identity"
         ],
@@ -1385,7 +1387,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
         recording_locality_identity="measurement",
     )
 
-    read = assertions_of_recorded_byte_position_pair_measurement(
+    read = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
     assert read
@@ -1403,11 +1405,13 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     detached = count.material
     detached["dimensions"]["standing"] = "unsupported"
     assert "standing" not in count.material["dimensions"]
-    assert count.referenced_assertions[0]["recorded_occurrence_identity"] == source.identity
+    assert count.referenced_result_position_references[0][
+        "recorded_occurrence_identity"
+    ] == source.identity
     movement = ledger.get(event.material["source_movement_event_identity"])
-    assert movement.material["source_assertion_reference"]["recorded_occurrence_identity"] == source.identity
-    assert movement.material["source_assertion_reference"] == (
-        count.referenced_assertions[0]
+    assert movement.material["source_result_position_reference"]["recorded_occurrence_identity"] == source.identity
+    assert movement.material["source_result_position_reference"] == (
+        count.referenced_result_position_references[0]
     )
     assert movement.material["source_locality"] == "byte-measurement"
     assert movement.material["destination_locality"] == "measurement"
@@ -1443,7 +1447,7 @@ def test_same_locality_pair_result_replays_without_recording_more_work():
         recording_locality_identity="source",
     )
     recorded_count = len(ledger.list())
-    assert assertions_of_recorded_byte_position_pair_measurement(
+    assert result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair.identity
     )
     assert len(ledger.list()) == recorded_count
@@ -1458,14 +1462,14 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         recording_locality_identity="measurement",
     )
     recurrence = next(
-        assertion
-        for assertion in event.material["assertions"]
-        if assertion["result"] == "recurrence"
+        result_position
+        for result_position in event.material["result_positions"]
+        if result_position["result"] == "recurrence"
     )
-    event.material["assertions"] = [
-        assertion
-        for assertion in event.material["assertions"]
-        if assertion["dimensions"]["position"]
+    event.material["result_positions"] = [
+        result_position
+        for result_position in event.material["result_positions"]
+        if result_position["dimensions"]["position"]
         != recurrence["dimensions"]["position"]
     ]
     yield_relation = ledger.get(event.material["yield_relation_identity"])
@@ -1475,11 +1479,11 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         if name in BYTE_PAIR_RESULT_COORDINATES
     }
 
-    with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+    with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
-def test_changed_pair_assertion_address_is_refused():
+def test_changed_pair_result_position_address_is_refused():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
@@ -1487,8 +1491,8 @@ def test_changed_pair_assertion_address_is_refused():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    event.material["assertions"][0]["dimensions"]["identity"] = (
-        "crossed-byte-pair-assertion-address"
+    event.material["result_positions"][0]["dimensions"]["identity"] = (
+        "crossed-byte-pair-result_position-address"
     )
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
@@ -1496,8 +1500,8 @@ def test_changed_pair_assertion_address_is_refused():
         for name in yield_relation.material["coordinates_of_carried_result"]
     }
 
-    with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+    with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 @pytest.mark.parametrize(
@@ -1520,16 +1524,16 @@ def test_pair_validation_requires_one_exact_ordered_content(content):
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    assertion = event.material["assertions"][0]
-    assertion["assertion_subject"]["content"] = content
+    result_position = event.material["result_positions"][0]
+    result_position["subject"]["content"] = content
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
         name: event.material[name]
         for name in yield_relation.material["coordinates_of_carried_result"]
     }
 
-    with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+    with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch):
@@ -1551,7 +1555,7 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
     monkeypatch.setattr(
         "seed_runtime.byte_measurement._pair_input_applicability", forbidden
     )
-    assert assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+    assert result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_pair_validation_refuses_unsupported_input_applicability():
@@ -1570,7 +1574,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
     }
 
     with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_zero_measured_pairs_is_a_lawful_exact_result():
@@ -1582,8 +1586,8 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
         recording_locality_identity="measurement",
     )
 
-    assert event.material["assertions"] == []
-    assert assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
+    assert event.material["result_positions"] == []
+    assert result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
 
 
 def test_applicability_identity_is_bound_to_one_exact_addressed_act():
@@ -1663,7 +1667,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     assert measurement_binding.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     assert applicability_binding.identity != measurement_binding.identity
     assert measurement_binding.material["subject_reference"] == applicability_binding.material[
-        "source_assertion_reference"
+        "source_result_position_reference"
     ]
     assert measurement_binding.material["through_event_occurrence_identity"] == (
         applicability_binding.identity
@@ -1825,7 +1829,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
             binding=applicability_binding,
             source=source,
             applicability_act_occurrence=applicability_act,
-            applicability_assertion=applicability,
+            applicability_result=applicability,
             current_coordinates=current_coordinates,
         )
     )
@@ -1885,11 +1889,11 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(assertion["assertion_subject"]["content"]): assertion[
+        tuple(result_position["subject"]["content"]): result_position[
             "dimensions"
         ]["content"]["count"]
-        for assertion in result.material["assertions"]
-        if assertion["result"] == "count"
+        for result_position in result.material["result_positions"]
+        if result_position["result"] == "count"
     }
     assert counts[(97, 98)] == 2
 
@@ -1959,12 +1963,12 @@ def test_pair_applicability_reads_exact_input_coordinates():
         "recorded_measurement_result_occurrence_identity": source[
             "recorded_occurrence_identity"
         ],
-        "assertion_position": source["assertion_position"],
+        "result_position": source["result_position"],
         "locality_movement_result_occurrence_identity": None,
     }
-    assert applicable["input_assertion_reference"] == {
+    assert applicable["input_result_position_reference"] == {
         "recorded_occurrence_identity": source["recorded_occurrence_identity"],
-        "assertion_position": source["assertion_position"],
+        "result_position": source["result_position"],
     }
     assert applicable["addressed_act_occurrence_identity"] is None
 
@@ -1979,9 +1983,9 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
         ],
     ).material
     source_set = next(
-        assertion
-        for assertion in source.material["assertions"]
-        if assertion["result"] == "exact_source_material_set"
+        result_position
+        for result_position in source.material["result_positions"]
+        if result_position["result"] == "exact_source_material_set"
     )
 
     assert set(binding) == {
@@ -2014,7 +2018,7 @@ def test_locality_movement_binding_addresses_the_exact_source():
     )
     movement = ledger.get(pair.material["source_movement_event_identity"])
     reference = movement.material["subject_to_act_binding_reference"]
-    binding = get_assertion_locality_movement_subject_to_act_binding(
+    binding = get_result_position_locality_movement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     )
     current_coordinates = read_operator_current_coordinates(
@@ -2026,8 +2030,8 @@ def test_locality_movement_binding_addresses_the_exact_source():
         "movement_act_identity",
         "movement_act_occurrence_identity",
         "subject_to_act_binding_reference",
-        "source_assertion_reference",
-        "source_assertion_coordinates",
+        "source_result_position_reference",
+        "source_result_position_coordinates",
         "source_locality",
         "destination_locality",
         "locality_relation",
@@ -2035,15 +2039,15 @@ def test_locality_movement_binding_addresses_the_exact_source():
         "yield_relation_identity",
     }
     assert binding.kind == (
-        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
+        RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
     )
     assert set(binding.material) == {
         "movement_act_identity",
         "movement_act_occurrence_identity",
         "movement_result_identity",
         "book_clause_identity",
-        "source_assertion_reference",
-        "source_assertion_coordinates",
+        "source_result_position_reference",
+        "source_result_position_coordinates",
         "source_locality",
         "destination_locality",
         "source_through_event_occurrence_identity",
@@ -2054,8 +2058,8 @@ def test_locality_movement_binding_addresses_the_exact_source():
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
     }
-    assert binding.material["source_assertion_reference"] == (
-        movement.material["source_assertion_reference"]
+    assert binding.material["source_result_position_reference"] == (
+        movement.material["source_result_position_reference"]
     )
     assert binding.material["source_locality"] == "byte-measurement"
     assert binding.material["destination_locality"] == "measurement"
@@ -2065,7 +2069,7 @@ def test_locality_movement_binding_addresses_the_exact_source():
 def test_movement_binding_has_distinct_lifecycle_identities_and_enters_destination_coordinates():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2122,7 +2126,7 @@ def test_movement_binding_refuses_stale_or_substituted_source_coordinates():
 
     for current_coordinates in (stale, substituted_coordinates):
         with pytest.raises(ByteMeasurementError, match="current source coordinates"):
-            record_assertion_locality_movement_subject_to_act_binding(
+            record_result_position_locality_movement_subject_to_act_binding(
                 ledger,
                 source=source,
                 destination_locality="movement",
@@ -2137,7 +2141,7 @@ def test_movement_act_requires_current_destination_coordinates_carrying_binding(
     stale_destination = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2157,7 +2161,7 @@ def test_movement_act_requires_current_destination_coordinates_carrying_binding(
         with pytest.raises(
             ByteMeasurementError, match="current destination coordinates"
         ):
-            record_assertion_locality_movement_act_occurrence(
+            record_result_position_locality_movement_act_occurrence(
                 ledger,
                 subject_to_act_binding_event_identity=binding.identity,
                 current_coordinates=current_coordinates,
@@ -2167,7 +2171,7 @@ def test_movement_act_requires_current_destination_coordinates_carrying_binding(
 def test_movement_lifecycle_refuses_duplicate_act_and_result():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2181,25 +2185,25 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    act = record_assertion_locality_movement_act_occurrence(
+    act = record_result_position_locality_movement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=current_coordinates,
     )
     with pytest.raises(ByteMeasurementError, match="already carries an Act"):
-        record_assertion_locality_movement_act_occurrence(
+        record_result_position_locality_movement_act_occurrence(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="movement"
             ),
         )
-    movement = record_assertion_locality_movement_result(
+    movement = record_result_position_locality_movement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    assert _validate_moved_byte_assertion(ledger, movement.identity)
+    assert _validate_moved_result_position(ledger, movement.identity)
     with pytest.raises(ByteMeasurementError, match="already carries a Yield or result"):
-        record_assertion_locality_movement_result(
+        record_result_position_locality_movement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
 
@@ -2207,7 +2211,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
 def test_movement_act_refuses_coordinates_before_a_later_destination_append_boundary():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2228,7 +2232,7 @@ def test_movement_act_refuses_coordinates_before_a_later_destination_append_boun
         source_boundary="after binding",
     )
     with pytest.raises(ByteMeasurementError, match="current destination coordinates"):
-        record_assertion_locality_movement_act_occurrence(
+        record_result_position_locality_movement_act_occurrence(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=stale,
@@ -2250,7 +2254,7 @@ def test_movement_binding_and_lifecycle_remain_exact_across_sqlite_restarts(tmp_
         recording_locality_identity="source-measurement",
     )
     source = _recorded_byte_source(ledger, source_result)
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2264,10 +2268,10 @@ def test_movement_binding_and_lifecycle_remain_exact_across_sqlite_restarts(tmp_
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    assert get_assertion_locality_movement_subject_to_act_binding(
+    assert get_result_position_locality_movement_subject_to_act_binding(
         ledger, binding.identity
     ) == binding
-    act = record_assertion_locality_movement_act_occurrence(
+    act = record_result_position_locality_movement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
@@ -2277,13 +2281,13 @@ def test_movement_binding_and_lifecycle_remain_exact_across_sqlite_restarts(tmp_
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    movement = record_assertion_locality_movement_result(
+    movement = record_result_position_locality_movement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    assert _validate_moved_byte_assertion(ledger, movement.identity)
+    assert _validate_moved_result_position(ledger, movement.identity)
     ledger.close()
 
 
@@ -2301,7 +2305,7 @@ def test_movement_binding_reader_refuses_corrupted_source_carrier():
         recording_locality_identity="source-measurement",
     )
     source = _recorded_byte_source(ledger, source_result)
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2315,7 +2319,7 @@ def test_movement_binding_reader_refuses_corrupted_source_carrier():
     ledger.corrupted.add(source_result.identity)
 
     with pytest.raises(ByteMeasurementError):
-        get_assertion_locality_movement_subject_to_act_binding(
+        get_result_position_locality_movement_subject_to_act_binding(
             ledger, binding.identity
         )
 
@@ -2332,7 +2336,7 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
 ):
     ledger = _ledger(b"ta\n")
     _source_result, source = _movement_source(ledger)
-    moved = move_recorded_byte_assertion_to_locality(
+    moved = move_recorded_byte_result_position_to_locality(
         ledger, source=source, destination_locality="movement"
     )
     movement = ledger.get(moved["locality_movement_event_identity"])
@@ -2342,7 +2346,7 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
     yield_relation.material[coordinate] = changed
 
     with pytest.raises(ByteMeasurementError, match="Yield relation is not exact"):
-        _validate_moved_byte_assertion(ledger, movement.identity)
+        _validate_moved_result_position(ledger, movement.identity)
 
 
 def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
@@ -2351,7 +2355,7 @@ def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
     prior = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    binding = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_result_position_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2369,12 +2373,12 @@ def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
     assert carried == read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    act = record_assertion_locality_movement_act_occurrence(
+    act = record_result_position_locality_movement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=carried,
     )
-    movement = record_assertion_locality_movement_result(
+    movement = record_result_position_locality_movement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
     carried = advance_operator_current_coordinates(
@@ -2392,7 +2396,7 @@ def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
     )
 
     event_count = len(ledger.list())
-    same = move_recorded_byte_assertion_to_locality(
+    same = move_recorded_byte_result_position_to_locality(
         ledger,
         source=source,
         destination_locality=source_result.locality_identity,
@@ -2408,13 +2412,13 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
         _byte_result_position(
             ledger,
             source_result.identity,
-            assertion["dimensions"]["position"],
+            result_position["dimensions"]["position"],
         )
-        for assertion in source_result.material["assertions"]
-        if assertion["result"] == "count"
+        for result_position in source_result.material["result_positions"]
+        if result_position["result"] == "count"
     )
 
-    moved = move_recorded_byte_assertions_to_locality(
+    moved = move_recorded_byte_result_positions_to_locality(
         ledger,
         sources=sources,
         destination_locality="movement-batch",
@@ -2423,8 +2427,8 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
         ledger, locality_identity="movement-batch"
     )
     movements = tuple(
-        ledger.get(assertion["locality_movement_event_identity"])
-        for assertion in moved
+        ledger.get(result_position["locality_movement_event_identity"])
+        for result_position in moved
     )
     bindings = tuple(
         ledger.get(
@@ -2435,8 +2439,8 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
         for movement in movements
     )
 
-    assert tuple(assertion["assertion_position"] for assertion in moved) == tuple(
-        assertion["assertion_position"] for assertion in sources
+    assert tuple(result_position["result_position"] for result_position in moved) == tuple(
+        result_position["result_position"] for result_position in sources
     )
     assert all(
         current_coordinates["subject_to_act_binding_occurrences"].get(
@@ -2447,8 +2451,8 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
     )
     assert current_coordinates["through_event_occurrence_identity"] == movements[-1].identity
     assert all(
-        _validate_moved_byte_assertion(ledger, movement.identity) == assertion
-        for movement, assertion in zip(movements, moved, strict=True)
+        _validate_moved_result_position(ledger, movement.identity) == result_position
+        for movement, result_position in zip(movements, moved, strict=True)
     )
 
 
@@ -2494,10 +2498,10 @@ def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
     before = deepcopy(state["destination_coordinates"])
     if phase in ("binding", "result"):
         another_position = next(
-            assertion
-            for assertion in state["source_result"].material["assertions"]
-            if assertion["dimensions"]["position"]
-            != state["source"]["assertion_position"]
+            result_position
+            for result_position in state["source_result"].material["result_positions"]
+            if result_position["dimensions"]["position"]
+            != state["source"]["result_position"]
         )["dimensions"]["position"]
         source_at_another_position = _byte_result_position(
             ledger,
@@ -2533,7 +2537,7 @@ def test_movement_batch_exact_carry_equals_public_replay():
     assert carried == read_operator_current_coordinates(
         ledger, locality_identity="movement-carry"
     )
-    assert exact == _validate_moved_byte_assertion(
+    assert exact == _validate_moved_result_position(
         ledger, state["movement"].identity
     )
 
@@ -2561,31 +2565,31 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
         _byte_result_position(
             ledger,
             source_result.identity,
-            assertion["dimensions"]["position"],
+            result_position["dimensions"]["position"],
         )
-        for assertion in source_result.material["assertions"]
-        if assertion["result"] == "count"
+        for result_position in source_result.material["result_positions"]
+        if result_position["result"] == "count"
     )
 
     def refuse_public_movement_read(*_args, **_kwargs):
         raise AssertionError("carried movement entered a public reader")
 
     reader_names = (
-        "_read_assertion_locality_movement_subject_to_act_binding",
-        "_read_assertion_locality_movement_act_occurrence",
-        "_validate_moved_byte_assertion",
+        "_read_result_position_locality_movement_subject_to_act_binding",
+        "_read_result_position_locality_movement_act_occurrence",
+        "_validate_moved_result_position",
     )
     for module in (byte_measurement_module, coordinates_module):
         for name in reader_names:
             monkeypatch.setattr(module, name, refuse_public_movement_read)
 
-    moved = move_recorded_byte_assertions_to_locality(
+    moved = move_recorded_byte_result_positions_to_locality(
         ledger,
         sources=sources,
         destination_locality="movement-batch",
     )
     movement_identities = tuple(
-        assertion["locality_movement_event_identity"] for assertion in moved
+        result_position["locality_movement_event_identity"] for result_position in moved
     )
     ledger.close()
     monkeypatch.undo()
@@ -2593,7 +2597,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
     reopened = SQLiteEventLedger(path)
     try:
         assert tuple(
-            _validate_moved_byte_assertion(reopened, identity)
+            _validate_moved_result_position(reopened, identity)
             for identity in movement_identities
         ) == moved
         assert read_operator_current_coordinates(
@@ -2628,9 +2632,9 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         recording_locality_identity="measurement",
     )
     count = next(
-        assertion
-        for assertion in event.material["assertions"]
-        if assertion["assertion_subject"]["content"] == [116, 97]
+        result_position
+        for result_position in event.material["result_positions"]
+        if result_position["subject"]["content"] == [116, 97]
     )
     count["dimensions"]["content"] = {
         "input_count": 2,
@@ -2644,7 +2648,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors():
@@ -2656,9 +2660,9 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
         recording_locality_identity="measurement",
     )
     count = next(
-        assertion
-        for assertion in event.material["assertions"]
-        if assertion["result"] == "count"
+        result_position
+        for result_position in event.material["result_positions"]
+        if result_position["result"] == "count"
     )
     count["dimensions"]["content"].pop("occurrences_carrying")
     yield_relation = ledger.get(event.material["yield_relation_identity"])
@@ -2668,18 +2672,18 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_byte_result_reader_refuses_changed_yield_result_identity():
     ledger = _ledger(b"ta\n")
     event = _byte_source(ledger)
-    assert assertions_of_recorded_byte_measurement(ledger, event.identity)
+    assert result_positions_of_recorded_byte_measurement(ledger, event.identity)
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result_identity"] = "crossed-byte-result"
 
     with pytest.raises(ByteMeasurementError, match="byte Measurement Yield relation"):
-        assertions_of_recorded_byte_measurement(ledger, event.identity)
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
 def test_pair_applicability_reader_refuses_changed_yield_result_identity():
@@ -2715,7 +2719,7 @@ def test_pair_applicability_reader_revalidates_exact_input_coordinates(monkeypat
         raise ByteMeasurementError("detached input coordinates")
 
     monkeypatch.setattr(
-        "seed_runtime.byte_measurement._validate_moved_byte_assertion",
+        "seed_runtime.byte_measurement._validate_moved_result_position",
         refuse_detached_coordinates,
     )
     with pytest.raises(ByteMeasurementError, match="detached input coordinates"):
@@ -2732,7 +2736,7 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    assert assertions_of_recorded_byte_position_pair_measurement(
+    assert result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair.identity
     )
     yield_relation = ledger.get(pair.material["yield_relation_identity"])
@@ -2741,7 +2745,7 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
     with pytest.raises(
         ByteMeasurementError, match="byte-position-pair Yield relation"
     ):
-        assertions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
+        result_positions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
 
 
@@ -2754,9 +2758,9 @@ WITNESSED_BOOK_COORDINATES = {
         test_opaque_bytes_supply_the_measured_subjects_without_whitespace,
         test_the_complete_declared_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
-        test_source_assertion_subject_is_the_exact_material_results,
+        test_source_result_position_subject_is_the_exact_material_results,
         test_recorded_results_replay_the_complete_bounded_source_read,
-        test_a_self_consistent_truncated_source_assertion_is_refused,
+        test_a_self_consistent_truncated_source_result_position_is_refused,
         test_recording_occurrence_is_validated_exactly,
         test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement,
         test_a_missing_declared_locality_is_refused,

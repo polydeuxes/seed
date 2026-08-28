@@ -2,7 +2,7 @@
 
 This declared Measurement carries two distinct occurrence references:
 
-* the recurrence Assertion yielded by an earlier byte-pair Measurement; and
+* the recurrence result position yielded by an earlier byte-pair Measurement; and
 * one later exact material result in the addressed Locality.
 
 Ordering and distance are views over the two measured positions.  The result
@@ -101,7 +101,7 @@ def _exact_measurement_occurrence_coordinates(
 
 
 class ReferenceToRecordedRecurrentBytePair(NamedTuple):
-    """Exact address of one recurrence Assertion and its count Assertion."""
+    """Exact address of one recurrence result position and its count result position."""
 
     recorded_occurrence_identity: str
     recurrence_result_position: int
@@ -169,7 +169,7 @@ def _validate_pair_reference(reference: ReferenceToRecordedRecurrentBytePair) ->
         or type(reference.count_result_position) is not int
         or reference.count_result_position < 0
     ):
-        raise ValueError("recurrent pair reference requires exact Assertion positions")
+        raise ValueError("recurrent pair reference requires exact result positions")
     if (
         type(reference.source_occurrence_identities) is not tuple
         or not reference.source_occurrence_identities
@@ -228,7 +228,7 @@ def reference_to_recorded_recurrent_byte_pair(
     recurrence_result_position: int,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> ReferenceToRecordedRecurrentBytePair:
-    """Resolve one recurrence Assertion through its exact Measurement Yield."""
+    """Resolve one recurrence result position through its exact Measurement Yield."""
 
     return _references_to_recorded_recurrent_byte_pairs(
         ledger,
@@ -259,11 +259,11 @@ def _references_to_recorded_recurrent_byte_pairs(
             for position in recurrence_result_positions
         )
     ):
-        raise ValueError("recurrent pair reference requires exact Assertion positions")
+        raise ValueError("recurrent pair reference requires exact result positions")
     if len(set(recurrence_result_positions)) != len(
         recurrence_result_positions
     ):
-        raise ValueError("recurrent pair Assertion entered one result twice")
+        raise ValueError("recurrent pair result position entered one result twice")
     event = ledger.get(measurement_occurrence_identity)
     if (
         event is None
@@ -287,7 +287,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     )
     findings = reading.results if reading is not None else None
     findings_by_position = {
-        finding.assertion_position: finding for finding in findings or ()
+        finding.result_position: finding for finding in findings or ()
     }
     binding = reading.binding.material if reading is not None else None
     sources = (
@@ -324,16 +324,16 @@ def _references_to_recorded_recurrent_byte_pairs(
             or recurrence.exact_pair is None
         ):
             raise ValueError(
-                "the addressed pair Assertion does not establish recurrence"
+                "the addressed pair result position does not establish recurrence"
             )
-        referenced_positions = recurrence._referenced_assertion_positions
+        referenced_positions = recurrence._referenced_result_positions
         if (
             len(referenced_positions) != 1
             or type(referenced_positions[0]) is not int
             or referenced_positions[0] < 0
         ):
             raise ValueError(
-                "the recurrent pair carries no exact count Assertion reference"
+                "the recurrent pair carries no exact count result position reference"
             )
         count = findings_by_position.get(referenced_positions[0])
         if (
@@ -342,12 +342,12 @@ def _references_to_recorded_recurrent_byte_pairs(
             or count.exact_pair != recurrence.exact_pair
         ):
             raise ValueError(
-                "the recurrent pair references another exact count Assertion"
+                "the recurrent pair references another exact count result position"
             )
         reference = ReferenceToRecordedRecurrentBytePair(
             recorded_occurrence_identity=event.identity,
-            recurrence_result_position=recurrence.assertion_position,
-            count_result_position=count.assertion_position,
+            recurrence_result_position=recurrence.result_position,
+            count_result_position=count.result_position,
             locality_identity=event.locality_identity,
             source_occurrence_identities=source_occurrence_identities,
             completeness_boundary_identity=boundary["identity"],
@@ -500,7 +500,7 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     )
 
 
-def measure_positions_for_recurrent_byte_pair_assertions(
+def measure_positions_for_recurrent_byte_pair_result_positions(
     ledger: EventLedger,
     *,
     pair_measurement_occurrence_identity: str,

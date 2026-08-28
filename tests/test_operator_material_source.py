@@ -339,7 +339,7 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
     ] == (
         sources[0].identity
     )
-    assert byte_results[0].material["assertions"][0]["dimensions"]["content"][
+    assert byte_results[0].material["result_positions"][0]["dimensions"]["content"][
         "source_material"
     ] == [{"material_result_occurrence_identity": sources[0].identity}]
 

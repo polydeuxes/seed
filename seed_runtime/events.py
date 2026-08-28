@@ -20,7 +20,7 @@ from seed_runtime.event import Event, _decode_screened_event_material
 #
 # Nothing in active law requires append-only, and nothing here asserts history
 # cannot revision: a `DROP TRIGGER` followed by a
-# rewrite of both row and material identity defeats this. The established Assertion is narrower
+# rewrite of both row and material identity defeats this. The established distinction is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
 VERIFIED = "verified"
@@ -637,8 +637,8 @@ class SQLiteEventLedger(EventLedger):
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
         #
-        # This table is not an occurrence. It records no Assertion and carries
-        # no current coordinates; it is ledger mechanics, and the `events`
+        # This table is not an occurrence and establishes no current
+        # coordinates; it is ledger mechanics, and the `events`
         # mutation refusal deliberately does not cover it.
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS identity_reservations (
@@ -684,7 +684,7 @@ class SQLiteEventLedger(EventLedger):
             )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
-        # what keeps the Assertion at "refused by default" rather than "immutable".
+        # what keeps mutation "refused by default" rather than "immutable".
         self._connection.execute("""
             CREATE TRIGGER IF NOT EXISTS events_refuse_update
             BEFORE UPDATE ON events

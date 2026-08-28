@@ -645,7 +645,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     ]
 
 
-def test_exact_reusable_material_result_is_not_a_source_assertion():
+def test_exact_reusable_material_result_is_not_a_source_result_position():
     ledger = EventLedger()
     measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
@@ -661,7 +661,7 @@ def test_exact_reusable_material_result_is_not_a_source_assertion():
     )
 
     assert exact_material_result.exact_material == b"a+a"
-    assert exact_material_result.material.get("assertions") is None
+    assert exact_material_result.material.get("result_positions") is None
 
 
 def test_varying_coordinate_material_yields_no_common_exact_material():

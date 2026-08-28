@@ -23,21 +23,21 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
-    _assertion_carried_by_locality_movement_result,
+    RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
+    RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_RESULT_KIND,
+    _result_position_addressed_by_locality_movement_result,
     _movement_act_material,
     _movement_binding_material,
     _movement_result_material,
-    _source_assertion_is_carried,
-    _source_assertion_from_reference,
-    _source_assertion_reference,
-    _source_assertion_coordinates,
+    _source_result_position_is_carried,
+    _source_result_position_from_reference,
+    _source_result_position_reference,
+    _source_result_position_coordinates,
     _findings_of_recorded_byte_position_pair_measurement,
-    _read_assertion_locality_movement_subject_to_act_binding,
-    _read_assertion_locality_movement_act_occurrence,
+    _read_result_position_locality_movement_subject_to_act_binding,
+    _read_result_position_locality_movement_act_occurrence,
     _require_exact_movement_binding_and_source,
     _read_byte_measurement_subject_to_act_binding,
     _read_pair_applicability_subject_to_act_binding,
@@ -51,8 +51,8 @@ from seed_runtime.byte_measurement import (
     _require_exact_pair_applicability_result_event,
     _require_exact_pair_measurement_act_event,
     _require_exact_pair_measurement_result_event,
-    _validate_moved_byte_assertion,
-    assertions_of_recorded_byte_measurement,
+    _validate_moved_result_position,
+    result_positions_of_recorded_byte_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
@@ -60,7 +60,7 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RESULT_KIND,
     OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     _occurrence_position_result_material,
-    _position_assertions,
+    _position_results,
     _require_carried_occurrence_position_binding,
     get_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_occurrence_position_measurement,
@@ -237,7 +237,7 @@ _MEASUREMENT_BINDING_KINDS = {
     OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
 }
@@ -249,10 +249,10 @@ _MEASUREMENT_RECORDED_KINDS = {
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 }
-_ASSERTION_LOCALITY_MOVEMENT_KINDS = {
-    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_KIND,
+_RESULT_POSITION_LOCALITY_MOVEMENT_KINDS = {
+    RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
+    RESULT_POSITION_LOCALITY_MOVEMENT_KIND,
 }
 _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -357,7 +357,7 @@ _SUPPORTED_KINDS = {
     *_MEASUREMENT_ACT_OCCURRENCE_EVENTS,
     *_MEASUREMENT_BINDING_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
-    *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
+    *_RESULT_POSITION_LOCALITY_MOVEMENT_KINDS,
     *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
     *_LOCALITY_CONTINUATION_KINDS,
     *_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS,
@@ -388,23 +388,23 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
     }
 
 
-def _assertion_locality_movement_occurrence_coordinates(
+def _result_position_locality_movement_occurrence_coordinates(
     ledger: EventLedger, event: Event
 ) -> dict[str, Any]:
     binding_reference = event.material["subject_to_act_binding_reference"]
     binding = ledger.get(binding_reference["recorded_occurrence_identity"])
     if binding is None:
         raise ValueError("result-position Locality movement coordinates are not exact")
-    source_reference = binding.material["source_assertion_reference"]
+    source_reference = binding.material["source_result_position_reference"]
     source_event = ledger.get(source_reference["recorded_occurrence_identity"])
     if source_event is None:
         raise ValueError("result-position Locality movement coordinates are not exact")
     return {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
-        "source_assertion_reference": deepcopy(source_reference),
-        "source_assertion_coordinates": deepcopy(
-            binding.material["source_assertion_coordinates"]
+        "source_result_position_reference": deepcopy(source_reference),
+        "source_result_position_coordinates": deepcopy(
+            binding.material["source_result_position_coordinates"]
         ),
         "source_through_event_occurrence_identity": binding.material[
             "source_through_event_occurrence_identity"
@@ -844,7 +844,7 @@ def advance_operator_current_coordinates(
     )
     material_result_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: dict[str, dict[str, str]] = {}
-    assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
+    result_position_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
     locality_continuation_relation_occurrences: dict[str, None] = {}
     recorded_through_occurrence_boundary_references: dict[str, None] = {}
@@ -871,10 +871,10 @@ def advance_operator_current_coordinates(
             raise ValueError(
                 "prior coordinates require exact Measurement occurrences"
             )
-        assertion_locality_movement_occurrences = prior[
-            "assertion_locality_movement_occurrences"
+        result_position_locality_movement_occurrences = prior[
+            "result_position_locality_movement_occurrences"
         ]
-        if type(assertion_locality_movement_occurrences) is not dict:
+        if type(result_position_locality_movement_occurrences) is not dict:
             raise ValueError(
                 "prior coordinates require exact result-position Locality movement occurrences"
             )
@@ -958,7 +958,7 @@ def advance_operator_current_coordinates(
             or event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS
             or event.kind in _MEASUREMENT_BINDING_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
-            or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
+            or event.kind in _RESULT_POSITION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
             or event.kind in _LOCALITY_CONTINUATION_KINDS
             or event.kind in _THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS
@@ -993,8 +993,8 @@ def advance_operator_current_coordinates(
             ),
             "measurement_occurrences": measurement_occurrences,
             "material_result_occurrences": material_result_occurrences,
-            "assertion_locality_movement_occurrences": (
-                assertion_locality_movement_occurrences
+            "result_position_locality_movement_occurrences": (
+                result_position_locality_movement_occurrences
             ),
             "exact_result_occurrences": exact_result_occurrences,
             "subject_to_act_binding_occurrences": (
@@ -1092,9 +1092,9 @@ def advance_operator_current_coordinates(
             continue
         if (
             event.kind
-            == ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
+            == RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         ):
-            _read_assertion_locality_movement_subject_to_act_binding(
+            _read_result_position_locality_movement_subject_to_act_binding(
                 ledger,
                 event.identity,
                 prior_destination_coordinates={
@@ -1106,8 +1106,8 @@ def advance_operator_current_coordinates(
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT:
-            _read_assertion_locality_movement_act_occurrence(
+        if event.kind == RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT:
+            _read_result_position_locality_movement_act_occurrence(
                 ledger,
                 event.identity,
                 prior_destination_coordinates={
@@ -1121,8 +1121,8 @@ def advance_operator_current_coordinates(
                 },
             )
             continue
-        if event.kind == ASSERTION_LOCALITY_MOVEMENT_KIND:
-            _validate_moved_byte_assertion(
+        if event.kind == RESULT_POSITION_LOCALITY_MOVEMENT_KIND:
+            _validate_moved_result_position(
                 ledger,
                 event.identity,
                 prior_destination_coordinates={
@@ -1135,8 +1135,8 @@ def advance_operator_current_coordinates(
                     ),
                 },
             )
-            assertion_locality_movement_occurrences[event.identity] = (
-                _assertion_locality_movement_occurrence_coordinates(ledger, event)
+            result_position_locality_movement_occurrences[event.identity] = (
+                _result_position_locality_movement_occurrence_coordinates(ledger, event)
             )
             continue
         if (
@@ -1533,7 +1533,7 @@ def advance_operator_current_coordinates(
             locality_continuation_relation_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
-            assertions_of_recorded_byte_measurement(
+            result_positions_of_recorded_byte_measurement(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
@@ -1631,8 +1631,8 @@ def advance_operator_current_coordinates(
         "event_count": event_count,
         "material_result_occurrences": material_result_occurrences,
         "measurement_occurrences": measurement_occurrences,
-        "assertion_locality_movement_occurrences": (
-            assertion_locality_movement_occurrences
+        "result_position_locality_movement_occurrences": (
+            result_position_locality_movement_occurrences
         ),
         "exact_result_occurrences": exact_result_occurrences,
         "locality_continuation_relation_occurrences": (
@@ -1705,7 +1705,7 @@ def _carry_byte_measurement_binding_into_current_coordinates(
     return current_coordinates
 
 
-def _carry_assertion_locality_movement_binding_into_current_coordinates(
+def _carry_result_position_locality_movement_binding_into_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
@@ -1743,8 +1743,8 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
     current_source = None
     current_source_event = None
     try:
-        current_source, current_source_event = _source_assertion_from_reference(
-            ledger, _source_assertion_reference(source)
+        current_source, current_source_event = _source_result_position_from_reference(
+            ledger, _source_result_position_reference(source)
         )
     except (TypeError, ValueError):
         pass
@@ -1759,7 +1759,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
     ):
         expected = _movement_binding_material(
             source=source,
-            source_assertion_coordinates=_source_assertion_coordinates(
+            source_result_position_coordinates=_source_result_position_coordinates(
                 ledger, source
             ),
             source_event=source_event,
@@ -1776,7 +1776,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
     if (
         type(current_coordinates) is not dict
         or event.kind
-        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
+        != RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
         or source_event is None
@@ -1785,12 +1785,12 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
         or type(source_current_coordinates) is not dict
         or ledger.get(source_event.identity) != source_event
         or ledger.integrity_of(source_event.identity) == CORRUPTED
-        or _source_assertion_reference(source).get("recorded_occurrence_identity")
+        or _source_result_position_reference(source).get("recorded_occurrence_identity")
         != source_event.identity
         or source_event.locality_identity != event.material.get("source_locality")
         or source_current_coordinates.get("locality_identity")
         != source_event.locality_identity
-        or not _source_assertion_is_carried(
+        or not _source_result_position_is_carried(
             source_event, source_current_coordinates
         )
         or event.locality_identity
@@ -1803,14 +1803,14 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("Assertion movement binding coordinates are not exact")
+        raise ValueError("result position movement binding coordinates are not exact")
     bindings[event.identity] = None
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
 
 
-def _carry_assertion_locality_movement_act_into_current_coordinates(
+def _carry_result_position_locality_movement_act_into_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
@@ -1837,14 +1837,14 @@ def _carry_assertion_locality_movement_act_into_current_coordinates(
             locality_identity=event.locality_identity,
         )
     except (AttributeError, TypeError, ValueError) as error:
-        raise ValueError("Assertion movement Act coordinates are not exact") from error
+        raise ValueError("result position movement Act coordinates are not exact") from error
     if (
         type(current_coordinates) is not dict
         or binding.kind
-        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
+        != RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(binding.identity) != binding
         or ledger.integrity_of(binding.identity) == CORRUPTED
-        or event.kind != ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
+        or event.kind != RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
         or event.locality_identity != binding.locality_identity
@@ -1859,13 +1859,13 @@ def _carry_assertion_locality_movement_act_into_current_coordinates(
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("Assertion movement Act coordinates are not exact")
+        raise ValueError("result position movement Act coordinates are not exact")
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
 
 
-def _carry_assertion_locality_movement_result_into_current_coordinates(
+def _carry_result_position_locality_movement_result_into_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
@@ -1885,7 +1885,7 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
         else None
     )
     movements = (
-        current_coordinates.get("assertion_locality_movement_occurrences")
+        current_coordinates.get("result_position_locality_movement_occurrences")
         if type(current_coordinates) is dict
         else None
     )
@@ -1897,8 +1897,8 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
     yield_relation_identity = event.material.get("yield_relation_identity")
     yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     try:
-        current_source, current_source_event = _source_assertion_from_reference(
-            ledger, _source_assertion_reference(source)
+        current_source, current_source_event = _source_result_position_from_reference(
+            ledger, _source_result_position_reference(source)
         )
         expected_act = _movement_act_material(binding)
         expected = {
@@ -1923,38 +1923,38 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
             locality_identity=event.locality_identity,
         )
     except (AttributeError, KeyError, TypeError, ValueError) as error:
-        raise ValueError("Assertion movement result coordinates are not exact") from error
+        raise ValueError("result position movement result coordinates are not exact") from error
     if (
         type(current_coordinates) is not dict
         or binding.kind
-        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
+        != RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(binding.identity) != binding
         or ledger.integrity_of(binding.identity) == CORRUPTED
         or current_source != source
         or current_source_event is None
         or ledger.integrity_of(current_source_event.identity) == CORRUPTED
         or act_occurrence.kind
-        != ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
+        != RESULT_POSITION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
         or ledger.get(act_occurrence.identity) != act_occurrence
         or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
         or act_occurrence.material != expected_act
-        or event.kind != ASSERTION_LOCALITY_MOVEMENT_KIND
+        or event.kind != RESULT_POSITION_LOCALITY_MOVEMENT_KIND
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
         or event.locality_identity != binding.locality_identity
         or event.material != expected
-        or binding.material.get("source_assertion_reference")
-        != _source_assertion_reference(source)
-        or event.material.get("source_assertion_reference")
-        != _source_assertion_reference(source)
+        or binding.material.get("source_result_position_reference")
+        != _source_result_position_reference(source)
+        or event.material.get("source_result_position_reference")
+        != _source_result_position_reference(source)
         or yield_relation is None
         or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
         or yield_relation.locality_identity != event.locality_identity
         or ledger.integrity_of(yield_relation.identity) == CORRUPTED
         or yield_relation.material.get("result_kind")
-        != ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND
+        != RESULT_POSITION_LOCALITY_MOVEMENT_RESULT_KIND
         or yield_relation.material.get("occurrence_boundary")
-        != "assertion_locality_movement"
+        != "result_position_locality_movement"
         or not all(requirements.values())
         or current_coordinates.get("locality_identity") != event.locality_identity
         or current_coordinates.get("through_event_occurrence_identity")
@@ -1968,13 +1968,13 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("Assertion movement result coordinates are not exact")
-    exact = _assertion_carried_by_locality_movement_result(
+        raise ValueError("result position movement result coordinates are not exact")
+    exact = _result_position_addressed_by_locality_movement_result(
         movement=event,
         binding=binding,
         source=source,
     )
-    movements[event.identity] = _assertion_locality_movement_occurrence_coordinates(
+    movements[event.identity] = _result_position_locality_movement_occurrence_coordinates(
         ledger, event
     )
     current_coordinates["through_event_occurrence_identity"] = event.identity
@@ -2047,11 +2047,11 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
         if type(current_coordinates) is dict
         else None
     )
-    assertions = _position_assertions(finding)
+    result_positions = _position_results(finding)
     result_material = _occurrence_position_result_material(
         finding,
         binding=binding,
-        assertions=assertions,
+        result_positions=result_positions,
     )
     expected = {
         **result_material,

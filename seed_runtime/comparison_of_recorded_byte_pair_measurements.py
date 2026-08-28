@@ -223,22 +223,30 @@ def _findings_from_carried_measurement(
         raise RecordedPairMeasurementComparisonError(
             "comparison requires one carried pair Measurement"
         )
-    assertions = event.material.get("assertions")
-    if type(assertions) is not list:
+    result_positions = event.material.get("result_positions")
+    if type(result_positions) is not list:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires one carried pair Measurement"
         )
     findings = []
     positions = set()
-    for assertion in assertions:
-        dimensions = assertion.get("dimensions") if type(assertion) is dict else None
-        subject = (
-            assertion.get("assertion_subject")
-            if type(assertion) is dict
+    for addressed_content in result_positions:
+        dimensions = (
+            addressed_content.get("dimensions")
+            if type(addressed_content) is dict
             else None
         )
-        result = assertion.get("result") if type(assertion) is dict else None
-        assertion_position = (
+        subject = (
+            addressed_content.get("subject")
+            if type(addressed_content) is dict
+            else None
+        )
+        result = (
+            addressed_content.get("result")
+            if type(addressed_content) is dict
+            else None
+        )
+        result_position = (
             dimensions.get("position") if type(dimensions) is dict else None
         )
         content_coordinates = (
@@ -248,14 +256,14 @@ def _findings_from_carried_measurement(
             subject.get("content") if type(subject) is dict else None
         )
         referenced_positions = (
-            assertion.get("referenced_assertion_positions")
-            if type(assertion) is dict
+            addressed_content.get("referenced_result_positions")
+            if type(addressed_content) is dict
             else None
         )
         if (
-            type(assertion_position) is not int
-            or assertion_position < 0
-            or assertion_position in positions
+            type(result_position) is not int
+            or result_position < 0
+            or result_position in positions
             or type(exact_pair) is not list
             or len(exact_pair) != 2
             or any(
@@ -300,15 +308,15 @@ def _findings_from_carried_measurement(
                 raise RecordedPairMeasurementComparisonError(
                     "comparison carried finding content is not exact"
                 )
-        positions.add(assertion_position)
+        positions.add(result_position)
         findings.append(
             _RecordedBytePairFinding(
-                assertion_position=assertion_position,
+                result_position=result_position,
                 recorded_occurrence_identity=event.identity,
                 exact_pair=tuple(exact_pair),
                 result=result,
                 _content_coordinates=carried_content,
-                _referenced_assertion_positions=tuple(referenced_positions),
+                _referenced_result_positions=tuple(referenced_positions),
             )
         )
     return tuple(findings)
@@ -1514,7 +1522,7 @@ def _comparison_of_findings(
             findings["findings_of_earlier_result"].append(
                 {
                     "subject": subject,
-                    "earlier_assertion_reference": first.reference,
+                    "earlier_result_position_reference": first.reference,
                     "earlier_content": first_content,
                 }
             )
@@ -1522,8 +1530,8 @@ def _comparison_of_findings(
         second_content = _finding_content(second)
         entry = {
             "subject": subject,
-            "earlier_assertion_reference": first.reference,
-            "later_assertion_reference": second.reference,
+            "earlier_result_position_reference": first.reference,
+            "later_result_position_reference": second.reference,
             "earlier_content": first_content,
             "later_content": second_content,
         }
@@ -1542,7 +1550,7 @@ def _comparison_of_findings(
                     "result": key[0],
                     "content": list(key[1]) if key[1] is not None else None,
                 },
-                "later_assertion_reference": second.reference,
+                "later_result_position_reference": second.reference,
                 "later_content": _finding_content(second),
             }
         )

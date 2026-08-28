@@ -19,7 +19,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.byte_measurement import (
     record_byte_measurement_subject_to_act_binding,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -30,7 +30,7 @@ from tests.operator_material_source_test_witness import (
 )
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
-    measure_positions_for_recurrent_byte_pair_assertions,
+    measure_positions_for_recurrent_byte_pair_result_positions,
     record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -180,14 +180,14 @@ def _build_fixture(
         source_measurement_event_identity=byte_result.identity,
         recording_locality_identity=locality,
     )
-    pair_assertions = assertions_of_recorded_byte_position_pair_measurement(
+    pair_result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair_result.identity
     )
     recurrence_by_pair = {
-        assertion.content: assertion.assertion_position
-        for assertion in pair_assertions or ()
-        if assertion.result == "recurrence"
-        and assertion.content in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
+        result_position.content: result_position.result_position
+        for result_position in pair_result_positions or ()
+        if result_position.result == "recurrence"
+        and result_position.content in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
     }
     assert set(recurrence_by_pair) == {
         (ord("a"), ord("b")),
@@ -199,7 +199,7 @@ def _build_fixture(
         exact=current,
         source_boundary="later exact material boundary",
     )
-    findings = measure_positions_for_recurrent_byte_pair_assertions(
+    findings = measure_positions_for_recurrent_byte_pair_result_positions(
         ledger,
         pair_measurement_occurrence_identity=pair_result.identity,
         recurrence_result_positions=(
@@ -701,7 +701,7 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coord
             if changed_occurrence == "source":
                 changed.material["source_boundary"] = "changed after coordinate read"
             elif changed_occurrence == "pair":
-                changed.material["assertions"][0]["dimensions"][
+                changed.material["result_positions"][0]["dimensions"][
                     "content"
                 ] = {"changed_after_standing": True}
             else:
@@ -812,7 +812,7 @@ def test_recurrent_result_batch_refuses_through_occurrences_without_one_order():
         )
 
 
-def test_direct_position_coordinate_assertions_compose_without_recurrence_support(
+def test_direct_position_coordinates_compose_without_recurrence_support(
     monkeypatch,
 ):
     ledger = EventLedger()
@@ -958,7 +958,7 @@ def test_d2_repeated_material_keeps_two_source_ordered_result_positions():
 
 def test_shared_position_refuses_assertion_identity_as_result_position():
     ledger = EventLedger()
-    locality = "legacy-assertion-identity"
+    locality = "legacy-result_position-identity"
     _source, _direct_result, determination_result = _direct_d2(
         ledger, locality=locality
     )
@@ -971,7 +971,7 @@ def test_shared_position_refuses_assertion_identity_as_result_position():
     reference = material["result_position_reference"]
     material["result_position_reference"] = {
         "recorded_occurrence_identity": reference["recorded_occurrence_identity"],
-        "assertion_identity": "legacy-assertion-identity",
+        "assertion_identity": "legacy-result_position-identity",
     }
 
     with pytest.raises(SharedPairPositionError, match="result-position address"):
@@ -1533,7 +1533,7 @@ WITNESSED_BOOK_COORDINATES = {
     ),
     ("book_coordinates", "01.Source.D", "result"): (
         test_exact_yielded_pair_relations_compose_at_one_shared_position,
-        test_direct_position_coordinate_assertions_compose_without_recurrence_support,
+        test_direct_position_coordinates_compose_without_recurrence_support,
         test_d2_result_without_exactly_two_references_cannot_assign_shared_position,
         test_d2_repeated_material_keeps_two_source_ordered_result_positions,
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,

@@ -9,9 +9,9 @@ occurrence, and result-local position?
 This census tests active Book Assertion clauses against live runtime physiology.
 It does not presume that Assertion survives or disappears.
 
-## Active Book claims
+## Former Book claims
 
-The active Book currently states:
+At the start of this census the Book stated:
 
 ```text
 01.Current.D.1
@@ -40,9 +40,9 @@ supplied material with a relation Assertion
 → exact relation Assertion
 ```
 
-## Live plain and pair Measurement results
+## Prior plain and pair Measurement result shape
 
-Plain-byte and byte-pair Measurement results record Assertion dictionaries
+Plain-byte and byte-pair Measurement results recorded Assertion dictionaries
 inside the parent result event:
 
 ```text
@@ -55,40 +55,41 @@ recorded Measurement result occurrence
     └── exact earlier-result references where established
 ```
 
-No separate Assertion event is recorded for these dictionaries. They have no
+No separate Assertion event was recorded for these dictionaries. They had no
 Assertion event identity, Assertion Act occurrence, Yield, result occurrence,
 or Ledger identity.
 
-Their exact durable address is:
+Their exact durable address was already:
 
 ```text
 recorded parent result occurrence identity
 + result-local assertion position
 ```
 
-The result reader reconstructs the complete expected Assertion list from the
+The result reader reconstructed the complete expected list from the
 exact Measurement inputs and boundary. It refuses a changed position, changed
 subject, changed content, changed references, missing entry, added entry, or
 reordered entry by comparing the parent result material with that independent
 reconstruction.
 
-## Runtime reader wrappers
+## Prior runtime reader wrappers
 
-`RecordedByteAssertion`, `RecordedBytePairAssertion`, and the private recorded
-Assertion reader classes are frozen Python values returned by parent-result
-readers. They are not Ledger events.
+`RecordedBytePairAssertion` and the private recorded Assertion reader shapes
+were Python values returned by parent-result readers. They were not Ledger
+events.
 
-Their properties return detached dictionaries and exact references. Replacing
-or mutating one detached dictionary does not mutate the recorded result.
+Their properties returned detached dictionaries and exact references.
+Replacing or mutating one detached dictionary did not mutate the recorded
+result.
 
-The wrapper reference is constructed from:
+The wrapper reference was constructed from:
 
 ```text
 recorded_occurrence_identity
-assertion_position
+result-local position
 ```
 
-The wrapper does not add a durable Assertion identity.
+The wrapper added no durable Assertion identity.
 
 ## Equal content at distinct result occurrences
 
@@ -294,26 +295,47 @@ independent Assertion result
 separate relation Assertion occurrence
 ```
 
-`Assertion` currently names exact addressed result content and its coordinate
+`Assertion` was shorthand for exact addressed result content and its coordinate
 requirements. The durable address and discrimination come from the parent
 result occurrence plus result-local position, not from an Assertion object.
 
-## Required subtraction order
+## Completed subtraction
 
-This census does not authorize a global rename or deletion. The smallest live
-tests are:
+The subtraction proceeded one road at a time:
 
 ```text
-1. plain-byte result reader wrapper
-2. byte-pair input type gate
-3. Assertion Locality movement source wrapper
+1. plain-byte result content and reader
+2. byte-pair result content and reader
+3. result-position Locality movement source
 4. ordered relation-path result content
 5. Book-only relation Assertion and recording clauses
 ```
 
-For each road, preserve exact content, parent result occurrence, result-local
-position, source references, Locality, movement where established, later
-subject-to-Act binding, and all mutation and substitution refusals.
+Plain-byte and byte-pair Measurement now record `result_positions`. Every
+result position has exact subject and result coordinates and is addressed by
+its owning result occurrence plus its local position. The pair reader is a
+`RecordedBytePairResultPosition`; its Python value adds no durable identity.
+
+References to an earlier result position remain distinct from local references
+inside the current result:
+
+```text
+referenced_result_position_references
+referenced_result_positions
+```
+
+The first population contains exact owning-occurrence and result-position
+addresses. The second contains local positions in the current owning result.
+Neither is an Assertion identity.
+
+Result-position Locality movement retains its independent binding, Movement Act
+occurrence, Yield event, and result occurrence. Its source coordinates are now
+named directly as `source_result_position_reference` and
+`source_result_position_coordinates`. The Movement result still refuses an
+absent, changed, substituted, foreign-Locality, or noncurrent source.
+
+All active runtime Assertion vocabulary has left these roads. No Content,
+Finding, Entry, Position, or other replacement object was introduced.
 
 Do not introduce a Content object, Finding object, Entry object, Position
 object, or replacement wrapper.

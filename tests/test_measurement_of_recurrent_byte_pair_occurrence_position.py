@@ -9,7 +9,7 @@ import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pa
 import seed_runtime.operator_current_coordinates as operator_standing
 from seed_runtime.byte_measurement import (
     record_byte_measurement_subject_to_act_binding,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -25,7 +25,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
-    measure_positions_for_recurrent_byte_pair_assertions,
+    measure_positions_for_recurrent_byte_pair_result_positions,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
     record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -79,14 +79,14 @@ def _fixture(
         source_measurement_event_identity=byte.identity,
         recording_locality_identity=locality,
     )
-    pair_assertions = assertions_of_recorded_byte_position_pair_measurement(
+    pair_result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair.identity
     )
     recurrence = next(
-        assertion
-        for assertion in pair_assertions or ()
-        if assertion.result == "recurrence"
-        and assertion.content == (ord("a"), ord("b"))
+        result_position
+        for result_position in pair_result_positions or ()
+        if result_position.result == "recurrence"
+        and result_position.content == (ord("a"), ord("b"))
     )
     source = record_operator_material_occurrence(
         ledger,
@@ -97,7 +97,7 @@ def _fixture(
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
-        recurrence_result_position=recurrence.assertion_position,
+        recurrence_result_position=recurrence.result_position,
         source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
     )
@@ -355,7 +355,7 @@ def test_binding_act_and_result_cross_distinct_durable_restarts(tmp_path):
     ledger.close()
 
 
-def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference():
+def test_each_pair_result_position_has_one_exact_occurrence_bound_reference():
     ledger, locality, pair, recurrence, source, finding = _fixture()
     _act, result = _record(ledger, locality, finding)
 
@@ -367,8 +367,8 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
     assert tuple(
         reference.result_position for reference in references
     ) == tuple(
-        assertion["dimensions"]["position"]
-        for assertion in result.material["result_positions"]
+        result_position["dimensions"]["position"]
+        for result_position in result.material["result_positions"]
     )
     assert tuple(
         (reference.first_position, reference.second_position)
@@ -390,8 +390,8 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
         (
             result.identity,
             pair.identity,
-            recurrence.assertion_position,
-            recurrence.referenced_assertions[0]["assertion_position"],
+            recurrence.result_position,
+            recurrence.referenced_result_position_references[0]["result_position"],
             source.identity,
             locality,
             finding.completeness_boundary.identity,
@@ -497,7 +497,7 @@ def test_binding_pair_handoff_refuses_later_pair_corruption():
         finding=finding,
         current_coordinates=prior_coordinates,
     )
-    pair.material["assertions"][0]["dimensions"]["content"] = {
+    pair.material["result_positions"][0]["dimensions"]["content"] = {
         "changed": True
     }
 
@@ -568,9 +568,9 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
     class BoundarySubclass(EventLedgerBoundary):
         pass
 
-    for supplied in ([recurrence.assertion_position], TupleSubclass((recurrence.assertion_position,))):
-        with pytest.raises(ValueError, match="exact Assertion positions"):
-            measure_positions_for_recurrent_byte_pair_assertions(
+    for supplied in ([recurrence.result_position], TupleSubclass((recurrence.result_position,))):
+        with pytest.raises(ValueError, match="exact result positions"):
+            measure_positions_for_recurrent_byte_pair_result_positions(
                 ledger,
                 pair_measurement_occurrence_identity=pair.identity,
                 recurrence_result_positions=supplied,
@@ -579,22 +579,22 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 through=through,
             )
     with pytest.raises(ValueError, match="entered one result twice"):
-        measure_positions_for_recurrent_byte_pair_assertions(
+        measure_positions_for_recurrent_byte_pair_result_positions(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_result_positions=(
-                recurrence.assertion_position,
-                recurrence.assertion_position,
+                recurrence.result_position,
+                recurrence.result_position,
             ),
             source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=through,
         )
-    count_position = recurrence.referenced_assertions[0][
-        "assertion_position"
+    count_position = recurrence.referenced_result_position_references[0][
+        "result_position"
     ]
     with pytest.raises(ValueError, match="does not establish recurrence"):
-        measure_positions_for_recurrent_byte_pair_assertions(
+        measure_positions_for_recurrent_byte_pair_result_positions(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_result_positions=(count_position,),
@@ -603,19 +603,19 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             through=through,
         )
     with pytest.raises(TypeError, match="one exact boundary"):
-        measure_positions_for_recurrent_byte_pair_assertions(
+        measure_positions_for_recurrent_byte_pair_result_positions(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
-            recurrence_result_positions=(recurrence.assertion_position,),
+            recurrence_result_positions=(recurrence.result_position,),
             source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=BoundarySubclass(through.identity),
         )
     with pytest.raises(ValueError, match="outside its exact boundary"):
-        measure_positions_for_recurrent_byte_pair_assertions(
+        measure_positions_for_recurrent_byte_pair_result_positions(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
-            recurrence_result_positions=(recurrence.assertion_position,),
+            recurrence_result_positions=(recurrence.result_position,),
             source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=ledger.append_boundary_through_occurrence(pair.identity),
@@ -628,13 +628,13 @@ def test_same_boundary_pair_subjects_keep_each_yield_relation_distinct():
         current=b"ba---abxx--yy",
     )
     recurrence_positions = tuple(
-        assertion.assertion_position
-        for assertion in assertions_of_recorded_byte_position_pair_measurement(
+        result_position.result_position
+        for result_position in result_positions_of_recorded_byte_position_pair_measurement(
             ledger, pair.identity
         ) or ()
-        if assertion.result == "recurrence"
+        if result_position.result == "recurrence"
     )
-    findings = measure_positions_for_recurrent_byte_pair_assertions(
+    findings = measure_positions_for_recurrent_byte_pair_result_positions(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_result_positions=recurrence_positions,
@@ -691,7 +691,7 @@ def test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
-        recurrence_result_position=recurrence.assertion_position,
+        recurrence_result_position=recurrence.result_position,
         source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=2,
     )
@@ -753,7 +753,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
         measure_positions_of_recurrent_byte_pair_occurrences(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
-            recurrence_result_position=recurrence.assertion_position,
+            recurrence_result_position=recurrence.result_position,
             source_material_result_occurrence_identity=other.identity,
             occurrence_count_boundary=16,
         )
@@ -762,17 +762,17 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
         measure_positions_of_recurrent_byte_pair_occurrences(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
-            recurrence_result_position=recurrence.assertion_position,
+            recurrence_result_position=recurrence.result_position,
             source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=boundary_before_source,
         )
 
 
-def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use():
+def test_count_result_position_cannot_impersonate_recurrence_and_result_is_single_use():
     ledger, locality, pair, recurrence, source, finding = _fixture()
-    count_position = recurrence.referenced_assertions[0][
-        "assertion_position"
+    count_position = recurrence.referenced_result_position_references[0][
+        "result_position"
     ]
     with pytest.raises(ValueError, match="does not establish recurrence"):
         measure_positions_of_recurrent_byte_pair_occurrences(
@@ -835,7 +835,7 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
             "first_position"
         ] += 1
     else:
-        pair.material["assertions"][0]["dimensions"]["content"] = {
+        pair.material["result_positions"][0]["dimensions"]["content"] = {
             "substituted": True
         }
 
@@ -850,7 +850,7 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
 WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
-        test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
+        test_each_pair_result_position_has_one_exact_occurrence_bound_reference,
         test_binding_read_threads_one_exact_coordinate_read_to_pair_validation,
         test_binding_pair_handoff_refuses_later_pair_corruption,
         test_public_binding_read_reconstructs_prior_coordinates,
@@ -858,7 +858,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
         test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts,
         test_same_bytes_cannot_substitute_another_material_result_occurrence,
-        test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
+        test_count_result_position_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (

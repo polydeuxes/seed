@@ -31,7 +31,7 @@ OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
         "subject_to_act_binding_reference",
         "source_localities",
         "completeness_boundary",
-        "assertions",
+        "result_positions",
     }
 )
 EVENT_KIND_BOOK_CLAUSES = {
@@ -129,7 +129,7 @@ def _occurrence_position_result_material(
     finding: OccurrencePositionFinding,
     *,
     binding: Event,
-    assertions: list[dict[str, Any]],
+    result_positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "result_identity": binding.material["measurement_result_identity"],
@@ -141,7 +141,7 @@ def _occurrence_position_result_material(
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
         },
-        "assertions": assertions,
+        "result_positions": result_positions,
     }
 
 
@@ -179,10 +179,10 @@ def _binding_material(
     }
 
 
-def _position_assertions(
+def _position_results(
     finding: OccurrencePositionFinding,
 ) -> list[dict[str, Any]]:
-    assertions = []
+    result_positions = []
     for occurrence_identity, position in finding.occurrences:
         boundary = {"identity": finding.completeness_boundary.identity}
         subject = {"occurrence_identity": occurrence_identity}
@@ -190,17 +190,17 @@ def _position_assertions(
             "position": position,
             "completeness_boundary": boundary,
         }
-        assertions.append(
+        result_positions.append(
             {
                 "dimensions": {
                     "identity": occurrence_identity,
                     "content": content,
                 },
                 "result": "position",
-                "assertion_subject": subject,
+                "subject": subject,
             }
         )
-    return assertions
+    return result_positions
 
 
 def _exact_occurrence_position_finding(
@@ -804,11 +804,11 @@ def _record_occurrence_position_measurement_result(
 ) -> Event:
     act_occurrence_identity = binding.material["act_occurrence_identity"]
 
-    assertions = _position_assertions(finding)
+    result_positions = _position_results(finding)
     result_material = _occurrence_position_result_material(
         finding,
         binding=binding,
-        assertions=assertions,
+        result_positions=result_positions,
     )
     yield_relation = _record_yield_relation(
         ledger,
@@ -831,7 +831,7 @@ def _record_occurrence_position_measurement_result(
         ],
         "source_localities": result_material["source_localities"],
         "completeness_boundary": result_material["completeness_boundary"],
-        "assertions": result_material["assertions"],
+        "result_positions": result_material["result_positions"],
         "act_occurrence_event_identity": act_occurrence.identity,
         "yield_relation_identity": yield_relation.identity,
     }
@@ -945,7 +945,7 @@ def get_recorded_occurrence_position_measurement(
         or set(boundary) != {"identity"}
         or type(boundary["identity"]) is not str
         or not boundary["identity"]
-        or type(material.get("assertions")) is not list
+        or type(material.get("result_positions")) is not list
         or type(material.get("result_identity")) is not str
         or not material["result_identity"]
         or type(material.get("addressed_act_identity")) is not str
@@ -968,10 +968,10 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         ) from error
-    assertions = _position_assertions(finding)
-    if material["assertions"] != assertions:
+    result_positions = _position_results(finding)
+    if material["result_positions"] != result_positions:
         raise ValueError(
-            "the occurrence position Measurement carries malformed Assertions"
+            "the occurrence position Measurement carries malformed result positions"
         )
 
     yield_relation_identity = material.get(
@@ -999,7 +999,7 @@ def get_recorded_occurrence_position_measurement(
     result_material = _occurrence_position_result_material(
         bound_finding,
         binding=binding,
-        assertions=assertions,
+        result_positions=result_positions,
     )
     requirements = read_requirements_of_yield_relation(
         ledger,

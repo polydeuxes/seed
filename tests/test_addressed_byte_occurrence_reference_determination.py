@@ -173,7 +173,7 @@ def _record(ledger, exact=b"2+2=5\n", position=3, locality="addressed-byte"):
     }
 
 
-def test_interior_address_carries_every_and_only_ordered_assertion_reference():
+def test_interior_address_preserves_every_and_only_ordered_result_position_reference():
     ledger = EventLedger()
     recorded = _record(ledger)
     expected = references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(

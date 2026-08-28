@@ -12,7 +12,7 @@ from compiled_format_invocation import (
 from compiled_material_invocation import MaterialAcquisitionResultReference
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    assertions_of_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_position_pair_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,
 )
 from seed_runtime.events import EventLedger
@@ -75,7 +75,7 @@ def exact_references_to_recurrent_material_pairs(
     event = ledger.get(measurement_occurrence_identity)
     if event is None or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
         raise ValueError("recurrent pair references require one pair Measurement")
-    assertions = assertions_of_recorded_byte_position_pair_measurement(
+    result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, measurement_occurrence_identity
     )
     reference = event.material["subject_to_act_binding_reference"]
@@ -90,22 +90,22 @@ def exact_references_to_recurrent_material_pairs(
         "identity"
     ]
     found = []
-    for assertion in assertions or ():
+    for assertion in result_positions or ():
         if assertion.result != "recurrence" or assertion.content is None:
             continue
         support = assertion.support_assertion_references
         if (
             len(support) != 1
             or support[0].get("recorded_occurrence_identity") != event.identity
-            or type(support[0].get("assertion_position")) is not int
-            or support[0]["assertion_position"] < 0
+            or type(support[0].get("result_position")) is not int
+            or support[0]["result_position"] < 0
         ):
             raise ValueError("recurrent pair carries no exact count Assertion support")
         found.append(
             ExactReferenceToRecurrentMaterialPair(
                 recorded_occurrence_identity=event.identity,
-                recurrence_result_position=assertion.assertion_position,
-                count_result_position=support[0]["assertion_position"],
+                recurrence_result_position=assertion.result_position,
+                count_result_position=support[0]["result_position"],
                 locality_identity=event.locality_identity,
                 source_occurrence_identities=source_occurrence_identities,
                 completeness_boundary_identity=completeness_boundary_identity,

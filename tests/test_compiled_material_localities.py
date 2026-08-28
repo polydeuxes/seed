@@ -115,7 +115,7 @@ def moved_byte_references(
         event
         for event in ledger.list()
         if event.locality_identity == "one-byte-measurement"
-        and "assertions" in event.material
+        and "result_positions" in event.material
     )
 
     moved = moved_exact_byte_material_references(
@@ -141,7 +141,7 @@ def test_moved_byte_references_keep_identity_in_one_new_locality(
     } == {
         event.identity
         for event in ledger.list_locality("one-byte-pairs")
-        if event.kind == "operator.assertion.locality_movement_recorded"
+        if event.kind == "operator.result_position.locality_movement_recorded"
     }
     assert tuple(reference.assertion_address for reference in moved) == tuple(
         reference.assertion_address for reference in references

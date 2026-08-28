@@ -52,7 +52,7 @@ unless an ordinary word needs translation to an exact Seed
 distinction.
 
 ```text
-Measurement pre-Act coordinates / Act occurrence / Assertions
+Measurement pre-Act coordinates / Act occurrence / result positions
     seed_runtime.byte_measurement::record_byte_measurement_result
     seed_runtime.byte_measurement::record_byte_position_pair_count_layer
 
@@ -62,9 +62,9 @@ Yield relation
 Bounded current-coordinate read
     seed_runtime.operator_current_coordinates::read_operator_current_coordinates
 
-Assertion addressability and locality movement
-    seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
-    seed_runtime.byte_measurement::_move_byte_assertion_to_locality
+Result-position addressability and Locality movement
+    seed_runtime.byte_measurement::result_positions_of_recorded_byte_measurement
+    seed_runtime.byte_measurement::move_recorded_byte_result_position_to_locality
 
 Applicability
     seed_runtime.byte_measurement::get_recorded_pair_input_applicability
