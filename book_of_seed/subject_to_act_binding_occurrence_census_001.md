@@ -57,6 +57,28 @@ This does not establish autonomous Act occurrence. Family-local mechanics
 still append the Measurement Act. It establishes only that the exact internal
 subject-to-Act binding needs no additional prior occurrence on this road.
 
+## Amendment after Compare-Distinction Measurement subtraction
+
+`compare_distinction_measurement_binding_occurrence_subtraction_report_001.md`
+supplies a second internal control. One exact current Compare result and its
+exact nested finding coordinates now enter the Compare-Distinction Measurement
+Act directly. The former binding event, current-coordinate entry, and copied
+binding reference are absent; Act/result order, replay, restart, completeness,
+mutation refusal, and downstream Measurement references survive.
+
+```text
+internal recurrent-position binding event       failed subtraction
+internal Compare-Distinction binding event       failed subtraction
+binding coordinates                              preserved in Act occurrences
+Applicability families                           not generalized
+```
+
+Two independent internal controls are enough. Stop collecting simple-family
+specimens. The next campaign is the Applicability neighborhood, beginning with
+the frozen shared-position Measurement case and preserving absence,
+inapplicable, applicable-before-Act, and applicable-with-Act as separate
+states.
+
 ## Question
 
 Does one recorded subject-to-Act binding event establish an independent

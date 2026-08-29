@@ -138,12 +138,12 @@ Do not subtract the shared-position Measurement binding as a simple internal
 control. Preserve the current states until the Applicability neighborhood is
 tested directly.
 
-Next pressure one actual internal non-Applicability family: Measurement of
-position coordinates of byte-pair occurrences. Its exact subject is one prior
-material result under one completeness boundary, and its live order is:
+Next pressure one actual internal non-Applicability family. Compare-Distinction
+Measurement is the narrower control: its exact subject is one prior Compare
+result, and its live order is:
 
 ```text
-exact internal material result
+exact internal Compare result
         ↓
 separate Measurement binding event
         ↓

@@ -18,9 +18,6 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 
 
-COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND = (
-    "operator.measurement.compare_distinctions.subject_to_act_binding_recorded"
-)
 COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND = (
     "operator.measurement.compare_distinctions.act_occurrence_recorded"
 )
@@ -32,7 +29,6 @@ BOOK_CLAUSE = "01.Source.D"
 MEASUREMENT_ACT = "Measurement of exact Compare Distinctions"
 
 EVENT_KIND_BOOK_CLAUSES = {
-    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND: "01.Source.D",
     COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND: "02.Acts.A",
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND: "01.Source.D",
 }
@@ -54,15 +50,6 @@ def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
     return value
-
-
-def _binding_reference(binding: Event) -> dict[str, Any]:
-    return {
-        "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
-        "subject_reference": deepcopy(binding.material["subject_reference"]),
-    }
 
 
 def _exact_distinctions(
@@ -199,7 +186,7 @@ def _source_coordinates(
     return current_coordinates, distinctions
 
 
-def _binding_material(
+def _act_material(
     *,
     comparison_result_occurrence_identity: str,
     locality_identity: str,
@@ -214,23 +201,24 @@ def _binding_material(
                 comparison_result_occurrence_identity
             ),
         },
-        "exact_act_identity": exact_act_identity,
+        "addressed_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "book_clause_identity": BOOK_CLAUSE,
+        "act": MEASUREMENT_ACT,
         "source_locality_identity": locality_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
     }
 
 
-def record_compare_distinction_measurement_subject_to_act_binding(
+def record_compare_distinction_measurement_act_occurrence(
     ledger: EventLedger,
     *,
     comparison_result_occurrence_identity: str,
     current_coordinates: dict[str, Any],
     through_occurrence_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    """Record one complete Compare-result subject before Measurement."""
+    """Record one Measurement Act over an exact current Compare result."""
 
     if not isinstance(ledger, EventLedger) or type(current_coordinates) is not dict:
         raise TypeError("Measurement requires an EventLedger and current coordinates")
@@ -286,8 +274,8 @@ def record_compare_distinction_measurement_subject_to_act_binding(
         ),
     }
     return ledger.append(
-        COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
-        _binding_material(
+        COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
+        _act_material(
             comparison_result_occurrence_identity=(
                 comparison_result_occurrence_identity
             ),
@@ -299,28 +287,27 @@ def record_compare_distinction_measurement_subject_to_act_binding(
     )
 
 
-def _read_binding(
+def _read_act(
     ledger: EventLedger,
-    binding_event_identity: str,
+    act_event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, tuple[dict[str, Any], ...]]:
-    binding = ledger.get(binding_event_identity)
+    act = ledger.get(act_event_identity)
     if (
-        binding is None
-        or binding.kind
-        != COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND
-        or type(binding.locality_identity) is not str
-        or ledger.integrity_of(binding.identity) == CORRUPTED
+        act is None
+        or act.kind != COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND
+        or type(act.locality_identity) is not str
+        or ledger.integrity_of(act.identity) == CORRUPTED
     ):
-        raise ValueError("Compare Distinction Measurement binding is not exact")
-    subject = binding.material.get("subject_reference")
+        raise ValueError("Compare Distinction Measurement Act is not exact")
+    subject = act.material.get("subject_reference")
     source_identity = (
         subject.get("comparison_result_occurrence_identity")
         if type(subject) is dict
         else None
     )
-    through_identity = binding.material.get("through_event_occurrence_identity")
+    through_identity = act.material.get("through_event_occurrence_identity")
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
             read_operator_current_coordinates_through,
@@ -328,194 +315,107 @@ def _read_binding(
 
         prior_coordinates = read_operator_current_coordinates_through(
             ledger,
-            locality_identity=binding.locality_identity,
+            locality_identity=act.locality_identity,
             through_event_occurrence_identity=through_identity,
         )
     distinctions = _exact_distinctions(
-        ledger,
-        comparison_result_occurrence_identity=source_identity,
+            ledger,
+            comparison_result_occurrence_identity=source_identity,
         current_coordinates=prior_coordinates,
     )
     identities = {
         coordinate: _identity(
-            binding.material.get(coordinate),
-            "Compare Distinction Measurement binding is not exact",
+            act.material.get(coordinate),
+            "Compare Distinction Measurement Act is not exact",
         )
         for coordinate in (
-            "exact_act_identity",
+            "addressed_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
     }
-    carried_bindings = prior_coordinates.get(
-        "subject_to_act_binding_occurrences"
-    )
-    binding_is_carried = (
-        type(carried_bindings) is dict
-        and carried_bindings.get(binding.identity, object()) is None
-    )
     prior_boundary_identity = prior_coordinates.get(
         "through_event_occurrence_identity"
     )
-    ordered_identities = tuple(
-        dict.fromkeys(
-            (
-                source_identity,
-                through_identity,
-                binding.identity,
-                prior_boundary_identity,
+    ordered_identities = ()
+    ordered = ()
+    for candidate in (
+        tuple(
+            dict.fromkeys(
+                (source_identity, through_identity, prior_boundary_identity, act.identity)
             )
-            if binding_is_carried
-            else (
-                source_identity,
-                through_identity,
-                prior_boundary_identity,
-                binding.identity,
+        ),
+        tuple(
+            dict.fromkeys(
+                (source_identity, through_identity, act.identity, prior_boundary_identity)
             )
-        )
-    )
-    try:
-        ordered = ledger.occurrences_in_append_order(
-            ordered_identities,
-            locality_identity=binding.locality_identity,
-        )
-    except (TypeError, ValueError):
-        ordered = ()
+        ),
+    ):
+        try:
+            resolved = ledger.occurrences_in_append_order(
+                candidate,
+                locality_identity=act.locality_identity,
+            )
+        except (TypeError, ValueError):
+            continue
+        if tuple(event.identity for event in resolved) == candidate:
+            ordered_identities = candidate
+            ordered = resolved
+            break
     if (
         len(set(identities.values())) != 3
-        or prior_coordinates.get("locality_identity") != binding.locality_identity
+        or prior_coordinates.get("locality_identity") != act.locality_identity
         or tuple(event.identity for event in ordered) != ordered_identities
-        or binding.material
-        != _binding_material(
+        or act.material
+        != _act_material(
             comparison_result_occurrence_identity=source_identity,
-            locality_identity=binding.locality_identity,
+            locality_identity=act.locality_identity,
             through_event_occurrence_identity=through_identity,
-            **identities,
+            exact_act_identity=identities["addressed_act_identity"],
+            act_occurrence_identity=identities["act_occurrence_identity"],
+            measurement_result_identity=identities["measurement_result_identity"],
         )
     ):
-        raise ValueError("Compare Distinction Measurement binding is not exact")
-    return binding, distinctions
-
-
-def _act_material(binding: Event) -> dict[str, Any]:
-    return {
-        "addressed_act_identity": binding.material["exact_act_identity"],
-        "act_occurrence_identity": binding.material["act_occurrence_identity"],
-        "act": MEASUREMENT_ACT,
-        "subject_to_act_binding_reference": _binding_reference(binding),
-        "source_locality_identity": binding.locality_identity,
-    }
-
-
-def record_compare_distinction_measurement_act_occurrence(
-    ledger: EventLedger,
-    *,
-    binding_event_identity: str,
-    current_coordinates: dict[str, Any],
-) -> Event:
-    """Record the Measurement Act occurrence from its current binding."""
-
-    binding, _distinctions = _read_binding(
-        ledger,
-        binding_event_identity,
-        prior_coordinates=current_coordinates,
-    )
-    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
-    if (
-        current_coordinates.get("locality_identity") != binding.locality_identity
-        or current_coordinates.get("through_event_occurrence_identity")
-        != binding.identity
-        or type(bindings) is not dict
-        or bindings.get(binding.identity, object()) is not None
-    ):
-        raise ValueError("Measurement Act requires its exact current binding")
-    if any(
-        event.material.get("subject_to_act_binding_reference")
-        == _binding_reference(binding)
-        for event in ledger.iter_locality_kind(
-            binding.locality_identity,
-            COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
-        )
-    ):
-        raise ValueError("Measurement binding already carries an Act occurrence")
-    return ledger.append(
-        COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
-        _act_material(binding),
-        locality_identity=binding.locality_identity,
-    )
-
-
-def _read_act(
-    ledger: EventLedger,
-    act_event_identity: str,
-    *,
-    prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, Event, tuple[dict[str, Any], ...]]:
-    act = ledger.get(act_event_identity)
-    reference = act.material.get("subject_to_act_binding_reference") if act else None
-    if (
-        act is None
-        or act.kind != COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND
-        or type(reference) is not dict
-        or ledger.integrity_of(act.identity) == CORRUPTED
-    ):
         raise ValueError("Compare Distinction Measurement Act is not exact")
-    binding, distinctions = _read_binding(
-        ledger,
-        reference.get("recorded_occurrence_identity"),
-        prior_coordinates=prior_coordinates,
-    )
-    if (
-        act.locality_identity != binding.locality_identity
-        or reference != _binding_reference(binding)
-        or act.material != _act_material(binding)
-    ):
-        raise ValueError("Compare Distinction Measurement Act is not exact")
-    ledger.occurrences_in_append_order(
-        (binding.identity, act.identity),
-        locality_identity=act.locality_identity,
-    )
-    return act, binding, distinctions
+    return act, distinctions
 
 
 def _result_material(
-    binding: Event,
+    act: Event,
     distinctions: tuple[dict[str, Any], ...],
 ) -> dict[str, Any]:
-    source_identity = binding.material["subject_reference"][
+    source_identity = act.material["subject_reference"][
         "comparison_result_occurrence_identity"
     ]
     return {
-        "result_identity": binding.material["measurement_result_identity"],
-        "addressed_act_identity": binding.material["exact_act_identity"],
-        "act_occurrence_identity": binding.material["act_occurrence_identity"],
+        "result_identity": act.material["measurement_result_identity"],
+        "addressed_act_identity": act.material["addressed_act_identity"],
+        "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": MEASUREMENT_ACT,
-        "subject_to_act_binding_reference": _binding_reference(binding),
+        "subject_reference": deepcopy(act.material["subject_reference"]),
         "source_result_occurrence_identity": source_identity,
         "completeness_boundary": {
             "source_result_occurrence_identity": source_identity,
             "distinction_count": len(distinctions),
         },
         "findings": deepcopy(list(distinctions)),
-        "source_locality_identity": binding.locality_identity,
+        "source_locality_identity": act.locality_identity,
     }
 
 
 def _recorded_result_material(
-    binding: Event,
+    act: Event,
     distinctions: tuple[dict[str, Any], ...],
     *,
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
-    result = _result_material(binding, distinctions)
+    result = _result_material(act, distinctions)
     return {
         "result_identity": result["result_identity"],
         "addressed_act_identity": result["addressed_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],
-        "subject_to_act_binding_reference": deepcopy(
-            result["subject_to_act_binding_reference"]
-        ),
+        "subject_reference": deepcopy(result["subject_reference"]),
         "source_result_occurrence_identity": result[
             "source_result_occurrence_identity"
         ],
@@ -534,7 +434,7 @@ def record_compare_distinction_measurement_result(
 ) -> Event:
     """Record the complete Measurement result."""
 
-    act, binding, distinctions = _read_act(
+    act, distinctions = _read_act(
         ledger,
         act_occurrence_event_identity,
         prior_coordinates=current_coordinates,
@@ -550,7 +450,7 @@ def record_compare_distinction_measurement_result(
     return ledger.append(
         COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
         _recorded_result_material(
-            binding,
+            act,
             distinctions,
             act_occurrence_event_identity=act.identity,
         ),
@@ -573,13 +473,13 @@ def get_recorded_compare_distinction_measurement(
         or ledger.integrity_of(result.identity) == CORRUPTED
     ):
         raise ValueError("Compare Distinction Measurement result is not exact")
-    act, binding, distinctions = _read_act(
+    act, distinctions = _read_act(
         ledger,
         result.material.get("act_occurrence_event_identity"),
         prior_coordinates=prior_coordinates,
     )
     expected = _recorded_result_material(
-        binding,
+        act,
         distinctions,
         act_occurrence_event_identity=act.identity,
     )

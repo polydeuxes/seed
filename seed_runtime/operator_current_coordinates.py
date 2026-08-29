@@ -177,10 +177,8 @@ from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_f
     get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings,
 )
 from seed_runtime.measurement_of_compare_distinctions import (
-    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
-    _read_binding as _read_compare_distinction_measurement_binding,
     _read_act as _read_compare_distinction_measurement_act,
     get_recorded_compare_distinction_measurement,
 )
@@ -313,7 +311,6 @@ _COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 }
 _COMPARE_DISTINCTION_MEASUREMENT_KINDS = {
-    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
 }
@@ -1409,14 +1406,6 @@ def advance_operator_current_coordinates(
                 prior_coordinates=pair_prior_coordinates,
             )
             comparison_result_occurrences[event.identity] = None
-            continue
-        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND:
-            _read_compare_distinction_measurement_binding(
-                ledger,
-                event.identity,
-                prior_coordinates=pair_prior_coordinates,
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND:
             _read_compare_distinction_measurement_act(

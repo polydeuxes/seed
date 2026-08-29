@@ -95,6 +95,19 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
         for finding in reading["findings"]
     )
     assert result.identity in current_coordinates["measurement_occurrences"]
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    assert act is not None
+    assert act.material["subject_reference"] == {
+        "comparison_result_occurrence_identity": source.identity,
+    }
+    assert "subject_to_act_binding_reference" not in act.material
+    assert "subject_to_act_binding_reference" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.list_locality(LOCALITY)
+        if event.kind
+        == "operator.measurement.compare_distinctions.subject_to_act_binding_recorded"
+    )
     assert "yield_relation_identity" not in result.material
     assert not tuple(
         event
@@ -216,7 +229,7 @@ def test_material_slice_preserves_current_coordinates_through_distinction_result
     monkeypatch,
 ):
     ledger = EventLedger()
-    original = compare_distinctions._read_binding
+    original = compare_distinctions._read_act
     reads = 0
 
     def require_current_coordinates(*args, **kwargs):
@@ -227,7 +240,7 @@ def test_material_slice_preserves_current_coordinates_through_distinction_result
 
     monkeypatch.setattr(
         compare_distinctions,
-        "_read_binding",
+        "_read_act",
         require_current_coordinates,
     )
 
