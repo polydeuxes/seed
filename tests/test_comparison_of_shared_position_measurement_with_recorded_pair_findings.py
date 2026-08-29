@@ -1058,6 +1058,11 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         act.material["applicability_result_event_identity"] for act in acts
     ) == (applicability_results[0].identity, applicability_results[3].identity)
     assert all(
+        set(act.material)
+        == {"act", "subject_reference", "applicability_result_event_identity"}
+        for act in acts
+    )
+    assert all(
         set(act.material["subject_reference"])
         == {"shared_position_result_position_reference", "comparison_result_reference"}
         for act in acts
@@ -1102,6 +1107,24 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
             ledger.get(result.material["act_occurrence_event_identity"])
             for result in applicability_results
         )
+    )
+    assert all(
+        set(applicability_act.material)
+        == {
+            "subject_reference",
+            "act",
+            "addressed_act",
+            "through_event_occurrence_identity",
+        }
+        for applicability_act in (
+            ledger.get(result.material["act_occurrence_event_identity"])
+            for result in applicability_results
+        )
+    )
+    assert all(
+        set(result.material)
+        == {"act_occurrence_event_identity", "applicability"}
+        for result in applicability_results
     )
     assert all(
         "result_identity" not in result.material
@@ -1168,6 +1191,10 @@ def test_every_current_compare_act_records_one_result():
     results = recorded.compare_result_occurrences
 
     assert len(results) == len(acts) == 2
+    assert all(
+        set(result.material) == {"finding", "act_occurrence_event_identity"}
+        for result in results
+    )
     assert tuple(
             result.material["act_occurrence_event_identity"] for result in results
     ) == tuple(act.identity for act in acts)
