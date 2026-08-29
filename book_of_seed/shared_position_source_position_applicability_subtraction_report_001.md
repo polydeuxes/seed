@@ -70,14 +70,14 @@ The Compare Act and result contain no Applicability result reference. Current
 coordinates contain no Applicability binding or result occurrence from this
 active road.
 
-## Boundary retained
+## Amended binding boundary
 
-The separate Compare binding occurrence remains. This report does not claim an
-independently established producer for that binding and does not infer that the
-fixed host walk is a Seed occurrence.
+The separate Compare binding occurrence subsequently failed its own
+subtraction. See
+`shared_position_source_position_compare_binding_occurrence_subtraction_report_001.md`.
 
-The three-member construction and the Compare binding event are separate
-questions from the removed one-valued Applicability ceremony.
+The three-member construction remains separate from both removed ceremonies.
+This report does not infer that the fixed host walk is a Seed occurrence.
 
 ## Finding
 
@@ -86,9 +86,8 @@ exact source-position pair subjects          established
 variable Applicability result                absent
 forced positive Applicability lifecycle      failed subtraction
 variable Compare finding                     preserved
-separate Compare binding occurrence          unresolved
+separate active Compare binding occurrence   failed subtraction
 ```
 
 Applicability is not a mandatory stage between one exact source-position pair
 binding and its Compare Act.
-

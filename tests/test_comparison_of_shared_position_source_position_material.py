@@ -179,11 +179,11 @@ def test_every_source_position_pair_is_compared_without_a_chosen_pair():
             APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
         }
     )
-    assert tuple(event.kind for event in binding_occurrences) == (
-        COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
-    ) * 3
+    assert binding_occurrences == ()
     assert all(
         "applicability_result_event_identity"
+        not in comparison.result_occurrence.material
+        and "subject_to_act_binding_reference"
         not in comparison.result_occurrence.material
         for comparison in recorded
     )

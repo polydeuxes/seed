@@ -420,3 +420,26 @@ The active console still supplies the preceding carried pair Measurement and
 the newly produced pair Measurement to family-local Compare mechanics. No
 prior Seed occurrence establishing that Compare Act production has been found.
 This subtraction removes one copied occurrence; it does not name that vacancy.
+
+## Amendment after source-position material Compare subtraction
+
+`shared_position_source_position_compare_binding_occurrence_subtraction_report_001.md`
+supplies another active Compare control after its one-valued Applicability
+lifecycle was withdrawn.
+
+One current shared-position Measurement result establishes three exact ordered
+source-position coordinates. For each exact two-position member, the Compare
+Act now records the complete subject-to-Act binding coordinates. The separate
+binding event and binding-event reference are absent; all three subjects,
+findings, current-coordinate replay, restart, mutation refusal, and one-result
+physiology survive.
+
+```text
+active recorded-pair Compare binding event        failed subtraction
+active source-position material Compare binding   failed subtraction
+binding coordinates                               preserved in Act occurrences
+host production of each Compare Act               unresolved
+```
+
+The host fixed-set walk over `{(0, 1), (0, 2), (1, 2)}` remains mechanism, not
+an established Seed occurrence.
