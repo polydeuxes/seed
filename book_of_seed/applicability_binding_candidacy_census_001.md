@@ -1,5 +1,28 @@
 # Applicability binding candidacy census 001
 
+## Amendment after biological pressure
+
+This census froze a possible population-level Applicability road. Biological
+pressure sharpens the result: such a road is not presently wanted merely to
+replace Cartesian binding expansion.
+
+The exact current subjects can coexist while no binding and no Applicability
+occurrence exist. That state is not an inapplicable result. Applicability has
+established nothing about a combination it never addressed.
+
+The active question therefore moves to binding production:
+
+```text
+exact current subjects
+        ↓
+what exact occurrence makes one subject-to-Act binding exist?
+        ↓
+Applicability may address that exact binding
+```
+
+`compare_binding_production_census_001.md` records the three-state control and
+the unresolved binding-production fork.
+
 ## Question
 
 Can the existing runtime address bounded exact subjects with Applicability
@@ -150,7 +173,8 @@ Keep the exact same-position coordinate subtraction in `37b04611` and the
 post-Applicability result-to-Act coverage.
 
 Withdraw the broader claim that this road has removed Candidate enumeration.
-Freeze the upstream vacancy:
+Freeze the upstream vacancy; do not fill it with population-level
+Applicability:
 
 ```text
 bounded exact input sets
