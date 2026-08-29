@@ -677,7 +677,7 @@ def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    with pytest.raises(ByteMeasurementError, match="already has a result"):
+    with pytest.raises(ByteMeasurementError, match="has one result"):
         record_byte_measurement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -892,7 +892,7 @@ def test_one_act_occurrence_cannot_record_two_results(monkeypatch):
 
     monkeypatch.setattr(byte_measurement, "_measure_byte_counts_through", forbidden)
 
-    with pytest.raises(ByteMeasurementError, match="already has a result"):
+    with pytest.raises(ByteMeasurementError, match="has one result"):
         record_byte_measurement_result(
             ledger,
             act_occurrence_event_identity=act_occurrence.identity,
@@ -1510,7 +1510,7 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
     assert result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
 
 
-def test_direct_pair_measurements_have_distinct_act_and_result_identities():
+def test_pair_measurements_without_applicability_have_distinct_act_and_result_identities():
     ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     first_result = record_byte_position_pair_count_layer(
@@ -1563,7 +1563,7 @@ def test_active_pair_measurement_records_no_binding_or_applicability_occurrence(
     )
 
 
-def test_direct_pair_act_is_stoppable_and_records_one_result():
+def test_pair_act_without_applicability_is_stoppable_and_records_one_result():
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"tata\n")
@@ -1576,7 +1576,7 @@ def test_direct_pair_act_is_stoppable_and_records_one_result():
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="byte-measurement"
     )
-    act = byte_measurement._record_direct_pair_measurement_act(
+    act = byte_measurement._record_pair_measurement_act_without_applicability(
         ledger,
         source=source,
         source_localities=source_localities,
@@ -1599,14 +1599,14 @@ def test_direct_pair_act_is_stoppable_and_records_one_result():
         locality_identity="byte-measurement",
         prior=current_coordinates,
     )
-    result = byte_measurement._record_direct_pair_measurement_result(
+    result = byte_measurement._record_pair_measurement_result_without_applicability(
         ledger,
         act_occurrence=act,
         current_coordinates=current_coordinates,
     )
     assert result.material["act_occurrence_event_identity"] == act.identity
     with pytest.raises(ByteMeasurementError, match="cannot record a second result"):
-        byte_measurement._record_direct_pair_measurement_result(
+        byte_measurement._record_pair_measurement_result_without_applicability(
             ledger,
             act_occurrence=act,
             current_coordinates=advance_operator_current_coordinates(
@@ -1845,7 +1845,7 @@ def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_s
     ) == recorded_before
 
 
-def test_direct_pair_act_reads_exact_input_coordinates():
+def test_pair_act_without_applicability_reads_exact_input_coordinates():
     ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     source = _recorded_byte_source(ledger, source_event)
@@ -2093,7 +2093,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=current_coordinates,
     )
-    with pytest.raises(ByteMeasurementError, match="already carries an Act"):
+    with pytest.raises(ByteMeasurementError, match="carries one Act"):
         record_result_position_locality_movement_act_occurrence(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
@@ -2105,7 +2105,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         ledger, act_occurrence_event_identity=act.identity
     )
     assert _validate_moved_result_position(ledger, movement.identity)
-    with pytest.raises(ByteMeasurementError, match="already has a result"):
+    with pytest.raises(ByteMeasurementError, match="has one result"):
         record_result_position_locality_movement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -2572,7 +2572,7 @@ def test_byte_result_reader_refuses_changed_result_identity():
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_direct_pair_result_carries_no_applicability_identity():
+def test_pair_result_carries_no_applicability_identity():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2587,7 +2587,7 @@ def test_direct_pair_result_carries_no_applicability_identity():
     assert "input_applicability_event_identity" not in pair.material
 
 
-def test_direct_pair_reader_revalidates_exact_input_coordinates(monkeypatch):
+def test_pair_reader_revalidates_exact_input_coordinates(monkeypatch):
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2622,7 +2622,7 @@ def test_pair_result_reader_refuses_changed_result_identity():
     )
     pair.material["result_identity"] = "crossed-pair-result"
 
-    with pytest.raises(ByteMeasurementError, match="exact direct pair Measurement"):
+    with pytest.raises(ByteMeasurementError, match="pair Measurement without Applicability"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
 

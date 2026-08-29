@@ -43,7 +43,6 @@ current
 d
 declared
 destination
-direct
 distinctions
 e
 each

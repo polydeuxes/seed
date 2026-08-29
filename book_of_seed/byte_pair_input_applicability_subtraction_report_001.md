@@ -20,7 +20,7 @@ introduced.
 
 ## Exact subject before the removed stages
 
-The direct Measurement Act addresses one already recorded
+The Measurement Act addresses one recorded
 `exact_source_material_set` result position. Its coordinates are:
 
 ```text
@@ -38,7 +38,7 @@ Applicability producer returned `applicable` for every accepted instance and
 had no negative producer. It neither narrowed these coordinates nor changed
 the bounded material.
 
-## Direct Act and result
+## Measurement Act and result
 
 The byte-pair Measurement Act records its exact subject position, declared
 Act identity, Act occurrence identity, future result identity, Locality, and
@@ -103,7 +103,7 @@ callable variable Applicability control       retained
 ```
 
 Applicability is not a mandatory stage before Measurement. This result is
-bounded to the active byte-pair road whose exact subject was already present
+bounded to the active byte-pair road whose exact subject was established
 and whose Applicability result could not vary.
 
 ## Validation

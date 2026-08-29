@@ -186,7 +186,7 @@ def record_recorded_boundary_locality_subject_to_act_binding(
     *,
     source_current_coordinates: dict[str, Any],
 ) -> Event:
-    """Bind one direct Locality relation from one recorded result."""
+    """Bind one Locality relation from one recorded result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recorded boundary Locality requires one EventLedger")

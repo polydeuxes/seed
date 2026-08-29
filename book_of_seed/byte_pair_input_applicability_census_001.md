@@ -50,7 +50,7 @@ accepts.
 
 ## Exact subject before Applicability
 
-Before the first binding event, the lifecycle has already read and validated:
+Before the first binding event, the lifecycle has read and validated:
 
 ```text
 exact byte Measurement result occurrence

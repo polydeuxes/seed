@@ -69,7 +69,7 @@ addressed_byte_occurrence_reference_determination_result
 ```
 
 That road begins with one exact D.2 result whose two ordered result positions
-already share one addressed source-position coordinate. It now records:
+share one addressed source-position coordinate. It now records:
 
 ```text
 exact D.2 result
@@ -135,7 +135,7 @@ active inward producer of ordinary Applicability       absent
 prior Seed occurrence joining each exact input pair    not found
 host/test call                                          current producer
 moving Cartesian work into Applicability Acts           rejected
-D.2 direct road                                         active and separate
+D.2 result-addressed road                              active and separate
 ```
 
 The ordinary recurrent shared-position lifecycle is a representation control,
@@ -168,7 +168,7 @@ test.
 specimen. The operator operation produces byte-pair input Applicability for
 each exact byte-result position, but its result is unconditionally
 `applicable`. No negative producer exists. The exact source result position,
-source boundaries, movement coordinate, and Locality already exist before its
+source boundaries, movement coordinate, and Locality exist before its
 two prospective bindings.
 
 That family therefore fails for a different reason than this frozen ordinary
@@ -179,7 +179,7 @@ ordinary recurrent shared-position  positive/negative, no live producer
 byte-pair input                      live producer, no variable verdict
 ```
 
-The byte-pair road is now under its own direct subtraction falsifier.
+The byte-pair road is now under its own subtraction falsifier.
 
 ## Amendment after byte-pair subtraction
 

@@ -22,7 +22,7 @@ OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT = (
 OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND = "operator.destination_locality_recorded"
 OPERATOR_DESTINATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
 OPERATOR_DESTINATION_LOCALITY_ACT = (
-    "Establish one direct operator destination Locality relation"
+    "Establish one operator destination Locality relation"
 )
 EVENT_KIND_BOOK_CLAUSES = {
     OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (

@@ -1,6 +1,6 @@
 """One exact source through-occurrence boundary at another Locality.
 
-This boundary establishes one direct Locality relation and bounded
+This boundary establishes one Locality relation and bounded
 availability only.  It does not copy the source Locality's occurrences or
 current coordinates, make any addressed subject applicable to another Act,
 establish priority, or follow another continuation transitively.
@@ -376,7 +376,7 @@ def record_locality_continuation_result(
     *,
     act_occurrence_event_identity: str,
 ) -> Event:
-    """Record the direct Locality relation for one Act occurrence."""
+    """Record the Locality relation for one Act occurrence."""
 
     act_occurrence = _validated_act_occurrence(
         ledger, act_occurrence_event_identity
@@ -423,7 +423,7 @@ def record_locality_continuation_result(
 def get_recorded_locality_continuation(
     ledger: EventLedger, recorded_result_event_identity: str
 ) -> dict[str, Any]:
-    """Read one direct continuation relation through its exact relation."""
+    """Read one continuation relation through its exact occurrence."""
 
     _require_identity(
         recorded_result_event_identity,

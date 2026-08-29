@@ -1,4 +1,4 @@
-"""One direct Locality relation is established by operator material."""
+"""One Locality relation occurrence is established by operator material."""
 
 from __future__ import annotations
 

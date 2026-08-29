@@ -1,4 +1,4 @@
-"""Source and destination are addressed by one direct Locality relation."""
+"""Source and destination are addressed by one Locality relation occurrence."""
 
 from __future__ import annotations
 
