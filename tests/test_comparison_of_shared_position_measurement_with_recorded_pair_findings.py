@@ -1059,7 +1059,15 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
     ) == (applicability_results[0].identity, applicability_results[3].identity)
     assert all(
         set(act.material["subject_reference"])
-        == {"shared_position_measurement_result_reference", "comparison_result_reference"}
+        == {"shared_position_result_position_reference", "comparison_result_reference"}
+        for act in acts
+    )
+    assert all(
+        "shared_position_result_position_reference" not in act.material
+        and "source_material_result_occurrence_identity" not in act.material
+        and "comparison_added_occurrence_identity" not in act.material
+        and "pair_subjects" not in act.material
+        and "through_event_occurrence_identity" not in act.material
         for act in acts
     )
     assert all("subject_to_act_binding_reference" not in act.material for act in acts)
@@ -1167,9 +1175,7 @@ def test_every_current_compare_act_records_one_result():
         in recorded.current_coordinates["comparison_result_occurrences"]
         for result in results
     )
-    assert tuple(
-        result.material["subject_reference"] for result in results
-    ) == tuple(act.material["subject_reference"] for act in acts)
+    assert all("subject_reference" not in result.material for result in results)
     assert all(
         "subject_to_act_binding_reference" not in result.material
         for result in results
