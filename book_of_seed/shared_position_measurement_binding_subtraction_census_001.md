@@ -185,3 +185,25 @@ host-authored prospective pair can be positive or negative  Applicability kept
 ```
 
 See `d2_shared_position_applicability_subtraction_report_001.md`.
+
+## Amendment after Applicability occurrence-production census
+
+`shared_position_applicability_occurrence_production_census_001.md` finds that
+the ordinary recurrent-input lifecycle has no producer call in the active
+runtime process. Focused tests create its prospective binding, Applicability
+Act/result, Measurement Act, and result through authored calls. The tests prove
+that the callable physiology represents both `applicable` and `inapplicable`;
+they do not prove what prior Seed occurrence warrants either Applicability Act.
+
+The active inward operation uses only the direct D.2 Measurement road and
+therefore produces none of the ordinary binding or Applicability event kinds.
+
+```text
+ordinary positive/negative physiology  callable representation control
+active inward production               absent
+no occurrence                           distinct from inapplicable
+D.2 direct production                   established without Applicability
+```
+
+The frozen ordinary road must not be used as evidence for moving Cartesian
+pair expansion into Applicability Act occurrences.
