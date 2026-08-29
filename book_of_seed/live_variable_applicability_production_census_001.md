@@ -177,3 +177,13 @@ No further construction on this road is warranted until an exact occurrence
 addresses particular subjects without also deciding their Applicability
 result.
 
+## Amendment after residual producer census
+
+`active_inward_applicability_producer_census_001.md` finds no other active
+inward family that supplies the missing positive control. The only other active
+producer is the shared-position source-position material family, whose
+Applicability result is unconditionally `applicable`.
+
+All residual variable readers outside this road are authored/test-only or
+replay-only. Variable Applicability production is therefore frozen across the
+currently active inward runtime, not merely for this Cartesian specimen.

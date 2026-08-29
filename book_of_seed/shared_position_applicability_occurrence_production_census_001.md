@@ -228,3 +228,13 @@ prior Seed occurrence for either     not found
 
 Variable Applicability survives. Autonomous production of its questions does
 not follow from that survival.
+
+## Amendment after residual active-producer census
+
+The remaining active inward call graph contains no grounded variable positive
+control. See `active_inward_applicability_producer_census_001.md`.
+
+One additional active family records source-position material Compare
+Applicability, but its result is always `applicable`. The source-position
+recurrence family's similar producer is called only through public/test roads.
+Neither can establish how a variable Applicability question is posed.
