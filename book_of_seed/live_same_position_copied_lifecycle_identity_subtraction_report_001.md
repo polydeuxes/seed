@@ -43,10 +43,10 @@ occurrence identities. Later Distinction Measurement addresses the exact
 Compare result occurrence. No active reader selects any of the five copied
 identities independently.
 
-The addressed Compare Act identity remains as a positive control. It is part
-of the exact Applicability question before a Compare occurrence exists and is
-carried into the positive Compare occurrence. This subtraction does not merge
-that Act coordinate with an occurrence.
+This subtraction initially retained the addressed Compare Act identity as a
+positive control. The subsequent addressed-Act census found that its exact
+Act and subjects remain available without minting one prospective identity per
+cross-set member.
 
 ## Result
 
@@ -77,7 +77,7 @@ recorded Applicability result occurrence identity   load-bearing
 recorded Compare Act occurrence identity            load-bearing
 recorded Compare result occurrence identity         load-bearing
 copied family-local occurrence/result identities    no distinction found
-addressed Compare Act identity                      survives
+addressed Compare Act identity                      tested separately
 ```
 
 The same occurrence does not need a second family-local identity merely so

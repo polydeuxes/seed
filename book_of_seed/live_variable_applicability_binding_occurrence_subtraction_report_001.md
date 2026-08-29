@@ -48,7 +48,7 @@ The Applicability Act carries:
 ```text
 one shared-position result-position reference
 one recorded-pair Compare result reference
-the addressed Compare Act identity
+the exact addressed Compare Act
 Locality
 through-occurrence boundary
 ```

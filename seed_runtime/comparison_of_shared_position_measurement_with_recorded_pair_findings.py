@@ -1150,38 +1150,24 @@ def _new_identities(ledger: EventLedger) -> dict[str, str]:
     }
 
 
-_ACTIVE_IDENTITY_COORDINATES = (
-    "compare_act_identity",
-)
-
-
-def _new_active_identities(ledger: EventLedger) -> dict[str, str]:
-    return {
-        "compare_act_identity": ledger.mint_identity(
-            "comparison_of_shared_position_measurement_with_recorded_pair_findings_compare_act"
-        ),
-    }
-
-
 def _active_applicability_act_material(
-    inputs: dict[str, Any], boundary: str, identities: dict[str, str]
+    inputs: dict[str, Any], boundary: str
 ) -> dict[str, Any]:
-    addressed_act_identity = identities["compare_act_identity"]
     return {
         "subject_reference": {
             "shared_position_input": {
                 "subject": deepcopy(
                     inputs["shared_position"]["result_position_reference"]
                 ),
-                "addressed_act_identity": addressed_act_identity,
+                "addressed_act": COMPARE_ACT,
             },
             "comparison_input": {
                 "subject": deepcopy(inputs["comparison"]["reference"]),
-                "addressed_act_identity": addressed_act_identity,
+                "addressed_act": COMPARE_ACT,
             },
         },
         "act": APPLICABILITY_ACT,
-        "addressed_act_identity": addressed_act_identity,
+        "addressed_act": COMPARE_ACT,
         "book_clause_identity": "01.Current.E.1",
         "shared_position_measurement_result_reference": deepcopy(
             inputs["shared_position"]["reference"]
@@ -1208,7 +1194,7 @@ def _active_applicability_act_inputs(
     event: Event,
     *,
     prior_coordinates: dict[str, Any] | None,
-) -> tuple[dict[str, Any], str, dict[str, str]]:
+) -> tuple[dict[str, Any], str]:
     material = event.material
     boundary = material.get("through_event_occurrence_identity")
     if prior_coordinates is None:
@@ -1237,10 +1223,7 @@ def _active_applicability_act_inputs(
         ),
         prior_coordinates=prior_coordinates,
     )
-    identities = {
-        "compare_act_identity": material.get("addressed_act_identity"),
-    }
-    return inputs, boundary, identities
+    return inputs, boundary
 
 
 def _record_active_applicability_act(
@@ -1250,15 +1233,9 @@ def _record_active_applicability_act(
     current_coordinates: dict[str, Any],
 ) -> Event:
     boundary = _require_input_current_coordinates(ledger, inputs, current_coordinates)
-    identities = _new_active_identities(ledger)
-    if len(set(identities.values())) != len(identities):
-        raise ValueError(
-            "comparison of shared-position Measurement result with recorded pair "
-            "findings lifecycle identities are compressed"
-        )
     return ledger.append(
         COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _active_applicability_act_material(inputs, boundary, identities),
+        _active_applicability_act_material(inputs, boundary),
         locality_identity=inputs["locality_identity"],
     )
 
@@ -1279,18 +1256,16 @@ def _read_active_applicability_act(
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Applicability Act carries an authored binding"
         )
-    inputs, boundary, identities = _active_applicability_act_inputs(
+    inputs, boundary = _active_applicability_act_inputs(
         ledger,
         event,
         prior_coordinates=prior_coordinates,
     )
     if (
-        any(type(value) is not str or not value for value in identities.values())
-        or len(set(identities.values())) != len(identities)
-        or type(boundary) is not str
+        type(boundary) is not str
         or event.locality_identity != inputs["locality_identity"]
         or event.material
-        != _active_applicability_act_material(inputs, boundary, identities)
+        != _active_applicability_act_material(inputs, boundary)
     ):
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Applicability Act coordinates are not exact"
@@ -1757,7 +1732,7 @@ def _active_applicability_result_material(
             },
         },
         "exact_act": APPLICABILITY_ACT,
-        "addressed_act_identity": act.material["addressed_act_identity"],
+        "addressed_act": COMPARE_ACT,
         "subject_reference": deepcopy(act.material["subject_reference"]),
         "act_occurrence_event_identity": act.identity,
         "applicability": applicability,
@@ -2035,9 +2010,6 @@ def _active_compare_act_material(
     inputs: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "compare_act_identity": applicability_act.material[
-            "addressed_act_identity"
-        ],
         "act": COMPARE_ACT,
         "subject_reference": _active_compare_subject_reference(inputs),
         "shared_position_result_position_reference": deepcopy(
@@ -2295,11 +2267,6 @@ def _compare_result_material(
     act: Event, binding: Event | None, applicability: Event, inputs: dict[str, Any]
 ) -> dict[str, Any]:
     result = {
-        "compare_act_identity": (
-            binding.material["exact_act_identity"]
-            if binding is not None
-            else act.material["compare_act_identity"]
-        ),
         "exact_act": COMPARE_ACT,
         "applicability_result_event_identity": applicability.identity,
         "finding": _comparison_finding(inputs),
@@ -2308,6 +2275,7 @@ def _compare_result_material(
     if binding is None:
         result["subject_reference"] = deepcopy(act.material["subject_reference"])
     else:
+        result["compare_act_identity"] = binding.material["exact_act_identity"]
         result["result_identity"] = binding.material["compare_result_identity"]
         result["act_occurrence_identity"] = binding.material[
             "compare_act_occurrence_identity"
@@ -2320,7 +2288,6 @@ def _recorded_compare_result_material(
     result: dict[str, Any]
 ) -> dict[str, Any]:
     recorded = {
-        "compare_act_identity": result["compare_act_identity"],
         "exact_act": result["exact_act"],
         "applicability_result_event_identity": result[
             "applicability_result_event_identity"
@@ -2331,6 +2298,7 @@ def _recorded_compare_result_material(
         ],
     }
     if "subject_to_act_binding_reference" in result:
+        recorded["compare_act_identity"] = result["compare_act_identity"]
         recorded["result_identity"] = result["result_identity"]
         recorded["act_occurrence_identity"] = result["act_occurrence_identity"]
         recorded["subject_to_act_binding_reference"] = deepcopy(

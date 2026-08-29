@@ -1074,6 +1074,14 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "applicability_act_occurrence_identity"
         not in applicability_act.material
         and "result_identity" not in applicability_act.material
+        and "addressed_act_identity" not in applicability_act.material
+        and applicability_act.material["addressed_act"]
+        == comparison_module.COMPARE_ACT
+        and all(
+            subject["addressed_act"] == comparison_module.COMPARE_ACT
+            and "addressed_act_identity" not in subject
+            for subject in applicability_act.material["subject_reference"].values()
+        )
         for applicability_act in (
             ledger.get(result.material["act_occurrence_event_identity"])
             for result in applicability_results
@@ -1083,12 +1091,15 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         "result_identity" not in result.material
         and "applicability_act_identity" not in result.material
         and "applicability_act_occurrence_identity" not in result.material
+        and "addressed_act_identity" not in result.material
+        and result.material["addressed_act"] == comparison_module.COMPARE_ACT
         and set(result.material["dimensions"]) == {"content"}
         for result in applicability_results
     )
     assert all(
         "act_occurrence_identity" not in act.material
         and "result_identity" not in act.material
+        and "compare_act_identity" not in act.material
         for act in acts
     )
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
@@ -1160,6 +1171,7 @@ def test_every_current_compare_act_records_one_result():
     assert all(
         "act_occurrence_identity" not in result.material
         and "result_identity" not in result.material
+        and "compare_act_identity" not in result.material
         for result in results
     )
     for result in results:

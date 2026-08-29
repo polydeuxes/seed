@@ -31,7 +31,7 @@ Compare result present
 ```
 
 The Applicability Act still carries the exact cross-set member, addressed
-Compare Act identity, Locality, and through-occurrence boundary. The recorded
+Compare Act, Locality, and through-occurrence boundary. The recorded
 Applicability Act occurrence and result occurrence address the exact Act and
 answer. The Applicability result still records the exact variable answer.
 
@@ -59,7 +59,7 @@ Compare result coordinates survive.
 ## Finding
 
 ```text
-Applicability addresses one exact Compare Act             yes
+Applicability addresses exact Compare                     yes
 Applicability establishes applicable | inapplicable       yes
 Applicability establishes a future Compare occurrence     no
 Applicability establishes a future Compare result         no
