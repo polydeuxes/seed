@@ -31,25 +31,26 @@ Compare result present
 ```
 
 The Applicability Act still carries the exact cross-set member, addressed
-Compare Act identity, Locality, through-occurrence boundary, and its own Act
-and result identities. The Applicability result still records the exact
-variable answer.
+Compare Act identity, Locality, and through-occurrence boundary. The recorded
+Applicability Act occurrence and result occurrence address the exact Act and
+answer. The Applicability result still records the exact variable answer.
 
 ## Result
 
 The future Compare occurrence and result identities are absent from every
 active Applicability Act and result.
 
-When one positive Compare Act occurs, that occurrence establishes its own:
+When one positive Compare Act and its result occur, their recorded occurrence
+identities establish:
 
 ```text
-Compare Act occurrence identity
-Compare result identity
+exact Compare Act occurrence
+exact Compare result occurrence
 ```
 
-The negative branch establishes neither. A positive Applicability result can
-remain exact and current while the Compare occurrence is absent, without
-carrying an identity for that absent occurrence.
+The negative branch establishes neither occurrence. A positive Applicability
+result can remain exact and current while the Compare occurrence is absent,
+without carrying an identity for that absent occurrence.
 
 All exact cross-set coverage, positive and negative answers, restart, replay,
 one-result-per-Act refusal, positive-only Compare occurrence, and later
@@ -62,8 +63,8 @@ Applicability addresses one exact Compare Act             yes
 Applicability establishes applicable | inapplicable       yes
 Applicability establishes a future Compare occurrence     no
 Applicability establishes a future Compare result         no
-positive Compare occurrence establishes its lifecycle     yes
-negative branch mints a Compare lifecycle                  no
+positive Compare and result occurrence addresses survive  yes
+negative branch establishes a Compare occurrence           no
 ```
 
 An exact addressed Act is not an occurrence of that Act. Applicability can

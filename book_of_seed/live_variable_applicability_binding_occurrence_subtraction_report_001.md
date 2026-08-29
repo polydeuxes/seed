@@ -49,7 +49,6 @@ The Applicability Act carries:
 one shared-position result-position reference
 one recorded-pair Compare result reference
 the addressed Compare Act identity
-Applicability Act and result identities
 Locality
 through-occurrence boundary
 ```
@@ -63,10 +62,10 @@ applicable | inapplicable
 ```
 
 The Compare Act occurs only for a positive result. It carries its exact
-subjects and establishes its occurrence and result identities without a
-binding-event reference. Its result does the same. Neither Applicability
-branch carries identities for a Compare occurrence or result that has not
-occurred.
+subjects without a binding-event reference. Its result does the same. The
+recorded Act and result occurrence identities address those exact
+occurrences. Neither Applicability branch carries identities for a Compare
+occurrence or result that has not occurred.
 
 ## Exhaustive coverage
 
