@@ -6,8 +6,12 @@ Does through-boundary Recording need a separate subject-to-Act binding event,
 or can its exact binding coordinates be established in the Recording Act
 occurrence itself?
 
-This is one isolated control. It changes no Applicability road and makes no
-claim about Compare, Measurement, Source, Locality, or other binding families.
+This is one isolated cleanup control. The checkpoint command is supplied by
+operator mechanics outside Seed; its addressed boundary does not arise from
+an internally established Seed result. The subtraction therefore makes no
+positive claim about internally produced binding physiology. It changes no
+Applicability road and makes no claim about Compare, Measurement, Source,
+Locality, or other binding families.
 
 ## Former shape
 
@@ -137,11 +141,19 @@ the dependency was circular on this road. The exact addressed boundary already
 supplies the prior occurrence; the Recording Act occurrence supplies the next
 one.
 
+It does not show that an internally produced exact subject can reach an Act
+without a separate binding occurrence. The operator supplied the checkpoint
+command and thereby fixed both the addressed boundary and the requested
+Recording operation before the former binding event was appended. Counting
+that authored request as Seed testimony would put the laboratory on the scale.
+
 ## Disposition
 
-Accept the checkpoint binding-event subtraction.
+Accept the checkpoint binding-event subtraction as cleanup of an externally
+authored command road, not as an internal constitutional control.
 
-Do not generalize it globally. Next pressure a second family with no
-Applicability, preserving its exact subject and Act coordinates directly in
-the Act occurrence. Only after independent controls should the more complex
-Compare binding-before-Applicability floor be touched.
+Do not generalize it globally. The first positive control must begin with an
+exact subject established by earlier Seed physiology, then pressure a family
+with no Applicability while preserving its exact subject and Act coordinates
+directly in the Act occurrence. Only after independent internal controls
+should the more complex Compare binding-before-Applicability floor be touched.

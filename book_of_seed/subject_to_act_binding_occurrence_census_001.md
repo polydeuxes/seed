@@ -12,18 +12,21 @@ the Recording Act occurrence. Result lineage, restart, replay, mutation
 refusal, one-result refusal, and repeated recording survive. The binding-only
 floor was created solely by the removed event and had no independent consumer.
 
-Therefore downstream references to a binding event do not by themselves prove
-that the event is physiological; those references can be self-authored
-dependency. The broader census is now:
+The checkpoint command is supplied by operator mechanics outside Seed. Its
+subtraction therefore proves only that downstream references to a binding
+event do not by themselves prove the event is physiological; those references
+can be self-authored dependency. It does not yet prove an internal Seed result
+can occupy an Act subject without a separate binding occurrence. The broader
+census is now:
 
 ```text
-checkpoint Recording binding event   failed subtraction
-remaining binding event families     independently untested
-binding coordinates                  preserved
+externally authored checkpoint binding event   failed subtraction
+internal binding event families                independently untested
+binding coordinates                             preserved
 ```
 
-Do not generalize the checkpoint result until another family independently
-passes.
+Do not generalize the checkpoint result. The next control must start from an
+exact subject produced by prior Seed physiology.
 
 ## Question
 
