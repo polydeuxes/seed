@@ -80,7 +80,7 @@ def _identity(value: Any, message: str) -> str:
 def _operator_source_for_material_result(
     ledger: EventLedger, added: Event
 ) -> tuple[Event, dict[str, Any]]:
-    """Read direct O1 or an earlier result carrying an O1 source reference."""
+    """Read O1 or an earlier result carrying an O1 source reference."""
 
     from seed_runtime.operator_material_source import (
         get_recorded_operator_material_source,
@@ -1294,7 +1294,7 @@ def _record_applicability_result_from_act(
     )
     if existing:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Applicability Act already has a result"
+            "comparison Applicability Act has one result"
         )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
@@ -1427,6 +1427,40 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
     }
 
 
+def _comparison_act_material_without_applicability(binding: Event) -> dict[str, Any]:
+    material = binding.material
+    return {
+        "comparison_act_identity": material["exact_act_identity"],
+        "act_occurrence_identity": material["comparison_act_occurrence_identity"],
+        "result_identity": material["comparison_result_identity"],
+        "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
+        "subject_to_act_binding_reference": _binding_reference(binding),
+    }
+
+
+def _record_comparison_act_from_binding_without_applicability(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    binding_reading = _binding_reading(
+        ledger,
+        binding.identity,
+        prior_coordinates=current_coordinates,
+    )
+    if binding_reading[0] is not binding:
+        raise RecordedPairMeasurementComparisonError(
+            "Compare carries another exact binding"
+        )
+    _require_binding_current_coordinates(binding, current_coordinates)
+    return ledger.append(
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
+        _comparison_act_material_without_applicability(binding),
+        locality_identity=binding.locality_identity,
+    )
+
+
 def record_recorded_pair_measurement_comparison_act_occurrence(
     ledger: EventLedger,
     *,
@@ -1481,7 +1515,7 @@ def _comparison_act_reading(
     *,
     binding_reading: _BindingReading | None = None,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, _BindingReading, Event]:
+) -> tuple[Event, _BindingReading, Event | None]:
     event = ledger.get(_identity(event_identity, "comparison requires Act occurrence"))
     if (
         event is None
@@ -1502,6 +1536,16 @@ def _comparison_act_reading(
             prior_coordinates=prior_coordinates,
         )
     binding, _inputs = binding_reading
+    if "applicability_result_event_identity" not in event.material:
+        if (
+            event.locality_identity != binding.locality_identity
+            or event.material
+            != _comparison_act_material_without_applicability(binding)
+        ):
+            raise RecordedPairMeasurementComparisonError(
+                "comparison Act occurrence is not exact"
+            )
+        return event, binding_reading, None
     applicability = ledger.get(event.material.get("applicability_result_event_identity"))
     if applicability is None:
         raise RecordedPairMeasurementComparisonError(
@@ -1616,25 +1660,27 @@ def _comparison_result_material(
         raise RecordedPairMeasurementComparisonError(
             "comparison result carries another binding"
         )
-    return {
+    material = {
         "result_identity": act.material["result_identity"],
         "comparison_act_identity": act.material["comparison_act_identity"],
         "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
         "subject_to_act_binding_reference": deepcopy(binding_reference),
-        "applicability_result_event_identity": act.material[
-            "applicability_result_event_identity"
-        ],
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
     }
+    if "applicability_result_event_identity" in act.material:
+        material["applicability_result_event_identity"] = act.material[
+            "applicability_result_event_identity"
+        ]
+    return material
 
 
 def _recorded_comparison_result_material(
     material: dict[str, Any], *, act_identity: str
 ) -> dict[str, Any]:
-    return {
+    recorded = {
         "result_identity": material["result_identity"],
         "comparison_act_identity": material["comparison_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -1642,12 +1688,14 @@ def _recorded_comparison_result_material(
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
-        "applicability_result_event_identity": material[
-            "applicability_result_event_identity"
-        ],
         "findings": deepcopy(material["findings"]),
         "act_occurrence_event_identity": act_identity,
     }
+    if "applicability_result_event_identity" in material:
+        recorded["applicability_result_event_identity"] = material[
+            "applicability_result_event_identity"
+        ]
+    return recorded
 
 
 def record_recorded_pair_measurement_comparison_result(
@@ -1681,7 +1729,7 @@ def _record_comparison_result_from_act(
     )
     if prior_results:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Act already has a result"
+            "comparison Act has one result"
         )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -1724,54 +1772,16 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         prior_through_event_occurrence_identity=boundary,
     )
     _require_binding_current_coordinates(binding, current_coordinates)
-    applicability_binding = (
-        record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding(
-            ledger,
-            comparison_binding_event_identity=binding.identity,
-            current_coordinates=current_coordinates,
-        )
-    )
-    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+    comparison_act = _record_comparison_act_from_binding_without_applicability(
         ledger,
-        current_coordinates,
-        applicability_binding,
-        prior_through_event_occurrence_identity=binding.identity,
-    )
-    _require_binding_current_coordinates(applicability_binding, current_coordinates)
-    applicability_act = ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _applicability_act_material(applicability_binding),
-        locality_identity=applicability_binding.locality_identity,
-    )
-    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        applicability_act,
-        prior_through_event_occurrence_identity=applicability_binding.identity,
-    )
-    applicability_material = _applicability_result_material(applicability_act)
-    applicability = _record_applicability_result_from_act(
-        ledger, act=applicability_act, result=applicability_material
-    )
-    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        applicability,
-        prior_through_event_occurrence_identity=applicability_act.identity,
-    )
-    _require_applicability_current_coordinates(
-        binding, applicability_binding, applicability, current_coordinates
-    )
-    comparison_act = ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
-        _comparison_act_material(binding, applicability),
-        locality_identity=binding.locality_identity,
+        binding=binding,
+        current_coordinates=current_coordinates,
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
         ledger,
         current_coordinates,
         comparison_act,
-        prior_through_event_occurrence_identity=applicability.identity,
+        prior_through_event_occurrence_identity=binding.identity,
     )
     binding_reading = (binding, inputs)
     result_material = _comparison_result_material(

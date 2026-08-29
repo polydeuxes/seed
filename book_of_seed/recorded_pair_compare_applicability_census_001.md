@@ -3,7 +3,7 @@
 ## Question
 
 Does live recorded-pair Compare Applicability establish a result that can
-vary, or does it repeat a question already answered before the Compare
+vary, or does it repeat a question answered before the Compare
 binding is recorded?
 
 This census changes no active Book clause, runtime occurrence, Act, result,
@@ -140,3 +140,17 @@ current-coordinate replay, restart, mutation refusal, and every later finding
 reference.
 
 Do not generalize this result to ordinary positive/negative Applicability.
+
+## Amendment after subtraction
+
+The falsifier passed. The active inward road retains its exact Compare binding
+and proceeds directly through Compare Act and result occurrences. The
+Applicability binding, Act, and forced-positive result are absent.
+
+Source succession, operator source coordinates, stoppability, exact findings,
+current-coordinate replay, restart, mutation refusal, and later recurrence /
+shared-position / Distinction physiology survive. The callable Applicability
+lifecycle remains as a laboratory control.
+
+The Compare binding-production vacancy remains frozen and was not renamed or
+filled. See `recorded_pair_compare_applicability_subtraction_report_001.md`.

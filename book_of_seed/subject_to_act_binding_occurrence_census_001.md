@@ -85,8 +85,8 @@ states.
 the first Applicability-neighborhood control whose complete prospective floor
 fails subtraction.
 
-One exact direct pair-position Measurement result and one addressed
-source-byte position coordinate already establish the complete Determination
+One exact pair-position Measurement result and one addressed
+source-byte position coordinate establish the complete Determination
 subject. The family-local Applicability result had no positive/negative verdict
 coordinate and always recorded `applicable_to`, including when the final
 Determination result contained zero matching references.
@@ -233,7 +233,7 @@ same Locality
 different recorded binding event identities
 ```
 
-Both binding readers accepted them. Direct family calls could then append two
+Both binding readers accepted them. Family-local calls could then append two
 Applicability lifecycles, two Compare Act events, and two results. The supposed
 exact Act occurrence and result identities collided; only binding and event
 references differed.
@@ -358,7 +358,7 @@ This is not evidence for deleting bindings or Applicability from mechanically
 paired inputs. It establishes the narrower discriminator:
 
 ```text
-exact prior occurrence already joins the complete subject coordinates
+exact prior occurrence joins the complete subject coordinates
         → binding coordinates may reside on the later Act
 
 only co-current/addressable inputs
@@ -376,7 +376,20 @@ Act. The separate Applicability binding and Measurement binding occurrences
 added no independently variable coordinate and both failed subtraction with
 the forced Applicability lifecycle.
 
-The direct Measurement Act now carries the exact binding coordinates. Its
+The Measurement Act now carries the exact binding coordinates. Its
 result preserves the independently varying pair counts and recurrence.
 Ordinary recurrent shared-position pairing remains frozen because its inputs
 are mechanically formed and its Applicability result can vary.
+
+## Amendment after recorded-pair Compare Applicability
+
+Recorded-pair Compare gives a distinct control. Its separate Compare binding
+remains, while the later forced-positive Applicability binding, Act, and result
+fail subtraction. The Compare Act and result now address the surviving binding
+directly.
+
+This does not establish a producer for the Compare binding. The operator
+operation still joins the immediately prior pair Measurement with the newly
+produced pair Measurement. No prior Ledger occurrence independently records
+that pair. The binding-production boundary therefore remains frozen even
+though the ceremonial Applicability stages after it are gone.

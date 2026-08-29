@@ -594,7 +594,7 @@ def read_operator_current_coordinates(
     Equivalent to advancing from empty prior coordinates over every recorded
     occurrence. `#2376` established that advancing prior coordinates over only
     the occurrences after the through-occurrence boundary yields equal
-    coordinates, so a caller that already holds those coordinates should use
+    coordinates, so a caller holding those coordinates should use
     :func:`advance_operator_current_coordinates` instead of replaying.
     """
 
@@ -800,7 +800,7 @@ def advance_operator_current_coordinates(
     """Advance current Locality coordinates over exact Ledger occurrences.
 
     With no `prior`, this reads the supplied identities from empty coordinates.
-    With a `prior`, it begins from the accumulators already established there.
+    With a `prior`, it begins from the accumulators established there.
     The Ledger verifies each identity's Locality and append order. The supplied
     identities must be the complete Locality interval after `prior` through the
     final supplied occurrence.
@@ -847,7 +847,7 @@ def advance_operator_current_coordinates(
 
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
-        # prior coordinates that already input the earlier occurrences. Not copied:
+        # prior coordinates that input the earlier occurrences. Not copied:
         # see the shared-accumulator note above.
         material_result_occurrences = prior["material_result_occurrences"]
         if type(material_result_occurrences) is not list:
@@ -1807,7 +1807,7 @@ def _carry_result_position_locality_movement_result_into_current_coordinates(
     dict[str, Any],
     dict[str, Any],
 ]:
-    """Carry one exact movement result and its already-carried source."""
+    """Carry one exact movement result and its carried source."""
 
     bindings = (
         current_coordinates.get("subject_to_act_binding_occurrences")
@@ -2501,25 +2501,41 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
             raise ValueError("recorded pair comparison Applicability is not exact")
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT:
         binding = event.material.get("subject_to_act_binding_reference")
-        if (
-            type(binding) is not dict
-            or binding.get("recorded_occurrence_identity") not in bindings
-            or event.material.get("applicability_result_event_identity")
+        has_no_applicability = (
+            "applicability_result_event_identity" not in event.material
+        )
+        if type(binding) is not dict or binding.get(
+            "recorded_occurrence_identity"
+        ) not in bindings:
+            raise ValueError("recorded pair comparison Act is not exact")
+        if has_no_applicability:
+            if (
+                binding.get("recorded_occurrence_identity")
+                != prior_through_event_occurrence_identity
+            ):
+                raise ValueError("recorded pair comparison Act is not exact")
+        elif (
+            event.material.get("applicability_result_event_identity")
             != prior_through_event_occurrence_identity
             or prior_through_event_occurrence_identity not in applicability
         ):
             raise ValueError("recorded pair comparison Act is not exact")
     else:
         binding = event.material.get("subject_to_act_binding_reference")
+        has_no_applicability = (
+            "applicability_result_event_identity" not in event.material
+        )
         if (
             type(binding) is not dict
             or binding.get("recorded_occurrence_identity") not in bindings
             or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
-            or event.material.get("applicability_result_event_identity")
-            not in applicability
             or event.identity in comparisons
         ):
+            raise ValueError("recorded pair comparison result is not exact")
+        if not has_no_applicability and event.material.get(
+            "applicability_result_event_identity"
+        ) not in applicability:
             raise ValueError("recorded pair comparison result is not exact")
     if event.kind in {
         RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,

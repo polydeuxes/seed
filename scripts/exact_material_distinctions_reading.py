@@ -22,10 +22,8 @@ from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_f
     get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings_applicability,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
-    get_recorded_pair_measurement_comparison_applicability,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_source import (
@@ -172,18 +170,6 @@ def _exact_material_distinctions_reading(
             kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
             reader=lambda exact_ledger, identity: (
                 get_recorded_shared_position_measurement(
-                    exact_ledger,
-                    identity,
-                    prior_coordinates=current_coordinates,
-                )
-            ),
-        ),
-        "pair_compare_applicability_results": _kind_readings(
-            ledger,
-            locality_identity=locality_identity,
-            kind=RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
-            reader=lambda exact_ledger, identity: (
-                get_recorded_pair_measurement_comparison_applicability(
                     exact_ledger,
                     identity,
                     prior_coordinates=current_coordinates,
@@ -361,20 +347,6 @@ def _result_coordinates(
             event.material["first_position_result"]["first_position"],
             event.material["first_position_result"]["second_position"],
             event.material["second_position_result"]["second_position"],
-        )
-
-    for identity, result in reading["pair_compare_applicability_results"]:
-        subjects = result["subject_to_act_binding_reference"]["subject_reference"]
-        earlier = coordinates[
-            subjects["earlier_input"]["subject"]["recorded_occurrence_identity"]
-        ][-1]
-        later = coordinates[
-            subjects["later_input"]["subject"]["recorded_occurrence_identity"]
-        ][-1]
-        coordinates[identity] = (
-            "pair_Compare_Applicability_result",
-            earlier,
-            later,
         )
 
     for identity, result in reading["pair_compare_results"]:

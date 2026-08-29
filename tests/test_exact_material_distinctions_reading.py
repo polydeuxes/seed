@@ -22,7 +22,7 @@ def test_two_material_occurrences_have_established_result_readings():
     ) == materials
     assert len(reading["byte_measurement_result_positions"]) == 2
     assert len(reading["pair_measurement_result_positions"]) == 2
-    assert len(reading["pair_compare_applicability_results"]) == 1
+    assert "pair_compare_applicability_results" not in reading
     assert len(reading["pair_compare_results"]) == 1
     path_applicability = reading["shared_position_compare_applicability_results"]
     assert len(path_applicability) == 2

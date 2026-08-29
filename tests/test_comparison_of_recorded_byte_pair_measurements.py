@@ -19,6 +19,10 @@ from seed_runtime.byte_measurement import (
     result_positions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
@@ -289,8 +293,80 @@ def test_carried_measurements_record_one_complete_comparison():
     )
 
     reading = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    act = ledger.get(result.material["act_occurrence_event_identity"])
     assert reading["result_identity"] == result.material["result_identity"]
+    assert act.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT
+    assert "applicability_result_event_identity" not in act.material
+    assert "applicability_result_event_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        in {
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+        }
+    )
     assert result.identity in current_coordinates["comparison_result_occurrences"]
+
+
+def test_recorded_pair_compare_without_applicability_is_stoppable_and_records_one_result():
+    ledger, _source, _source_event, _added, earlier, later = _operator_inputs()
+    binding = record_recorded_pair_measurement_comparison_subject_to_act_binding(
+        ledger,
+        earlier_result_event_identity=earlier.identity,
+        later_result_event_identity=later.identity,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT
+        )
+        if event.material.get("subject_to_act_binding_reference", {}).get(
+            "recorded_occurrence_identity"
+        )
+        == binding.identity
+    )
+
+    act = comparison_module._record_comparison_act_from_binding_without_applicability(
+        ledger,
+        binding=binding,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+        )
+        if event.material.get("act_occurrence_event_identity") == act.identity
+    )
+
+    result = record_recorded_pair_measurement_comparison_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+    assert result.material["act_occurrence_event_identity"] == act.identity
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="has one result",
+    ):
+        record_recorded_pair_measurement_comparison_result(
+            ledger,
+            act_occurrence_event_identity=act.identity,
+            current_coordinates=read_operator_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
 
 
 def test_witness_source_references_do_not_establish_a_recorded_pair_compare_input(monkeypatch):
@@ -482,7 +558,7 @@ def test_compare_applicability_result_is_exact_without_a_yield_event():
     )["applicability"] == "applicable"
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="already has a result",
+        match="has one result",
     ):
         record_recorded_pair_measurement_comparison_applicability_result(
             ledger,
@@ -495,7 +571,7 @@ def test_one_compare_act_cannot_record_two_results():
 
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="already has a result",
+        match="has one result",
     ):
         record_recorded_pair_measurement_comparison_result(
             ledger,
@@ -823,7 +899,7 @@ def test_pair_compare_uses_supplied_coordinates_with_ordered_paths(monkeypatch):
 
     def historical_pair_coordinates_are_not_read(*_args, **_coordinates):
         raise AssertionError(
-            "pair Compare must use the exact current coordinates already supplied"
+            "pair Compare must use the exact supplied current coordinates"
         )
 
     monkeypatch.setattr(
