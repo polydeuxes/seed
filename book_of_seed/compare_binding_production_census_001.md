@@ -1,5 +1,21 @@
 # Compare binding production census 001
 
+## Amendment after cross-family occurrence subtraction
+
+`subject_to_act_binding_occurrence_census_001.md` pressure-tests the binding
+event itself across Source, Measurement, Compare, Locality, Recording, and
+Applicability families.
+
+The binding event does add runtime distinctions: its exact event identity,
+occurrence order, and current-coordinate boundary are addressed downstream.
+Removing it today would erase the stoppable floor where a binding exists
+before Applicability or its Act occurrence.
+
+That does not establish its constitutional production. No sampled family has
+a binding-producing Act or prior occurrence. The host append remains the first
+durable association. The event is therefore load-bearing in current runtime
+and still ungrounded by prior Seed physiology.
+
 ## Question
 
 What exact Seed physiology makes one same-position Measurement result and one
@@ -134,9 +150,12 @@ B. binding is only exact subjects + Act + Locality
       structure, but the occurrence of Applicability is still unaccounted for
 ```
 
-Current evidence does not choose between them. Deleting the binding occurrence
-now would only move its copied coordinates into Applicability. Keeping it and
-calling it encounter would invent testimony.
+The cross-family census narrows this fork. Binding is not only a recoverable
+dictionary in current runtime because later readers address its event identity
+and occurrence order. Deleting the event would move its coordinates into
+Applicability and erase the pre-Applicability binding floor. Keeping it and
+calling it encounter would still invent testimony because no prior Seed
+physiology produces it.
 
 ## Why the apparent positive condition does not solve production
 
