@@ -35,7 +35,7 @@ earlier/later identity and result occurrence order
 complete earlier and later source occurrence sequences
 one exact added operator material result
 operator source and destination-Locality coordinates
-Act absent before family-local Act production
+Act absent before the family-local call appends it
 Act present with result absent
 Act before result
 one result for one Act
@@ -60,19 +60,22 @@ This subtraction is bounded to the active serial road after its forced
 Applicability stages failed independently. It does not globally withdraw the
 binding event kind and does not reinterpret an authored binding as an Act.
 
-## Unresolved production
+## Occurrence boundary
 
 The active console still supplies:
 
 ```text
 the pair Measurement result carried from the preceding material slice
-+ the pair Measurement result produced for the present material slice
++ the pair Measurement result established for the present material slice
 ```
 
-Family-local mechanics append the Compare Act for those exact subjects. No
-prior Seed occurrence has been found that establishes why this Act occurrence
-exists. Removing the binding event makes that production boundary smaller; it
-does not explain or rename it.
+Family-local mechanics append the Compare Act for those exact subjects. The Act
+occurrence itself establishes their participation. Demanding another prior
+occurrence merely because the Act exists would create a regress.
+
+This road does not establish exhaustive coverage over every co-current pair
+Measurement result. That missing completeness claim bounds the road; it does
+not invalidate the exact Compare Acts that do occur.
 
 ## Finding
 
@@ -81,9 +84,8 @@ subject-to-Act binding coordinates         established
 separate active Compare binding occurrence failed subtraction
 Compare Act/result distinction             preserved
 authored binding lifecycle                 retained as control
-family-local Compare Act production        unresolved
+universal exhaustive coverage              not established
 ```
 
 One recorded-pair Compare binding is real as exact coordinates without being
 another occurrence before the Compare Act.
-

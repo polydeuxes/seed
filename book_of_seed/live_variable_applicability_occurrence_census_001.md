@@ -1,10 +1,10 @@
-# Live variable Applicability production census 001
+# Live variable Applicability occurrence census 001
 
 ## Question
 
-What exact prior Seed occurrence warrants asking Applicability about one
-current shared-position Measurement result and one current recorded-pair
-Compare result?
+Does the active family establish an exact bounded member set for its variable
+Applicability Acts, and do its pre-Applicability binding events add another
+exact distinction?
 
 This census changes no Book clause, runtime occurrence, Act, result, relation,
 identity, or reader. The variable positive/negative Applicability physiology
@@ -90,7 +90,7 @@ an occurrence that asks it.
 
 ### Family-local call
 
-The active console call is the sole producer found. It performs the Cartesian
+The active console call is the sole writer found. It performs the Cartesian
 walk, appends all Compare bindings, records Applicability for all of them,
 records Compare Acts for positive results, and records those Compare results.
 The call is not a Ledger occurrence.
@@ -116,9 +116,10 @@ positive/negative reader physiology.
 
 ### Move each Cartesian pair into an Applicability Act
 
-This removes one Compare binding event per pair but preserves the same host
-Cartesian expansion as one Applicability Act per pair. It relocates the
-unwarranted question production.
+This removes one Compare binding event per pair and preserves one Applicability
+Act per member of the same exact bounded cross-set. The later Act occurrence
+census establishes that another prior occurrence is not mandatory merely to
+account for those Acts.
 
 ### Record only positive Applicability Acts
 
@@ -134,9 +135,9 @@ such cross-set relation.
 
 ### Treat exhaustive host work as a Seed occurrence
 
-Iteration is implementation mechanics. It does not add an occurrence
-distinguishing why any particular `(S, C)` pair became one Applicability
-subject.
+Iteration is implementation mechanics. Exhaustive coverage is established by
+the exact bounded members and one Act for each member, not by calling the loop
+another occurrence.
 
 ## Finding
 
@@ -145,45 +146,43 @@ two separately bounded exact current sets       established
 host Cartesian formation of every ordered pair  implemented
 host verdict calculation before Applicability   implemented
 positive and negative Applicability results      established
-prior occurrence addressing one exact pair      not found
+one Applicability Act for every exact pair       established
 absence distinct from inapplicable               preserved
 ```
 
-The active road produces genuinely variable Applicability results from
-questions whose production is not established by a prior Seed occurrence.
-Variability proves the result distinction; it does not prove the occurrence of
-the question.
+The active road records genuinely variable Applicability results for every
+member of the exact bounded cross-set. The Applicability Act is the occurrence
+of the question. Another prior occurrence would restate its subjects and create
+a regress.
 
 ## Disposition
 
-Freeze this boundary:
+Pressure the smaller boundary:
 
 ```text
-S(B) × C(B)
-        ↓ host Cartesian walk
-no established Seed occurrence for one pair
+one exact S(B) × C(B) member
         ↓
-same-position Compare binding
+Compare binding event
         ↓
-Applicability occurrence
+Applicability binding event
+        ↓
+Applicability Act occurrence
 ```
 
-Do not withdraw variable Applicability, manufacture one Applicability Act for
-every mechanically formed pair under another shape, keep only positive
-results, or introduce Population, Candidate, Enumeration, Encounter,
-Selection, or another producer noun.
+Do not withdraw variable Applicability, keep only positive results, or
+introduce Population, Candidate, Enumeration, Encounter, Selection, or another
+noun for a prior maker.
 
-No further construction on this road is warranted until an exact occurrence
-addresses particular subjects without also deciding their Applicability
-result.
+The next falsifier removes both binding events while preserving every
+Applicability Act/result state and exhaustive cross-set coverage.
 
-## Amendment after residual producer census
+## Amendment after residual occurrence census
 
-`active_inward_applicability_producer_census_001.md` finds no other active
-inward family that supplies the missing positive control. The only other active
-producer is the shared-position source-position material family, whose
+`active_inward_applicability_occurrence_census_001.md` finds no other active
+inward family with a variable result. The only other active
+family is the shared-position source-position material family, whose
 Applicability result is unconditionally `applicable`.
 
 All residual variable readers outside this road are authored/test-only or
-replay-only. Variable Applicability production is therefore frozen across the
-currently active inward runtime, not merely for this Cartesian specimen.
+replay-only. This road is therefore the active positive control for variable
+Applicability and the next binding-event subtraction.

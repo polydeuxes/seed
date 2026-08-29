@@ -208,7 +208,7 @@ separate from the proposed forced-Applicability subtraction. See
 
 ## Amendment after live variable producer census
 
-`live_variable_applicability_production_census_001.md` supplies the requested
+`live_variable_applicability_occurrence_census_001.md` supplies the requested
 active inward specimen. The same-position Measurement / recorded-pair Compare
 family produces positive and negative Applicability results during the active
 console operation.
@@ -232,7 +232,7 @@ not follow from that survival.
 ## Amendment after residual active-producer census
 
 The remaining active inward call graph contains no grounded variable positive
-control. See `active_inward_applicability_producer_census_001.md`.
+control. See `active_inward_applicability_occurrence_census_001.md`.
 
 One additional active family recorded source-position material Compare
 Applicability, but its result was always `applicable`. That active lifecycle

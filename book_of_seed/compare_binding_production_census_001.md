@@ -2,7 +2,7 @@
 
 ## Amendment after live variable Applicability production census
 
-`live_variable_applicability_production_census_001.md` confirms the active
+`live_variable_applicability_occurrence_census_001.md` confirms the active
 same-position family is produced by a host Cartesian walk over two separately
 bounded exact current sets. The combined-input reader computes the later
 positive or negative result before any binding or Applicability occurrence is
