@@ -1085,7 +1085,8 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "result_identity" not in applicability_act.material
         and "addressed_act_identity" not in applicability_act.material
         and applicability_act.material["addressed_act"]
-        == comparison_module.COMPARE_ACT
+        == "Compare"
+        and applicability_act.material["act"] == "Applicability"
         and set(applicability_act.material["subject_reference"])
         == {
             "shared_position_result_position_reference",
@@ -1117,6 +1118,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         "act_occurrence_identity" not in act.material
         and "result_identity" not in act.material
         and "compare_act_identity" not in act.material
+        and act.material["act"] == "Compare"
         for act in acts
     )
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (

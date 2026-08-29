@@ -43,6 +43,8 @@ COMPARE_ACT = (
     "Compare each exact pair position of one same-position Measurement result "
     "with complete recorded findings of the same exact pair subject"
 )
+_ACTIVE_APPLICABILITY_ACT = "Applicability"
+_ACTIVE_COMPARE_ACT = "Compare"
 COMPARE_RESULT_KIND = (
     "Compare result of shared-position Measurement and recorded pair findings"
 )
@@ -1162,8 +1164,8 @@ def _active_applicability_act_material(
                 inputs["comparison"]["reference"]
             ),
         },
-        "act": APPLICABILITY_ACT,
-        "addressed_act": COMPARE_ACT,
+        "act": _ACTIVE_APPLICABILITY_ACT,
+        "addressed_act": _ACTIVE_COMPARE_ACT,
         "through_event_occurrence_identity": boundary,
     }
 
@@ -1994,7 +1996,7 @@ def _active_compare_act_material(
     inputs: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "act": COMPARE_ACT,
+        "act": _ACTIVE_COMPARE_ACT,
         "subject_reference": _active_compare_subject_reference(inputs),
         "applicability_result_event_identity": applicability.identity,
     }
