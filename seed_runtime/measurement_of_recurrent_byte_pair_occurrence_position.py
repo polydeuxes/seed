@@ -16,6 +16,7 @@ from typing import Any, NamedTuple
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _validated_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_measurement,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -270,12 +271,43 @@ def _references_to_recorded_recurrent_byte_pairs(
     findings_by_position = {
         finding.result_position: finding for finding in findings or ()
     }
-    binding = reading.binding.material if reading is not None else None
-    sources = (
-        binding.get("source_occurrence_references")
-        if isinstance(binding, dict)
+    binding = (
+        reading.binding.material
+        if reading is not None and reading.binding is not None
         else None
     )
+    if binding is not None:
+        sources = binding.get("source_occurrence_references")
+    else:
+        source_reference = event.material.get("source_result_position_reference")
+        source_positions = (
+            result_positions_of_recorded_byte_measurement(
+                ledger,
+                source_reference.get("recorded_occurrence_identity"),
+                prior_coordinates=prior_coordinates,
+            )
+            if type(source_reference) is dict
+            else None
+        )
+        source_position = (
+            next(
+                (
+                    position
+                    for position in source_positions
+                    if position.get("dimensions", {}).get("position")
+                    == source_reference.get("result_position")
+                ),
+                None,
+            )
+            if type(source_positions) is tuple
+            else None
+        )
+        content = (
+            source_position.get("dimensions", {}).get("content")
+            if type(source_position) is dict
+            else None
+        )
+        sources = content.get("source_material") if type(content) is dict else None
     boundary = event.material.get("completeness_boundary")
     if (
         type(sources) is not list

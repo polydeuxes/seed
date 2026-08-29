@@ -180,3 +180,17 @@ byte-pair input                      live producer, no variable verdict
 ```
 
 The byte-pair road is now under its own direct subtraction falsifier.
+
+## Amendment after byte-pair subtraction
+
+The byte-pair falsifier passed. Its active inward Applicability could not vary,
+and its exact byte-result position existed before the prospective stages. The
+active road now proceeds directly from that exact position through a
+byte-pair Measurement Act to its result.
+
+This does not alter the frozen ordinary recurrent shared-position control:
+
+```text
+ordinary recurrent shared-position  variable result, no live producer
+active byte-pair input               live producer, forced result withdrawn
+```

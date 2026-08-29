@@ -8,6 +8,7 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
@@ -1311,18 +1312,15 @@ def test_pair_count_and_recurrence_are_separate_results():
     applicability = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
-    assert applicability["dimensions"]["applicability"] == "applicable"
-    assert applicability["input_result_position_reference"] == event.material["source_result_position_reference"]
-    assert applicability["result_boundary"]
-    assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
-    assert applicability["measurement_locality"] == "measurement"
-    assert applicability["input_coordinates"] == {
-        "recorded_measurement_result_occurrence_identity": source.identity,
-        "result_position": original["dimensions"]["position"],
-        "locality_movement_result_occurrence_identity": event.material[
-            "source_movement_event_identity"
-        ],
-    }
+    assert applicability is None
+    assert "input_applicability" not in event.material
+    assert "input_applicability_event_identity" not in event.material
+    assert "subject_to_act_binding_reference" not in event.material
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    assert act.kind == BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT
+    assert act.material["source_result_position_reference"] == (
+        event.material["source_result_position_reference"]
+    )
 
 
 def test_recorded_pair_results_replay_the_complete_bounded_source_read():
@@ -1486,7 +1484,7 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
     assert result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
-def test_pair_validation_refuses_unsupported_input_applicability():
+def test_pair_validation_refuses_an_unestablished_input_applicability_surface():
     ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
@@ -1494,8 +1492,8 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    event.material["input_applicability"]["result_boundary"] = "some other use"
-    with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
+    event.material["input_applicability"] = {"applicability": "applicable"}
+    with pytest.raises(ByteMeasurementError, match="exact pair result and recording surfaces"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
@@ -1512,7 +1510,7 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
     assert result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
 
 
-def test_applicability_identity_is_bound_to_one_exact_addressed_act():
+def test_direct_pair_measurements_have_distinct_act_and_result_identities():
     ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     first_result = record_byte_position_pair_count_layer(
@@ -1525,32 +1523,21 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
         source_measurement_event_identity=source_event.identity,
         recording_locality_identity="byte-measurement",
     )
-    first = input_applicability_of_recorded_byte_position_pair_measurement(
+    first_act = ledger.get(first_result.material["act_occurrence_event_identity"])
+    second_act = ledger.get(second_result.material["act_occurrence_event_identity"])
+
+    assert first_act.identity != second_act.identity
+    assert first_act.material["act_occurrence_identity"] != (
+        second_act.material["act_occurrence_identity"]
+    )
+    assert first_result.material["result_identity"] != second_result.material["result_identity"]
+    assert first_act.material["addressed_act_identity"] != first_act.material["act_occurrence_identity"]
+    assert input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, first_result.identity
-    )
-    second = input_applicability_of_recorded_byte_position_pair_measurement(
-        ledger, second_result.identity
-    )
-    first_binding = ledger.get(
-        first["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ],
-    )
-
-    assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
-    assert first["dimensions"]["identity"] == first_binding.material[
-        "applicability_result_identity"
-    ]
-    assert first_binding.kind == (
-        BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    )
-    assert first["addressed_act_identity"] == first_binding.material[
-        "addressed_act_identity"
-    ]
-    assert first["addressed_act_occurrence_identity"] is None
+    ) is None
 
 
-def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act():
+def test_active_pair_measurement_records_no_binding_or_applicability_occurrence():
     ledger = _ledger(b"tata\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
@@ -1558,51 +1545,77 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    measurement_binding = get_byte_position_pair_measurement_subject_to_act_binding(
-        ledger,
-        result.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ],
-    )
-    applicability = ledger.get(result.material["input_applicability_event_identity"])
-    applicability_act = ledger.get(
-        applicability.material["act_occurrence_event_identity"]
-    )
     measurement_act = ledger.get(result.material["act_occurrence_event_identity"])
-    current_coordinates = read_operator_current_coordinates_through(
-        ledger,
-        locality_identity="measurement",
-        through_event_occurrence_identity=measurement_binding.identity,
+
+    assert measurement_act.kind == BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT
+    assert "subject_to_act_binding_reference" not in measurement_act.material
+    assert "subject_to_act_binding_reference" not in result.material
+    assert "input_applicability_event_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        in {
+            BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+        }
     )
 
-    assert current_coordinates["subject_to_act_binding_occurrences"].get(
-        measurement_binding.identity, object()
-    ) is None
-    applicability_binding = ledger.get(
-        applicability_act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
+
+def test_direct_pair_act_is_stoppable_and_records_one_result():
+    from seed_runtime import byte_measurement
+
+    ledger = _ledger(b"tata\n")
+    source_event = _byte_source(ledger)
+    source, source_localities, content = byte_measurement._prepare_pair_source(
+        ledger,
+        source_measurement_event_identity=source_event.identity,
+        measurement_locality_identity="byte-measurement",
     )
-    assert applicability_binding.kind == (
-        BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    current_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity="byte-measurement"
     )
-    assert measurement_binding.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    assert applicability_binding.identity != measurement_binding.identity
-    assert measurement_binding.material["subject_reference"] == applicability_binding.material[
-        "source_result_position_reference"
-    ]
-    assert measurement_binding.material["through_event_occurrence_identity"] == (
-        applicability_binding.identity
+    act = byte_measurement._record_direct_pair_measurement_act(
+        ledger,
+        source=source,
+        source_localities=source_localities,
+        content=content,
+        recording_locality_identity="byte-measurement",
+        current_coordinates=current_coordinates,
     )
-    assert applicability_binding.material["addressed_act_identity"] == (
-        measurement_binding.material["exact_act_identity"]
+
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            "byte-measurement", BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        )
+        if event.material.get("act_occurrence_event_identity") == act.identity
     )
-    assert applicability_act.material["subject_to_act_binding_reference"] != (
-        result.material["subject_to_act_binding_reference"]
+
+    current_coordinates = advance_operator_current_coordinates(
+        ledger,
+        (act.identity,),
+        locality_identity="byte-measurement",
+        prior=current_coordinates,
     )
-    assert measurement_act.material["subject_to_act_binding_reference"] == (
-        result.material["subject_to_act_binding_reference"]
+    result = byte_measurement._record_direct_pair_measurement_result(
+        ledger,
+        act_occurrence=act,
+        current_coordinates=current_coordinates,
     )
+    assert result.material["act_occurrence_event_identity"] == act.identity
+    with pytest.raises(ByteMeasurementError, match="cannot record a second result"):
+        byte_measurement._record_direct_pair_measurement_result(
+            ledger,
+            act_occurrence=act,
+            current_coordinates=advance_operator_current_coordinates(
+                ledger,
+                (result.identity,),
+                locality_identity="byte-measurement",
+                prior=current_coordinates,
+            ),
+        )
 
 
 def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
@@ -1832,7 +1845,7 @@ def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_s
     ) == recorded_before
 
 
-def test_pair_applicability_reads_exact_input_coordinates():
+def test_direct_pair_act_reads_exact_input_coordinates():
     ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     source = _recorded_byte_source(ledger, source_event)
@@ -1841,32 +1854,22 @@ def test_pair_applicability_reads_exact_input_coordinates():
         source_measurement_event_identity=source_event.identity,
         recording_locality_identity="byte-measurement",
     )
-    applicable = input_applicability_of_recorded_byte_position_pair_measurement(
-        ledger, result.identity
-    )
-    applicability_event = ledger.get(
-        result.material["input_applicability_event_identity"]
-    )
+    act = ledger.get(result.material["act_occurrence_event_identity"])
 
-    assert applicable["dimensions"]["applicability"] == "applicable"
-    assert applicable["input_coordinates"] == {
-        "recorded_measurement_result_occurrence_identity": source[
-            "recorded_occurrence_identity"
-        ],
-        "result_position": source["result_position"],
-        "locality_movement_result_occurrence_identity": None,
-    }
-    assert applicable["input_result_position_reference"] == {
+    assert act.material["source_result_position_reference"] == {
         "recorded_occurrence_identity": source["recorded_occurrence_identity"],
         "result_position": source["result_position"],
     }
-    assert applicable["addressed_act_occurrence_identity"] is None
-    assert "yield_relation_identity" not in applicability_event.material
+    assert act.material["source_movement_event_identity"] is None
+    assert input_applicability_of_recorded_byte_position_pair_measurement(
+        ledger, result.identity
+    ) is None
+    assert "yield_relation_identity" not in act.material
     assert "yield_relation_identity" not in result.material
     assert not tuple(
         event
         for event in ledger.iter_locality_kind(
-            applicability_event.locality_identity,
+            result.locality_identity,
             RECORDED_YIELD_RELATION_EVENT,
         )
         if event.material.get("occurrence_boundary")
@@ -2513,10 +2516,10 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
     )
 
     assert result.material["addressed_act_identity"] != result.material["act_occurrence_identity"]
-    assert result.material["input_applicability"]["addressed_act_identity"] == (
-        result.material["addressed_act_identity"]
-    )
-    assert result.material["input_applicability"]["addressed_act_occurrence_identity"] is None
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    assert act.material["addressed_act_identity"] == result.material["addressed_act_identity"]
+    assert act.material["act_occurrence_identity"] == result.material["act_occurrence_identity"]
+    assert act.material["measurement_result_identity"] == result.material["result_identity"]
 
 
 def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
@@ -2569,7 +2572,7 @@ def test_byte_result_reader_refuses_changed_result_identity():
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_pair_applicability_reader_refuses_changed_result_identity():
+def test_direct_pair_result_carries_no_applicability_identity():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2577,16 +2580,14 @@ def test_pair_applicability_reader_refuses_changed_result_identity():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    applicability_identity = pair.material["input_applicability_event_identity"]
-    applicability = ledger.get(applicability_identity)
-    assert get_recorded_pair_input_applicability(ledger, applicability.identity)
-    applicability.material["result_identity"] = "crossed-applicability-result"
-
-    with pytest.raises(ByteMeasurementError, match="exact pair Measurement binding"):
-        get_recorded_pair_input_applicability(ledger, applicability.identity)
+    assert input_applicability_of_recorded_byte_position_pair_measurement(
+        ledger, pair.identity
+    ) is None
+    assert "input_applicability" not in pair.material
+    assert "input_applicability_event_identity" not in pair.material
 
 
-def test_pair_applicability_reader_revalidates_exact_input_coordinates(monkeypatch):
+def test_direct_pair_reader_revalidates_exact_input_coordinates(monkeypatch):
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2603,8 +2604,8 @@ def test_pair_applicability_reader_revalidates_exact_input_coordinates(monkeypat
         refuse_detached_coordinates,
     )
     with pytest.raises(ByteMeasurementError, match="detached input coordinates"):
-        get_recorded_pair_input_applicability(
-            ledger, pair.material["input_applicability_event_identity"]
+        result_positions_of_recorded_byte_position_pair_measurement(
+            ledger, pair.identity
         )
 
 
@@ -2621,9 +2622,7 @@ def test_pair_result_reader_refuses_changed_result_identity():
     )
     pair.material["result_identity"] = "crossed-pair-result"
 
-    with pytest.raises(
-        ByteMeasurementError, match="exact pair Measurement binding"
-    ):
+    with pytest.raises(ByteMeasurementError, match="exact direct pair Measurement"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
 
@@ -2659,13 +2658,6 @@ WITNESSED_BOOK_COORDINATES = {
         test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors,
         test_byte_result_reader_refuses_changed_result_identity,
         test_pair_result_reader_refuses_changed_result_identity,
-    ),
-    ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
-        test_pair_validation_refuses_unsupported_input_applicability,
-        test_applicability_identity_is_bound_to_one_exact_addressed_act,
-        test_pair_applicability_reads_exact_input_coordinates,
-        test_pair_applicability_reader_refuses_changed_result_identity,
-        test_pair_applicability_reader_revalidates_exact_input_coordinates,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (
         test_pair_validation_requires_one_exact_ordered_content,

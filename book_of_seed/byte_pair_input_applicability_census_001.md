@@ -143,3 +143,21 @@ later pair Compare and source-position physiology
 
 Do not generalize the result to an Applicability family with independently
 variable positive and negative results.
+
+## Amendment after subtraction
+
+The falsifier passed. The active inward road now records the exact source
+result position directly on the byte-pair Measurement Act, followed by one
+exact Measurement result. The two binding events and forced Applicability
+Act/result are absent.
+
+Pair counts, recurrence, movement coordinates, source occurrence references,
+current-coordinate replay, restart, mutation refusal, recorded-pair Compare,
+and later source-position physiology survive. Reading the result does not
+perform Measurement again.
+
+The old callable lifecycle remains only as an independently callable
+laboratory control. Ordinary recurrent shared-position Applicability remains
+untouched because its authored result can vary.
+
+See `byte_pair_input_applicability_subtraction_report_001.md`.

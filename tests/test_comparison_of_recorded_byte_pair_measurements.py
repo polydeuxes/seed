@@ -145,7 +145,7 @@ def _witness_compare_input_testimony(monkeypatch):
             added.identity,
         )
         if event.identity == later.identity
-        else (),
+        else (earlier_source.identity,),
     )
     current_coordinates = {
         "locality_identity": LOCALITY,

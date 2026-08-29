@@ -10,6 +10,7 @@ from seed_runtime.byte_measurement import (
     _RecordedBytePairFinding,
     _read_pair_measurement_subject_to_act_binding,
     _validated_recorded_byte_position_pair_measurement,
+    result_positions_of_recorded_byte_measurement,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -170,7 +171,7 @@ def _measurement_and_findings(
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, tuple[Any, ...], Event]:
+) -> tuple[Event, tuple[Any, ...], Event | None]:
     event_identity = _identity(
         event_identity, "comparison requires one exact recorded Measurement result"
     )
@@ -321,6 +322,44 @@ def _source_occurrence_references(
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
     reference = event.material.get("subject_to_act_binding_reference")
+    if reference is None:
+        source_reference = event.material.get("source_result_position_reference")
+        source_positions = (
+            result_positions_of_recorded_byte_measurement(
+                ledger,
+                source_reference.get("recorded_occurrence_identity"),
+                prior_coordinates=prior_coordinates,
+            )
+            if type(source_reference) is dict
+            else None
+        )
+        source_position = (
+            next(
+                (
+                    position
+                    for position in source_positions
+                    if position.get("dimensions", {}).get("position")
+                    == source_reference.get("result_position")
+                ),
+                None,
+            )
+            if type(source_positions) is tuple
+            else None
+        )
+        content = (
+            source_position.get("dimensions", {}).get("content")
+            if type(source_position) is dict
+            else None
+        )
+        return _source_occurrence_references_from_binding(
+            {
+                "source_occurrence_references": (
+                    content.get("source_material")
+                    if type(content) is dict
+                    else None
+                )
+            }
+        )
     binding_event = _read_pair_measurement_subject_to_act_binding(
         ledger,
         reference.get("recorded_occurrence_identity")
@@ -392,11 +431,11 @@ def _comparison_inputs(
         raise RecordedPairMeasurementComparisonError(
             "later comparison input must follow the earlier input"
         )
-    earlier_sources = _source_occurrence_references_from_binding(
-        earlier_binding.material
+    earlier_sources = _source_occurrence_references(
+        ledger, earlier, prior_coordinates=prior_coordinates
     )
-    later_sources = _source_occurrence_references_from_binding(
-        later_binding.material
+    later_sources = _source_occurrence_references(
+        ledger, later, prior_coordinates=prior_coordinates
     )
     if len(later_sources) != len(earlier_sources) + 1 or later_sources[:-1] != earlier_sources:
         raise RecordedPairMeasurementComparisonError(
@@ -552,8 +591,8 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "later comparison input must follow the earlier input"
         )
-    earlier_sources = _source_occurrence_references_from_binding(
-        earlier_binding.material
+    earlier_sources = _source_occurrence_references(
+        ledger, earlier, prior_coordinates=current_coordinates
     )
     later_sources = _source_occurrence_references(
         ledger,

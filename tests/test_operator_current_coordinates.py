@@ -15,7 +15,6 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     result_positions_of_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_subject_to_act_binding,
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -167,48 +166,36 @@ def _pair_lifecycle(ledger):
     measurement_act = ledger.get(
         result.material["act_occurrence_event_identity"]
     )
-    applicability = ledger.get(
-        result.material["input_applicability_event_identity"]
-    )
-    applicability_act = ledger.get(
-        applicability.material["act_occurrence_event_identity"]
-    )
-    assignment = ledger.get(
-        result.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-    )
-    return assignment, applicability_act, applicability, measurement_act, result
+    return measurement_act, result
 
 
-def test_pair_standing_replay_carries_both_subject_to_act_bindings_and_result():
+def test_pair_standing_replay_carries_direct_act_and_result():
     ledger = _measurement_ledger()
-    measurement_binding, applicability_act, _applicability, _measurement_act, result = (
-        _pair_lifecycle(ledger)
-    )
-    applicability_binding_identity = applicability_act.material[
-        "subject_to_act_binding_reference"
-    ]["recorded_occurrence_identity"]
+    measurement_act, result = _pair_lifecycle(ledger)
 
     standing = _standing(ledger)
 
-    assert standing["subject_to_act_binding_occurrences"].get(
-        applicability_binding_identity, object()
-    ) is None
-    assert standing["subject_to_act_binding_occurrences"].get(
-        measurement_binding.identity, object()
-    ) is None
+    assert measurement_act.kind == BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT
+    assert "subject_to_act_binding_reference" not in measurement_act.material
+    assert "input_applicability_event_identity" not in result.material
     assert result.identity in standing["measurement_occurrences"]
-
-
-def test_pair_standing_replay_refuses_changed_subject_to_act_binding():
-    ledger = _measurement_ledger()
-    measurement_binding, _applicability_act, _applicability, _measurement_act, _result = (
-        _pair_lifecycle(ledger)
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        in {
+            BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+            BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+        }
     )
-    measurement_binding.material["measurement_rule"] = "changed rule"
 
-    with pytest.raises(ByteMeasurementError, match="binding coordinates"):
+
+def test_pair_standing_replay_refuses_changed_direct_act_coordinates():
+    ledger = _measurement_ledger()
+    measurement_act, _result = _pair_lifecycle(ledger)
+    measurement_act.material["source_result_position_reference"]["result_position"] += 1
+
+    with pytest.raises(ByteMeasurementError, match="source result position"):
         _standing(ledger)
 
 
@@ -221,16 +208,14 @@ def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path)
         exact=b"material",
         source_boundary="test boundary",
     )
-    assignment, _applicability_act, _applicability, _measurement_act, result = (
-        _pair_lifecycle(ledger)
-    )
+    measurement_act, result = _pair_lifecycle(ledger)
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
     assert result.identity in _standing(reopened)["measurement_occurrences"]
-    assert get_byte_position_pair_measurement_subject_to_act_binding(
-        reopened, assignment.identity
-    ).identity == assignment.identity
+    assert reopened.get(measurement_act.identity).kind == (
+        BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT
+    )
     assert result_positions_of_recorded_byte_position_pair_measurement(
         reopened, result.identity
     )

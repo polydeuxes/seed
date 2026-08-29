@@ -9,7 +9,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_position_pair_count_layer_from_current_coordinates,
-    get_byte_position_pair_measurement_subject_to_act_binding,
+    result_positions_of_recorded_byte_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
@@ -290,23 +290,37 @@ def _latest_carried_pair_premise(
             or event.locality_identity != locality_identity
         ):
             continue
-        reference = (
-            event.material.get("subject_to_act_binding_reference")
-            if type(event.material) is dict
+        source_reference = event.material.get("source_result_position_reference")
+        source_positions = (
+            result_positions_of_recorded_byte_measurement(
+                ledger,
+                source_reference.get("recorded_occurrence_identity"),
+                prior_coordinates=current_coordinates,
+            )
+            if type(source_reference) is dict
             else None
         )
-        try:
-            binding = get_byte_position_pair_measurement_subject_to_act_binding(
-                ledger,
-                reference.get("recorded_occurrence_identity")
-                if type(reference) is dict
-                else None,
+        source_position = (
+            next(
+                (
+                    position
+                    for position in source_positions
+                    if position.get("dimensions", {}).get("position")
+                    == source_reference.get("result_position")
+                ),
+                None,
             )
-        except (TypeError, ValueError):
-            binding = None
+            if type(source_positions) is tuple
+            else None
+        )
+        source_content = (
+            source_position.get("dimensions", {}).get("content")
+            if type(source_position) is dict
+            else None
+        )
         source_occurrence_references = (
-            binding.material.get("source_occurrence_references")
-            if binding is not None
+            source_content.get("source_material")
+            if type(source_content) is dict
             else None
         )
         if (

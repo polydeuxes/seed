@@ -366,3 +366,17 @@ only co-current/addressable inputs
 ```
 
 See `d2_shared_position_applicability_subtraction_report_001.md`.
+
+## Amendment after active byte-pair Measurement
+
+The active byte-pair road supplies another internally produced control. Its
+exact source byte-result position, movement coordinate when present, bounded
+source occurrences, and Locality all exist before the byte-pair Measurement
+Act. The separate Applicability binding and Measurement binding occurrences
+added no independently variable coordinate and both failed subtraction with
+the forced Applicability lifecycle.
+
+The direct Measurement Act now carries the exact binding coordinates. Its
+result preserves the independently varying pair counts and recurrence.
+Ordinary recurrent shared-position pairing remains frozen because its inputs
+are mechanically formed and its Applicability result can vary.

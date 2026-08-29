@@ -75,6 +75,14 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "input_applicability_event_identity",
     "subject_to_act_binding_reference",
 }
+DIRECT_BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
+    "subject_to_act_binding_reference",
+} | {
+    "addressed_act_identity",
+    "act_occurrence_identity",
+    "source_result_position_reference",
+    "source_movement_event_identity",
+}
 BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.byte_position_pair_act_occurrenced"
 )
@@ -266,7 +274,7 @@ class _RecordedBytePairFinding:
 @dataclass(frozen=True)
 class _RecordedBytePairMeasurementReading:
     results: tuple[RecordedBytePairResultPosition, ...] | tuple[_RecordedBytePairFinding, ...]
-    binding: Event
+    binding: Event | None
     source: dict[str, Any]
 
 
@@ -3294,6 +3302,27 @@ def _new_pair_lifecycle_identities(ledger: EventLedger) -> dict[str, str]:
     return identities
 
 
+def _new_direct_pair_measurement_identities(
+    ledger: EventLedger,
+) -> dict[str, str]:
+    identities = {
+        "measurement_act_identity": ledger.mint_identity(
+            "byte_position_pair_measurement_act"
+        ),
+        "measurement_act_occurrence_identity": ledger.mint_identity(
+            "byte_position_pair_measurement_occurrence"
+        ),
+        "measurement_result_identity": ledger.mint_identity(
+            "byte_position_pair_measurement_result"
+        ),
+    }
+    if len(set(identities.values())) != 3:
+        raise ByteMeasurementError(
+            "byte-position-pair Measurement identities collapsed"
+        )
+    return identities
+
+
 def _append_pair_applicability_binding(
     ledger: EventLedger,
     *,
@@ -3414,7 +3443,11 @@ def _read_pair_subject_to_act_binding(
             else None
         )
     elif type(movement_identity) is str and movement_identity:
-        source = _validate_moved_result_position(ledger, movement_identity)
+        source = _validate_moved_result_position(
+            ledger,
+            movement_identity,
+            prior_destination_coordinates=coordinates,
+        )
     else:
         source = None
     if (
@@ -3976,7 +4009,7 @@ def _read_pair_measurement_act_occurrence(
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, Event, dict[str, Any], Event]:
+) -> tuple[Event, Event | None, dict[str, Any], Event | None]:
     event = ledger.get(event_identity)
     if (
         event is None
@@ -3986,6 +4019,11 @@ def _read_pair_measurement_act_occurrence(
         raise ByteMeasurementError(
             "pair Measurement Act occurrence is absent or corrupted"
         )
+    if "subject_to_act_binding_reference" not in event.material:
+        source, _source_localities, _content = _direct_pair_source_from_act(
+            ledger, event, prior_coordinates=prior_coordinates
+        )
+        return event, None, source, None
     reference = event.material.get("subject_to_act_binding_reference")
     binding, source, _source_localities, _content = (
         _read_pair_measurement_subject_to_act_binding(
@@ -4277,6 +4315,281 @@ def _require_exact_pair_measurement_result_event(
         )
 
 
+def _direct_pair_measurement_act_material(
+    *,
+    source: dict[str, Any],
+    source_localities: tuple[str, ...],
+    content: dict[str, Any],
+    through_event_occurrence_identity: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    return {
+        "addressed_act_identity": identities["measurement_act_identity"],
+        "act_occurrence_identity": identities[
+            "measurement_act_occurrence_identity"
+        ],
+        "measurement_result_identity": identities["measurement_result_identity"],
+        "act": "declared byte-position-pair Measurement",
+        "subject_reference": _byte_result_position_reference(source),
+        "source_result_position_reference": _byte_result_position_reference(source),
+        "source_movement_event_identity": _byte_result_position_movement_identity(
+            source
+        ),
+        "source_localities": list(source_localities),
+        "completeness_boundary_identity": content["completeness_boundary"][
+            "identity"
+        ],
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+def _direct_pair_source_from_act(
+    ledger: EventLedger,
+    act_occurrence: Event,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], tuple[str, ...], dict[str, Any]]:
+    reference = act_occurrence.material.get("source_result_position_reference")
+    movement_identity = act_occurrence.material.get(
+        "source_movement_event_identity"
+    )
+    boundary = act_occurrence.material.get("through_event_occurrence_identity")
+    if type(reference) is not dict or type(boundary) is not str or not boundary:
+        raise ByteMeasurementError(
+            "pair Measurement Act carries no exact source result position"
+        )
+    coordinates = prior_coordinates
+    if (
+        type(coordinates) is not dict
+        or coordinates.get("locality_identity") != act_occurrence.locality_identity
+    ):
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates_through,
+        )
+
+        try:
+            coordinates = read_operator_current_coordinates_through(
+                ledger,
+                locality_identity=act_occurrence.locality_identity,
+                through_event_occurrence_identity=boundary,
+            )
+        except (TypeError, ValueError) as error:
+            raise ByteMeasurementError(
+                "pair Measurement Act has no exact prior coordinates"
+            ) from error
+    if movement_identity is None:
+        source = _byte_result_position(
+            ledger,
+            reference.get("recorded_occurrence_identity"),
+            reference.get("result_position"),
+            prior_coordinates=coordinates,
+        )
+    elif type(movement_identity) is str and movement_identity:
+        source = _validate_moved_result_position(ledger, movement_identity)
+    else:
+        source = None
+    if (
+        source is None
+        or _byte_result_position_reference(source) != reference
+        or _byte_result_position_movement_identity(source) != movement_identity
+        or not _pair_source_is_carried(source, coordinates)
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement Act carries another source result position"
+        )
+    _source_event, source_material, source_localities = _read_byte_result_position(
+        ledger, source, prior_coordinates=coordinates
+    )
+    dimensions = source_material.get("dimensions")
+    content = dimensions.get("content") if type(dimensions) is dict else None
+    if (
+        source_material.get("result") != "exact_source_material_set"
+        or type(content) is not dict
+        or type(content.get("completeness_boundary")) is not dict
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement Act carries no exact source result position"
+        )
+    identities = {
+        "measurement_act_identity": act_occurrence.material.get(
+            "addressed_act_identity"
+        ),
+        "measurement_act_occurrence_identity": act_occurrence.material.get(
+            "act_occurrence_identity"
+        ),
+        "measurement_result_identity": act_occurrence.material.get(
+            "measurement_result_identity"
+        ),
+    }
+    expected = _direct_pair_measurement_act_material(
+        source=source,
+        source_localities=source_localities,
+        content=content,
+        through_event_occurrence_identity=boundary,
+        identities=identities,
+    )
+    anchor = movement_identity or source["recorded_occurrence_identity"]
+    ordered_identities = tuple(dict.fromkeys((anchor, boundary, act_occurrence.identity)))
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            ordered_identities,
+            locality_identity=act_occurrence.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            "pair Measurement Act occurrence order is false"
+        ) from error
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != 3
+        or act_occurrence.material != expected
+        or tuple(event.identity for event in ordered) != ordered_identities
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement Act occurrence coordinates are not exact"
+        )
+    return source, source_localities, content
+
+
+def _record_direct_pair_measurement_act(
+    ledger: EventLedger,
+    *,
+    source: dict[str, Any],
+    source_localities: tuple[str, ...],
+    content: dict[str, Any],
+    recording_locality_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    boundary = _require_carried_pair_measurement_at_current_append_boundary(
+        ledger,
+        source=source,
+        recording_locality_identity=recording_locality_identity,
+        current_coordinates=current_coordinates,
+    )
+    identities = _new_direct_pair_measurement_identities(ledger)
+    source_material = deepcopy(content)
+    source_read_event, content_read, localities_read = _read_byte_result_position(
+        ledger, source, prior_coordinates=current_coordinates
+    )
+    boundary_event = ledger.get(boundary)
+    if (
+        _byte_result_position_reference(source)
+        != {
+            "recorded_occurrence_identity": source_read_event.identity,
+            "result_position": source["result_position"],
+        }
+        or content_read["dimensions"]["content"] != source_material
+        or localities_read != source_localities
+        or boundary_event is None
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement source changed before its Act occurrence"
+        )
+    return ledger.append(
+        BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
+        _direct_pair_measurement_act_material(
+            source=source,
+            source_localities=source_localities,
+            content=content,
+            through_event_occurrence_identity=boundary,
+            identities=identities,
+        ),
+        locality_identity=recording_locality_identity,
+    )
+
+
+def _direct_pair_measurement_result_material(
+    measured: MeasuredBytePairInputs,
+    *,
+    act_occurrence: Event,
+) -> dict[str, Any]:
+    return {
+        "result_identity": act_occurrence.material["measurement_result_identity"],
+        "dimensions": {
+            "identity": "byte-position-pair-count-measurement-occurrence",
+            "content": "byte-position-pair count and same content",
+        },
+        "exact_act": "declared byte-position-pair Measurement",
+        "addressed_act_identity": act_occurrence.material[
+            "addressed_act_identity"
+        ],
+        "act_occurrence_identity": act_occurrence.material[
+            "act_occurrence_identity"
+        ],
+        "source_result_position_reference": measured.source_result_position_reference,
+        "source_movement_event_identity": measured.source_movement_event_identity,
+        "source_localities": list(measured.source_localities),
+        "completeness_boundary": {
+            "identity": measured.completeness_boundary.identity
+        },
+        "result_positions": _pair_result_positions(measured),
+        "act_occurrence_event_identity": act_occurrence.identity,
+        "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
+    }
+
+
+def _record_direct_pair_measurement_result(
+    ledger: EventLedger,
+    *,
+    act_occurrence: Event,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    source, source_localities, content = _direct_pair_source_from_act(
+        ledger, act_occurrence, prior_coordinates=current_coordinates
+    )
+    existing = tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            act_occurrence.locality_identity,
+            BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        )
+        if event.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+        or event.material.get("act_occurrence_identity")
+        == act_occurrence.material["act_occurrence_identity"]
+    )
+    if existing:
+        raise ByteMeasurementError(
+            "one pair Measurement Act cannot record a second result"
+        )
+    measured = _measure_byte_position_pair_counts_through(
+        ledger,
+        localities=source_localities,
+        boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
+        source_result_position_reference=_byte_result_position_reference(source),
+        source_movement_event_identity=_byte_result_position_movement_identity(source),
+        input_applicability={},
+        addressed_act_identity=act_occurrence.material["addressed_act_identity"],
+        act_occurrence_identity=act_occurrence.material["act_occurrence_identity"],
+    )
+    act_material = deepcopy(act_occurrence.material)
+    source_read, localities_read, content_read = _direct_pair_source_from_act(
+        ledger, act_occurrence, prior_coordinates=current_coordinates
+    )
+    if (
+        act_occurrence.material != act_material
+        or source_read != source
+        or localities_read != source_localities
+        or content_read != content
+        or ledger.append_boundary_through_occurrence(act_occurrence.identity)
+        != ledger.append_boundary()
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement coordinates changed before its result occurrence"
+        )
+    return ledger.append(
+        BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        _direct_pair_measurement_result_material(
+            measured, act_occurrence=act_occurrence
+        ),
+        locality_identity=act_occurrence.locality_identity,
+    )
+
+
 def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     ledger: EventLedger,
     *,
@@ -4287,134 +4600,46 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     current_coordinates: dict[str, Any],
 ) -> tuple[Event, dict[str, Any]]:
     from seed_runtime.operator_current_coordinates import (
-        _carry_pair_applicability_act_into_current_coordinates,
-        _carry_pair_applicability_result_into_current_coordinates,
-        _carry_pair_measurement_act_into_current_coordinates,
-        _carry_pair_applicability_binding_into_current_coordinates,
-        _carry_pair_measurement_binding_into_current_coordinates,
-        _carry_pair_measurement_result_into_current_coordinates,
+        advance_operator_current_coordinates,
     )
 
-    boundary = _require_carried_pair_measurement_at_current_append_boundary(
-        ledger,
-        source=source,
-        recording_locality_identity=recording_locality_identity,
-        current_coordinates=current_coordinates,
-    )
-    lifecycle_identities = _new_pair_lifecycle_identities(ledger)
-    applicability_binding = _append_pair_applicability_binding(
+    prior = current_coordinates["through_event_occurrence_identity"]
+    act_occurrence = _record_direct_pair_measurement_act(
         ledger,
         source=source,
         source_localities=source_localities,
         content=content,
         recording_locality_identity=recording_locality_identity,
-        through_event_occurrence_identity=boundary,
-        identities=lifecycle_identities,
-    )
-    current_coordinates = _carry_pair_applicability_binding_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        applicability_binding,
-        source,
-        prior_through_event_occurrence_identity=boundary,
-    )
-    measurement_binding = _append_pair_measurement_binding(
-        ledger,
-        source=source,
-        source_localities=source_localities,
-        content=content,
-        recording_locality_identity=recording_locality_identity,
-        through_event_occurrence_identity=applicability_binding.identity,
-        identities=lifecycle_identities,
-    )
-    current_coordinates = _carry_pair_measurement_binding_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        measurement_binding,
-        source,
-        prior_through_event_occurrence_identity=applicability_binding.identity,
-    )
-    applicability = _pair_input_applicability(
-        ledger,
-        source,
-        binding=applicability_binding,
-        measurement_locality_identity=recording_locality_identity,
-        prior_coordinates=current_coordinates,
-    )
-    applicability_act = (
-        _record_pair_input_applicability_act_from_carried_binding(
-            ledger,
-            binding=applicability_binding,
-            source=source,
-            current_coordinates=current_coordinates,
-        )
-    )
-    current_coordinates = _carry_pair_applicability_act_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        applicability_act,
-        binding=applicability_binding,
-        source=source,
-        prior_through_event_occurrence_identity=measurement_binding.identity,
-    )
-    applicability_event = _record_pair_input_applicability_result_from_carried_act(
-        ledger,
-        binding=applicability_binding,
-        source=source,
-        applicability_act_occurrence=applicability_act,
-        applicability_result=applicability,
         current_coordinates=current_coordinates,
     )
-    current_coordinates = _carry_pair_applicability_result_into_current_coordinates(
+    current_coordinates = advance_operator_current_coordinates(
         ledger,
-        current_coordinates,
-        applicability_event,
-        binding=applicability_binding,
-        source=source,
-        applicability_act_occurrence=applicability_act,
-        prior_through_event_occurrence_identity=applicability_act.identity,
+        (act_occurrence.identity,),
+        locality_identity=recording_locality_identity,
+        prior=current_coordinates,
     )
-    if applicability["dimensions"]["applicability"] != "applicable":
-        return applicability_event, current_coordinates
-    act_occurrence = (
-        _record_pair_measurement_act_from_carried_applicability(
-            ledger,
-            binding=measurement_binding,
-            source=source,
-            applicability_event=applicability_event,
-            current_coordinates=current_coordinates,
+    if current_coordinates["through_event_occurrence_identity"] != act_occurrence.identity:
+        raise ByteMeasurementError(
+            "pair Measurement Act did not advance exact current coordinates"
         )
-    )
-    current_coordinates = _carry_pair_measurement_act_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        act_occurrence,
-        binding=measurement_binding,
-        source=source,
-        applicability_event=applicability_event,
-        applicability_act_occurrence=applicability_act,
-        prior_through_event_occurrence_identity=applicability_event.identity,
-    )
-    result = _record_pair_measurement_result_from_carried_act(
+    result = _record_direct_pair_measurement_result(
         ledger,
         act_occurrence=act_occurrence,
-        binding=measurement_binding,
-        source=source,
-        applicability_event=applicability_event,
-        applicability_act_occurrence=applicability_act,
         current_coordinates=current_coordinates,
     )
-    current_coordinates = _carry_pair_measurement_result_into_current_coordinates(
+    current_coordinates = advance_operator_current_coordinates(
         ledger,
-        current_coordinates,
-        result,
-        act_occurrence=act_occurrence,
-        binding=measurement_binding,
-        source=source,
-        applicability_event=applicability_event,
-        applicability_act_occurrence=applicability_act,
-        prior_through_event_occurrence_identity=act_occurrence.identity,
+        (result.identity,),
+        locality_identity=recording_locality_identity,
+        prior=current_coordinates,
     )
+    if (
+        prior == result.identity
+        or current_coordinates["through_event_occurrence_identity"] != result.identity
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement result did not advance exact current coordinates"
+        )
     return result, current_coordinates
 
 
@@ -4499,7 +4724,12 @@ def _validated_recorded_byte_position_pair_measurement(
     if ledger.integrity_of(event_identity) == CORRUPTED:
         raise ByteMeasurementError("a corrupted occurrence cannot return pair results")
     material = event.material
-    exact_surface = BYTE_PAIR_RESULT_COORDINATES | {
+    direct = "subject_to_act_binding_reference" not in material
+    exact_surface = (
+        DIRECT_BYTE_PAIR_RESULT_COORDINATES
+        if direct
+        else BYTE_PAIR_RESULT_COORDINATES
+    ) | {
         "act_occurrence_identity",
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -4518,9 +4748,25 @@ def _validated_recorded_byte_position_pair_measurement(
             prior_coordinates=prior_coordinates,
         )
     )
-    if (
-        binding_reference
-        != _pair_subject_to_act_binding_reference(binding)
+    if direct:
+        if (
+            binding is not None
+            or applicability_event is not None
+            or event.locality_identity != act_occurrence.locality_identity
+            or material.get("result_identity")
+            != act_occurrence.material["measurement_result_identity"]
+            or material.get("source_result_position_reference")
+            != _byte_result_position_reference(source)
+            or material.get("source_movement_event_identity")
+            != _byte_result_position_movement_identity(source)
+        ):
+            raise ByteMeasurementError(
+                f"{event_identity} carries no exact direct pair Measurement"
+            )
+    elif (
+        binding is None
+        or applicability_event is None
+        or binding_reference != _pair_subject_to_act_binding_reference(binding)
         or event.locality_identity != binding.locality_identity
         or material.get("result_identity")
         != binding.material["measurement_result_identity"]
@@ -4551,26 +4797,31 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact pair Measurement result position"
         )
-    carried_applicability = material.get("input_applicability")
-    applicability_dimensions = (
-        carried_applicability.get("dimensions")
-        if isinstance(carried_applicability, dict)
-        else None
-    )
-    applicability_identity = (
-        applicability_dimensions.get("identity")
-        if isinstance(applicability_dimensions, dict)
-        else None
-    )
-    if not isinstance(applicability_identity, str) or not applicability_identity:
-        raise ByteMeasurementError(f"{event_identity} carries no exact input Applicability")
-    if (
-        act_occurrence.material
-        != _pair_measurement_act_material(binding, source, applicability_event)
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} names no exact responsible pair Measurement Act occurrence"
+    if not direct:
+        carried_applicability = material.get("input_applicability")
+        applicability_dimensions = (
+            carried_applicability.get("dimensions")
+            if isinstance(carried_applicability, dict)
+            else None
         )
+        applicability_identity = (
+            applicability_dimensions.get("identity")
+            if isinstance(applicability_dimensions, dict)
+            else None
+        )
+        if not isinstance(applicability_identity, str) or not applicability_identity:
+            raise ByteMeasurementError(
+                f"{event_identity} carries no exact input Applicability"
+            )
+        if (
+            binding is None
+            or applicability_event is None
+            or act_occurrence.material
+            != _pair_measurement_act_material(binding, source, applicability_event)
+        ):
+            raise ByteMeasurementError(
+                f"{event_identity} names no exact responsible pair Measurement Act occurrence"
+            )
     try:
         ordered = ledger.occurrences_in_append_order(
             (act_occurrence.identity, event.identity),
@@ -4637,22 +4888,32 @@ def _validated_recorded_byte_position_pair_measurement(
     if (
         localities_value != list(source_localities)
         or boundary_value != source_content["completeness_boundary"]
-        or binding.material.get("source_localities") != localities_value
-        or binding.material.get("completeness_boundary_identity")
-        != boundary_value["identity"]
+        or (
+            binding is not None
+            and binding.material.get("source_localities") != localities_value
+        )
+        or (
+            binding is not None
+            and binding.material.get("completeness_boundary_identity")
+            != boundary_value["identity"]
+        )
     ):
         raise ByteMeasurementError(
             f"{event_identity} does not carry its exact input source boundary"
         )
-    applicability_event_identity = material.get("input_applicability_event_identity")
-    if (
-        applicability_event_identity != applicability_event.identity
-        or applicability_event.material.get("applicability")
-        != material.get("input_applicability")
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} does not name its exact recorded input Applicability"
+    if not direct:
+        applicability_event_identity = material.get(
+            "input_applicability_event_identity"
         )
+        if (
+            applicability_event is None
+            or applicability_event_identity != applicability_event.identity
+            or applicability_event.material.get("applicability")
+            != material.get("input_applicability")
+        ):
+            raise ByteMeasurementError(
+                f"{event_identity} does not name its exact recorded input Applicability"
+            )
     result_positions = material.get("result_positions")
     if not isinstance(result_positions, list):
         raise ByteMeasurementError(f"{event_identity} carries no pair result result positions")
@@ -4848,7 +5109,7 @@ def _findings_of_recorded_byte_position_pair_measurement(
 def byte_position_pair_measurement_occurrence_references(
     ledger: EventLedger, event_identity: str
 ) -> tuple[str, ...]:
-    """Return the exact ordered Applicability and Measurement occurrences."""
+    """Return the exact ordered occurrences preceding one pair result."""
 
     result_positions = result_positions_of_recorded_byte_position_pair_measurement(
         ledger, event_identity
@@ -4857,6 +5118,19 @@ def byte_position_pair_measurement_occurrence_references(
         raise ByteMeasurementError("pair Measurement result is absent")
     result = ledger.get(event_identity)
     assert result is not None
+    if "input_applicability_event_identity" not in result.material:
+        references = (
+            result.material["act_occurrence_event_identity"],
+            result.identity,
+        )
+        ordered = ledger.occurrences_in_append_order(
+            references, locality_identity=result.locality_identity
+        )
+        if tuple(event.identity for event in ordered) != references:
+            raise ByteMeasurementError(
+                "pair Measurement occurrences are not ordered"
+            )
+        return references
     applicability_identity = result.material["input_applicability_event_identity"]
     applicability = ledger.get(applicability_identity)
     if applicability is None:
@@ -4891,4 +5165,4 @@ def input_applicability_of_recorded_byte_position_pair_measurement(
     if read is None:
         return None
     event = ledger.get(event_identity)
-    return deepcopy(event.material["input_applicability"])
+    return deepcopy(event.material.get("input_applicability"))
