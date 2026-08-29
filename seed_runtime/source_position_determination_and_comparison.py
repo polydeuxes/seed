@@ -17,11 +17,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     source_position_coordinate_references_of_recorded_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
-    SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
+    record_shared_position_measurement_act_occurrence_from_addressed_byte_occurrence_reference_determination_result,
 )
 class SourcePositionDeterminationAndComparison(NamedTuple):
     source_position_coordinate: dict[str, Any]
@@ -52,18 +49,7 @@ def _advance(
             "source-position determination and comparison left its exact boundary"
         )
     for event in events:
-        if event.kind in {
-            SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        }:
-            current_coordinates["subject_to_act_binding_occurrences"][
-                event.identity
-            ] = None
-        elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            current_coordinates["applicability_result_occurrences"][
-                event.identity
-            ] = None
-        elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
+        if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
             current_coordinates["measurement_occurrences"][event.identity] = {
                 "recorded_occurrence_identity": event.identity,
                 "result_identity": event.material["result_identity"],
@@ -84,91 +70,16 @@ def _record_shared_position_measurement(
 ) -> tuple[dict[str, Any], Event]:
     """Record the existing shared-position lifecycle from carried coordinates."""
 
-    measurement_binding = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
+    measurement_act = record_shared_position_measurement_act_occurrence_from_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_result_event_identity=determination.identity,
         current_coordinates=current_coordinates,
     )
-    _result, inputs = shared_position._d2_result_inputs(
-        ledger,
-        result_event_identity=determination.identity,
-        prior_coordinates=current_coordinates,
-    )
-    current_coordinates = _advance(
-        ledger, current_coordinates, measurement_binding
-    )
-    applicability_identities = shared_position._mint_applicability_identities(ledger)
-    applicability_binding = ledger.append(
-        shared_position.SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        shared_position._applicability_binding_material(
-            inputs=inputs,
-            through_event_occurrence_identity=current_coordinates[
-                "through_event_occurrence_identity"
-            ],
-            measurement_act_identity=measurement_binding.material[
-                "exact_act_identity"
-            ],
-            identities=applicability_identities,
-            determination_result_reference=measurement_binding.material.get(
-                shared_position.D2_RESULT_REFERENCE_COORDINATE
-            ),
-        ),
-        locality_identity=measurement_binding.locality_identity,
-    )
-    current_coordinates = _advance(
-        ledger, current_coordinates, applicability_binding
-    )
-    applicability_act = ledger.append(
-        shared_position.SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        shared_position._applicability_act_material(
-            binding=applicability_binding,
-            inputs=inputs,
-            through_event_occurrence_identity=current_coordinates[
-                "through_event_occurrence_identity"
-            ],
-        ),
-        locality_identity=measurement_binding.locality_identity,
-    )
-    current_coordinates = _advance(ledger, current_coordinates, applicability_act)
-    applicability_material = shared_position._applicability_result_material(
-        ledger=ledger,
-        act=applicability_act,
-        binding=applicability_binding,
-        inputs=inputs,
-    )
-    applicability = ledger.append(
-        shared_position.SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-        shared_position._recorded_applicability_result_material(
-            applicability_material,
-        ),
-        locality_identity=measurement_binding.locality_identity,
-    )
-    current_coordinates = _advance(
-        ledger, current_coordinates, applicability
-    )
-    measurement_act = ledger.append(
-        shared_position.SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
-        shared_position._measurement_act_material(
-            binding=measurement_binding,
-            inputs=inputs,
-            applicability=applicability,
-            through_event_occurrence_identity=current_coordinates[
-                "through_event_occurrence_identity"
-            ],
-        ),
-        locality_identity=measurement_binding.locality_identity,
-    )
     current_coordinates = _advance(ledger, current_coordinates, measurement_act)
-    result_material = shared_position._measurement_result_material(
-        act=measurement_act,
-        binding=measurement_binding,
-        applicability=applicability,
-        inputs=inputs,
-    )
-    shared_position_result = ledger.append(
-        shared_position.SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-        shared_position._recorded_measurement_result_material(result_material),
-        locality_identity=measurement_binding.locality_identity,
+    shared_position_result = shared_position.record_shared_position_measurement_result(
+        ledger,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
+        current_coordinates=current_coordinates,
     )
     return _advance(ledger, current_coordinates, shared_position_result), shared_position_result
 

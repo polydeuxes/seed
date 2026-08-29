@@ -155,3 +155,33 @@ Measurement result occurrence
 If that event independently fails subtraction, stop collecting controls and
 return to shared-position/Compare Applicability with the negative and
 positive-before-Act states kept intact.
+
+## Amendment after the D.2 control
+
+The D.2-derived subroad supplies the missing positive control. One exact D.2
+result already establishes exactly two ordered result-position references with
+one addressed source-position coordinate. Its later shared-position
+Applicability lifecycle could only return `applicable`.
+
+That subroad now records:
+
+```text
+exact D.2 result
+        ↓
+shared-position Measurement Act
+        ↓
+Measurement result
+```
+
+Both prospective binding events and the forced Applicability lifecycle are
+gone. The ordinary recurrent-result road remains unchanged and continues to
+record exact negative Applicability results for coordinates that do not meet.
+
+The result therefore narrows this census rather than reversing it:
+
+```text
+prior exact occurrence already establishes shared subject  direct Measurement
+host-authored prospective pair can be positive or negative  Applicability kept
+```
+
+See `d2_shared_position_applicability_subtraction_report_001.md`.

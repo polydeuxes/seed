@@ -312,3 +312,28 @@ appended. If no such occurrence is found, the remaining alternative is a
 larger reordering in which binding has no prior occurrence; that alternative
 must preserve the three established stoppable states before it can replace
 current physiology.
+
+## Amendment after D.2 shared-position Measurement
+
+The requested independently established occurrence has now passed on one
+bounded subroad. An exact D.2 Determination result identifies exactly two
+ordered result positions with one addressed source-position coordinate before
+shared-position Measurement occurs.
+
+On that subroad, the separate Measurement binding occurrence, Applicability
+binding occurrence, Applicability Act, and inevitably positive Applicability
+result all failed subtraction. The exact D.2 result now precedes the
+Measurement Act directly.
+
+This is not evidence for deleting bindings or Applicability from mechanically
+paired inputs. It establishes the narrower discriminator:
+
+```text
+exact prior occurrence already joins the complete subject coordinates
+        → binding coordinates may reside on the later Act
+
+only co-current/addressable inputs
+        → no binding or Applicability occurrence is thereby warranted
+```
+
+See `d2_shared_position_applicability_subtraction_report_001.md`.
