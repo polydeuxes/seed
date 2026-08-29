@@ -1720,7 +1720,6 @@ def _active_applicability_result_material(
 ) -> dict[str, Any]:
     applicability = "applicable" if inputs["applicable"] else "inapplicable"
     return {
-        "exact_act": APPLICABILITY_ACT,
         "act_occurrence_event_identity": act.identity,
         "applicability": applicability,
     }
@@ -2240,12 +2239,12 @@ def _compare_result_material(
     act: Event, binding: Event | None, applicability: Event, inputs: dict[str, Any]
 ) -> dict[str, Any]:
     result = {
-        "exact_act": COMPARE_ACT,
-        "applicability_result_event_identity": applicability.identity,
         "finding": _comparison_finding(inputs),
         "act_occurrence_event_identity": act.identity,
     }
     if binding is not None:
+        result["exact_act"] = COMPARE_ACT
+        result["applicability_result_event_identity"] = applicability.identity
         result["compare_act_identity"] = binding.material["exact_act_identity"]
         result["result_identity"] = binding.material["compare_result_identity"]
         result["act_occurrence_identity"] = binding.material[
@@ -2259,16 +2258,16 @@ def _recorded_compare_result_material(
     result: dict[str, Any]
 ) -> dict[str, Any]:
     recorded = {
-        "exact_act": result["exact_act"],
-        "applicability_result_event_identity": result[
-            "applicability_result_event_identity"
-        ],
         "finding": deepcopy(result["finding"]),
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
         ],
     }
     if "subject_to_act_binding_reference" in result:
+        recorded["exact_act"] = result["exact_act"]
+        recorded["applicability_result_event_identity"] = result[
+            "applicability_result_event_identity"
+        ]
         recorded["compare_act_identity"] = result["compare_act_identity"]
         recorded["result_identity"] = result["result_identity"]
         recorded["act_occurrence_identity"] = result["act_occurrence_identity"]

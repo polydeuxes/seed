@@ -1108,6 +1108,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "addressed_act" not in result.material
         and "subject_reference" not in result.material
         and "dimensions" not in result.material
+        and "exact_act" not in result.material
         for result in applicability_results
     )
     assert all(
@@ -1184,6 +1185,8 @@ def test_every_current_compare_act_records_one_result():
         "act_occurrence_identity" not in result.material
         and "result_identity" not in result.material
         and "compare_act_identity" not in result.material
+        and "exact_act" not in result.material
+        and "applicability_result_event_identity" not in result.material
         for result in results
     )
     for result in results:
