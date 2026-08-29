@@ -1,5 +1,30 @@
 # Subject-to-Act binding occurrence census 001
 
+## Amendment after checkpoint subtraction
+
+`checkpoint_recording_binding_occurrence_subtraction_report_001.md` tests the
+clean through-boundary Recording control and overturns one part of this
+census's provisional disposition.
+
+The separate checkpoint binding event failed subtraction. Its exact subject,
+Act, Locality, lifecycle identities, and boundary order now exist directly in
+the Recording Act occurrence. Result lineage, restart, replay, mutation
+refusal, one-result refusal, and repeated recording survive. The binding-only
+floor was created solely by the removed event and had no independent consumer.
+
+Therefore downstream references to a binding event do not by themselves prove
+that the event is physiological; those references can be self-authored
+dependency. The broader census is now:
+
+```text
+checkpoint Recording binding event   failed subtraction
+remaining binding event families     independently untested
+binding coordinates                  preserved
+```
+
+Do not generalize the checkpoint result until another family independently
+passes.
+
 ## Question
 
 Does one recorded subject-to-Act binding event establish an independent
@@ -27,7 +52,7 @@ Six live families were sampled.
 | recorded-pair Compare | earlier and later Measurement results under exact order | Compare binding event appended by family call | Applicability binding, then Compare Act |
 | same-position Compare | one same-position result and one pair-Compare result selected by Cartesian host walk | Compare binding event | Applicability binding, then Compare Act |
 | recorded-boundary Locality | one exact through-occurrence boundary reference | Locality binding event that also mints destination Locality | Locality Act occurrence |
-| through-boundary Recording | one addressed command and through-occurrence reference | Recording binding event | Recording Act occurrence |
+| through-boundary Recording | one addressed command and through-occurrence reference | Recording binding event; later failed subtraction | Recording Act occurrence |
 
 Every specimen records the binding directly. None records:
 
@@ -222,10 +247,10 @@ no Applicability occurrence  → no result
 Applicability occurrence     → applicable or inapplicable
 ```
 
-Do not remove binding events while later physiology depends on their exact
-occurrence boundary. Do not treat host append as evidence that a binding
-should exist. Do not invent Encounter, Contact, Selection, Candidate,
-Population, or a generic binding-producing Act.
+Do not remove remaining binding events merely because checkpoint passed. Do
+not treat host append as evidence that a binding should exist. Do not invent
+Encounter, Contact, Selection, Candidate, Population, or a generic
+binding-producing Act.
 
 The next positive construction needs an independently established occurrence
 that identifies particular exact subjects and one Act before the binding is

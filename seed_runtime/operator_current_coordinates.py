@@ -122,10 +122,8 @@ from seed_runtime.operator_locality_continuation import (
 from seed_runtime.operator_checkpoint import (
     THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     get_recorded_through_occurrence_boundary_reference,
     get_through_occurrence_boundary_reference_act_occurrence,
-    get_through_occurrence_boundary_reference_subject_to_act_binding,
 )
 from seed_runtime.recorded_boundary_locality import (
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -267,7 +265,6 @@ _LOCALITY_CONTINUATION_KINDS = {
     LOCALITY_CONTINUATION_RECORDED_KIND,
 }
 _THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS = {
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
 }
@@ -1185,15 +1182,6 @@ def advance_operator_current_coordinates(
                         subject_to_act_binding_occurrences
                     ),
                 },
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
-            continue
-        if (
-            event.kind
-            == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_through_occurrence_boundary_reference_subject_to_act_binding(
-                ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue

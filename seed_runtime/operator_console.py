@@ -38,7 +38,6 @@ from seed_runtime.operator_command import (
 )
 from seed_runtime.operator_checkpoint import (
     OperatorCheckpointRequest,
-    record_through_occurrence_boundary_reference_subject_to_act_binding,
     record_through_occurrence_boundary_reference_act_occurrence,
     record_through_occurrence_boundary_reference_result,
     request_operator_checkpoint,
@@ -656,23 +655,10 @@ def run_persistent_operator_console(
                 )
                 continue
             if isinstance(request, OperatorCheckpointRequest):
-                binding = (
-                    record_through_occurrence_boundary_reference_subject_to_act_binding(
-                        ledger,
-                        addressed_command=command_run.addressed,
-                        current_coordinates=current_coordinates,
-                    )
-                )
-                current_coordinates = _advance_over(
-                    ledger,
-                    current_coordinates,
-                    (binding.identity,),
-                    locality_identity=locality_identity,
-                )
                 act_occurrence = (
                     record_through_occurrence_boundary_reference_act_occurrence(
                         ledger,
-                        subject_to_act_binding_event_identity=binding.identity,
+                        addressed_command=command_run.addressed,
                         current_coordinates=current_coordinates,
                     )
                 )

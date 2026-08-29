@@ -1,5 +1,16 @@
 # Recording and preservation occurrence census 001
 
+## Amendment after binding-event subtraction
+
+The through-boundary Recording road no longer records a separate binding
+event. Its Recording Act occurrence directly preserves the exact binding
+coordinates: addressed occurrence, through-occurrence boundary, exact Act,
+Locality, and lifecycle identities. The result still follows and addresses
+that exact Act occurrence.
+
+`05.Recording.D` remains instantiated. Only the intermediate binding event
+failed subtraction.
+
 ## Question
 
 Active Recording named three clauses:
@@ -21,8 +32,7 @@ reference road. It records:
 exact addressed occurrence
 + exact through-occurrence boundary
 + exact Locality
-→ subject-to-Act binding
-→ recording Act occurrence
+→ recording Act occurrence with exact binding coordinates
 → result occurrence
 ```
 
@@ -55,7 +65,8 @@ addressed by live physiology.
 
 The exact checkpoint recording road's former separate Yield event copied its
 future result coordinates and failed independent subtraction. Its subject,
-binding, Act, result, and boundary remain stated by `05.Recording.D`. The
+binding coordinates, Act, result, and boundary remain stated by
+`05.Recording.D`. The
 broader `05.Recording.E` clause adds no independently occurring coordinate to
 that road and has no second live specimen.
 

@@ -1,15 +1,28 @@
 # Compare binding production census 001
 
+## Amendment after the first binding-event subtraction
+
+The through-boundary Recording control independently removed its separate
+binding event while preserving binding coordinates in the Recording Act
+occurrence. That result proves that a runtime dependency on binding-event
+identity and ordering can be self-created rather than constitutional.
+
+It does not yet settle Compare. Compare retains independently stoppable
+Applicability and negative-result physiology that Recording does not have.
+The same-position Compare binding event remains under its own subtraction.
+
 ## Amendment after cross-family occurrence subtraction
 
 `subject_to_act_binding_occurrence_census_001.md` pressure-tests the binding
 event itself across Source, Measurement, Compare, Locality, Recording, and
 Applicability families.
 
-The binding event does add runtime distinctions: its exact event identity,
+The binding event adds runtime distinctions: its exact event identity,
 occurrence order, and current-coordinate boundary are addressed downstream.
-Removing it today would erase the stoppable floor where a binding exists
-before Applicability or its Act occurrence.
+Checkpoint establishes that these dependencies alone do not prove an
+independent occurrence. Removing the Compare event today would still erase
+the stoppable floor where a binding exists before Applicability or its Act
+occurrence, so Compare remains independently unresolved.
 
 That does not establish its constitutional production. No sampled family has
 a binding-producing Act or prior occurrence. The host append remains the first
