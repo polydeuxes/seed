@@ -39,13 +39,13 @@ The active Applicability result carries:
 
 ```text
 Applicability Act occurrence reference
-same-source and pair-finding-count evidence
 applicable | inapplicable
 ```
 
 It no longer copies the subjects or addressed Compare Act. Its reader follows
 the exact Act occurrence, resolves the two subjects there, reconstructs the
-evidence, and validates the answer.
+answer, and validates it. A subsequent subtraction also removed the copied
+same-source and pair-finding-count evidence from the result payload.
 
 Positive Compare Acts still carry their own exact subjects and address the
 positive Applicability result. Negative results remain exact with no Compare
@@ -60,7 +60,7 @@ top-level copies of those subjects              no distinction found
 Applicability result Act-occurrence reference   survives
 result copy of Act subjects                     no distinction found
 result copy of addressed Compare                no distinction found
-variable evidence and answer                    survive
+variable answer                                 survives
 ```
 
 Exact addressability is enough. A result can preserve its Act coordinates by

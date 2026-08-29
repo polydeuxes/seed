@@ -1107,7 +1107,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "addressed_act_identity" not in result.material
         and "addressed_act" not in result.material
         and "subject_reference" not in result.material
-        and set(result.material["dimensions"]) == {"content"}
+        and "dimensions" not in result.material
         for result in applicability_results
     )
     assert all(

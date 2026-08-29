@@ -1720,15 +1720,6 @@ def _active_applicability_result_material(
 ) -> dict[str, Any]:
     applicability = "applicable" if inputs["applicable"] else "inapplicable"
     return {
-        "dimensions": {
-            "content": {
-                "same_source_occurrence": inputs["same_source"],
-                "pair_finding_counts": [
-                    len(matches)
-                    for matches in inputs["shared_position_pair_findings"]
-                ],
-            },
-        },
         "exact_act": APPLICABILITY_ACT,
         "act_occurrence_event_identity": act.identity,
         "applicability": applicability,
