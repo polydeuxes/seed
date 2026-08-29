@@ -1155,27 +1155,16 @@ def _active_applicability_act_material(
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
-            "shared_position_input": {
-                "subject": deepcopy(
-                    inputs["shared_position"]["result_position_reference"]
-                ),
-                "addressed_act": COMPARE_ACT,
-            },
-            "comparison_input": {
-                "subject": deepcopy(inputs["comparison"]["reference"]),
-                "addressed_act": COMPARE_ACT,
-            },
+            "shared_position_result_position_reference": deepcopy(
+                inputs["shared_position"]["result_position_reference"]
+            ),
+            "comparison_result_reference": deepcopy(
+                inputs["comparison"]["reference"]
+            ),
         },
         "act": APPLICABILITY_ACT,
         "addressed_act": COMPARE_ACT,
         "book_clause_identity": "01.Current.E.1",
-        "shared_position_measurement_result_reference": deepcopy(
-            inputs["shared_position"]["reference"]
-        ),
-        "shared_position_result_position_reference": deepcopy(
-            inputs["shared_position"]["result_position_reference"]
-        ),
-        "comparison_result_reference": deepcopy(inputs["comparison"]["reference"]),
         "through_event_occurrence_identity": boundary,
     }
 
@@ -1207,8 +1196,17 @@ def _active_applicability_act_inputs(
             locality_identity=event.locality_identity,
             through_event_occurrence_identity=boundary,
         )
-    shared_reference = material.get("shared_position_measurement_result_reference")
-    comparison_reference = material.get("comparison_result_reference")
+    subject_reference = material.get("subject_reference")
+    shared_reference = (
+        subject_reference.get("shared_position_result_position_reference")
+        if type(subject_reference) is dict
+        else None
+    )
+    comparison_reference = (
+        subject_reference.get("comparison_result_reference")
+        if type(subject_reference) is dict
+        else None
+    )
     inputs = _inputs(
         ledger,
         shared_position_measurement_result_event_identity=(
@@ -1732,8 +1730,6 @@ def _active_applicability_result_material(
             },
         },
         "exact_act": APPLICABILITY_ACT,
-        "addressed_act": COMPARE_ACT,
-        "subject_reference": deepcopy(act.material["subject_reference"]),
         "act_occurrence_event_identity": act.identity,
         "applicability": applicability,
     }

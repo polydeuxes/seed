@@ -816,10 +816,12 @@ def test_every_exact_cross_set_member_receives_one_applicability_act():
         SharedPositionMeasurementPairFindingCompareSubject(
             shared_position_measurement_result_event_identity=act.material[
                 "subject_reference"
-            ]["shared_position_input"]["subject"]["recorded_occurrence_identity"],
+            ]["shared_position_result_position_reference"][
+                "recorded_occurrence_identity"
+            ],
             comparison_result_event_identity=act.material["subject_reference"][
-                "comparison_input"
-            ]["subject"]["recorded_occurrence_identity"],
+                "comparison_result_reference"
+            ]["recorded_occurrence_identity"],
         )
         for act in acts
     ) == subjects
@@ -930,9 +932,7 @@ def test_every_current_applicability_act_records_one_result():
     assert tuple(
         result.material["act_occurrence_event_identity"] for result in results
     ) == tuple(act.identity for act in acts)
-    assert tuple(result.material["subject_reference"] for result in results) == tuple(
-        act.material["subject_reference"] for act in acts
-    )
+    assert all("subject_reference" not in result.material for result in results)
     assert all(
         "subject_to_act_binding_reference" not in result.material
         for result in results
@@ -972,23 +972,23 @@ def test_holding_one_input_exact_does_not_determine_applicability():
     )
     subjects = tuple(act.material["subject_reference"] for act in acts)
 
-    assert subjects[0]["shared_position_input"]["subject"] == subjects[1][
-        "shared_position_input"
-    ]["subject"]
-    assert subjects[0]["comparison_input"]["subject"] != subjects[1][
-        "comparison_input"
-    ]["subject"]
+    assert subjects[0]["shared_position_result_position_reference"] == subjects[1][
+        "shared_position_result_position_reference"
+    ]
+    assert subjects[0]["comparison_result_reference"] != subjects[1][
+        "comparison_result_reference"
+    ]
     assert tuple(result.material["applicability"] for result in results[:2]) == (
         "applicable",
         "inapplicable",
     )
 
-    assert subjects[0]["comparison_input"]["subject"] == subjects[2][
-        "comparison_input"
-    ]["subject"]
-    assert subjects[0]["shared_position_input"]["subject"] != subjects[2][
-        "shared_position_input"
-    ]["subject"]
+    assert subjects[0]["comparison_result_reference"] == subjects[2][
+        "comparison_result_reference"
+    ]
+    assert subjects[0]["shared_position_result_position_reference"] != subjects[2][
+        "shared_position_result_position_reference"
+    ]
     assert (results[0].material["applicability"], results[2].material["applicability"]) == (
         "applicable",
         "inapplicable",
@@ -1077,11 +1077,16 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "addressed_act_identity" not in applicability_act.material
         and applicability_act.material["addressed_act"]
         == comparison_module.COMPARE_ACT
-        and all(
-            subject["addressed_act"] == comparison_module.COMPARE_ACT
-            and "addressed_act_identity" not in subject
-            for subject in applicability_act.material["subject_reference"].values()
-        )
+        and set(applicability_act.material["subject_reference"])
+        == {
+            "shared_position_result_position_reference",
+            "comparison_result_reference",
+        }
+        and "shared_position_measurement_result_reference"
+        not in applicability_act.material
+        and "shared_position_result_position_reference"
+        not in applicability_act.material
+        and "comparison_result_reference" not in applicability_act.material
         for applicability_act in (
             ledger.get(result.material["act_occurrence_event_identity"])
             for result in applicability_results
@@ -1092,7 +1097,8 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "applicability_act_identity" not in result.material
         and "applicability_act_occurrence_identity" not in result.material
         and "addressed_act_identity" not in result.material
-        and result.material["addressed_act"] == comparison_module.COMPARE_ACT
+        and "addressed_act" not in result.material
+        and "subject_reference" not in result.material
         and set(result.material["dimensions"]) == {"content"}
         for result in applicability_results
     )

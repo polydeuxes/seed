@@ -33,8 +33,9 @@ New active Applicability Acts name:
 addressed_act = Compare
 ```
 
-for both exact subjects. Their recorded occurrence and result preserve the
-same coordinate. Positive Compare occurrences name:
+for both exact subjects. The Applicability result addresses that exact Act
+occurrence rather than copying its addressed Act or subjects. Positive Compare
+occurrences name:
 
 ```text
 act = Compare

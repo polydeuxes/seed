@@ -370,18 +370,30 @@ def _result_coordinates(
 
     for identity, result in reading["shared_position_compare_applicability_results"]:
         binding = result.get("subject_to_act_binding_reference")
-        subjects = (
-            binding["subject_reference"]
-            if type(binding) is dict
-            else result["subject_reference"]
-        )
+        if type(binding) is dict:
+            subjects = binding["subject_reference"]
+            shared_position_reference = subjects["shared_position_input"]["subject"]
+            comparison_reference = subjects["comparison_input"]["subject"]
+        else:
+            act = ledger.get(result.get("act_occurrence_event_identity"))
+            subjects = (
+                act.material.get("subject_reference")
+                if act is not None and type(act.material) is dict
+                else None
+            )
+            if type(subjects) is not dict:
+                raise ValueError(
+                    "shared-position Compare Applicability result has no exact Act subjects"
+                )
+            shared_position_reference = subjects[
+                "shared_position_result_position_reference"
+            ]
+            comparison_reference = subjects["comparison_result_reference"]
         shared_position_coordinate = coordinates[
-            subjects["shared_position_input"]["subject"]["recorded_occurrence_identity"]
+            shared_position_reference["recorded_occurrence_identity"]
         ]
         comparison_coordinate = coordinates[
-            subjects["comparison_input"]["subject"][
-                "recorded_occurrence_identity"
-            ]
+            comparison_reference["recorded_occurrence_identity"]
         ]
         coordinates[identity] = (
             "shared_position_Compare_Applicability_result",
