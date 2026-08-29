@@ -1,5 +1,23 @@
 # Compare binding production census 001
 
+## Amendment after live variable Applicability production census
+
+`live_variable_applicability_production_census_001.md` confirms the active
+same-position family is produced by a host Cartesian walk over two separately
+bounded exact current sets. The combined-input reader computes the later
+positive or negative result before any binding or Applicability occurrence is
+recorded. No prior Seed occurrence addresses one cross-set pair without also
+answering the applicability question.
+
+The recorded-pair Compare binding event below this family has now failed its
+own subtraction. That cleanup removes a copied dependency from each
+recorded-pair Compare result; it does not supply an antecedent for pairing that
+result with every current shared-position Measurement result.
+
+The same-position Compare binding and variable Applicability lifecycle remain
+unchanged. Moving the Cartesian walk into Applicability Acts would relocate,
+not resolve, the production vacancy.
+
 ## Amendment after the first binding-event subtraction
 
 The through-boundary Recording control independently removed its separate

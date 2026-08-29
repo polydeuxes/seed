@@ -205,3 +205,26 @@ Compare findings vary later in the Compare result.
 The Compare binding-production boundary remains unresolved and is kept
 separate from the proposed forced-Applicability subtraction. See
 `recorded_pair_compare_applicability_census_001.md`.
+
+## Amendment after live variable producer census
+
+`live_variable_applicability_production_census_001.md` supplies the requested
+active inward specimen. The same-position Measurement / recorded-pair Compare
+family produces positive and negative Applicability results during the active
+console operation.
+
+Its production does not solve the frozen ordinary recurrent case. Host
+mechanics forms every ordered pair from the exact current shared-position
+Measurement result set and the exact current recorded-pair Compare result set.
+The combined-input reader computes the later verdict before recording any
+Applicability occurrence. No prior Seed occurrence warrants one particular
+question.
+
+```text
+ordinary recurrent shared-position  variable result, authored producer only
+active same-position Compare         variable result, host Cartesian producer
+prior Seed occurrence for either     not found
+```
+
+Variable Applicability survives. Autonomous production of its questions does
+not follow from that survival.
