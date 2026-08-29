@@ -2504,11 +2504,36 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
         has_no_applicability = (
             "applicability_result_event_identity" not in event.material
         )
-        if type(binding) is not dict or binding.get(
-            "recorded_occurrence_identity"
-        ) not in bindings:
+        if binding is None:
+            measurements = current_coordinates.get("measurement_occurrences")
+            subjects = event.material.get("subject_reference")
+            earlier = (
+                subjects.get("earlier_measurement_reference")
+                if type(subjects) is dict
+                else None
+            )
+            later = (
+                subjects.get("later_measurement_reference")
+                if type(subjects) is dict
+                else None
+            )
+            if (
+                not has_no_applicability
+                or type(measurements) is not dict
+                or type(earlier) is not dict
+                or type(later) is not dict
+                or earlier.get("recorded_occurrence_identity") not in measurements
+                or later.get("recorded_occurrence_identity") not in measurements
+                or event.material.get("through_event_occurrence_identity")
+                != prior_through_event_occurrence_identity
+            ):
+                raise ValueError("recorded pair comparison Act is not exact")
+        elif (
+            type(binding) is not dict
+            or binding.get("recorded_occurrence_identity") not in bindings
+        ):
             raise ValueError("recorded pair comparison Act is not exact")
-        if has_no_applicability:
+        elif has_no_applicability:
             if (
                 binding.get("recorded_occurrence_identity")
                 != prior_through_event_occurrence_identity
@@ -2522,12 +2547,21 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
             raise ValueError("recorded pair comparison Act is not exact")
     else:
         binding = event.material.get("subject_to_act_binding_reference")
+        subjects = event.material.get("subject_reference")
         has_no_applicability = (
             "applicability_result_event_identity" not in event.material
         )
         if (
-            type(binding) is not dict
-            or binding.get("recorded_occurrence_identity") not in bindings
+            (
+                type(binding) is not dict
+                or binding.get("recorded_occurrence_identity") not in bindings
+            )
+            and (
+                type(subjects) is not dict
+                or set(subjects)
+                != {"earlier_measurement_reference", "later_measurement_reference"}
+            )
+            or (binding is None and not has_no_applicability)
             or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
             or event.identity in comparisons

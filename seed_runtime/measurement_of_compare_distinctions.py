@@ -555,7 +555,7 @@ def _producing_pair_measurement_subject(
     pair_subject = (
         binding_reference.get("subject_reference")
         if type(binding_reference) is dict
-        else None
+        else comparison.get("subject_reference")
     )
     if (
         type(pair_subject) is not dict

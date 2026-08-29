@@ -393,3 +393,30 @@ operation still joins the immediately prior pair Measurement with the newly
 produced pair Measurement. No prior Ledger occurrence independently records
 that pair. The binding-production boundary therefore remains frozen even
 though the ceremonial Applicability stages after it are gone.
+
+## Amendment after recorded-pair Compare binding subtraction
+
+`recorded_pair_compare_binding_occurrence_subtraction_report_001.md` tests the
+active recorded-pair Compare road after its one-valued Applicability lifecycle
+was withdrawn.
+
+The separate Compare binding event failed. The Compare Act occurrence now
+records the two exact Measurement references, complete ordered source
+occurrence sequences, one added material result, operator source coordinates,
+Locality, through-occurrence boundary, and lifecycle identities. The Compare
+result records its exact subjects and Act occurrence. Later shared-position and
+Distinction readers resolve those subject coordinates without a binding-event
+reference.
+
+```text
+internal recurrent-position binding event       failed subtraction
+internal Compare-Distinction binding event       failed subtraction
+active recorded-pair Compare binding event       failed subtraction
+binding coordinates                              preserved in Act occurrences
+authored binding lifecycle                       retained as control
+```
+
+The active console still supplies the preceding carried pair Measurement and
+the newly produced pair Measurement to family-local Compare mechanics. No
+prior Seed occurrence establishing that Compare Act production has been found.
+This subtraction removes one copied occurrence; it does not name that vacancy.

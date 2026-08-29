@@ -350,7 +350,12 @@ def _result_coordinates(
         )
 
     for identity, result in reading["pair_compare_results"]:
-        subjects = result["subject_to_act_binding_reference"]["subject_reference"]
+        binding = result.get("subject_to_act_binding_reference")
+        subjects = (
+            binding["subject_reference"]
+            if type(binding) is dict
+            else result["subject_reference"]
+        )
         earlier = coordinates[
             subjects["earlier_measurement_reference"][
                 "recorded_occurrence_identity"

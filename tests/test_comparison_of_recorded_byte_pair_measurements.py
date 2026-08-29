@@ -298,17 +298,45 @@ def test_carried_measurements_record_one_complete_comparison():
     assert act.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT
     assert "applicability_result_event_identity" not in act.material
     assert "applicability_result_event_identity" not in result.material
+    assert "subject_to_act_binding_reference" not in act.material
+    assert "subject_to_act_binding_reference" not in result.material
+    assert result.material["subject_reference"] == act.material["subject_reference"]
     assert not tuple(
         event
         for event in ledger.list()
         if event.kind
         in {
+            comparison_module.RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
             RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
             RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
             RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
         }
     )
     assert result.identity in current_coordinates["comparison_result_occurrences"]
+
+
+def test_changed_active_compare_subject_coordinates_are_refused():
+    ledger, _source, _source_event, _added, earlier, later = _operator_inputs()
+    result, _current_coordinates = (
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
+            ledger,
+            earlier_measurement=earlier,
+            later_measurement=later,
+            current_coordinates=read_operator_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+    )
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    act.material["subject_reference"]["earlier_measurement_reference"] = deepcopy(
+        act.material["subject_reference"]["later_measurement_reference"]
+    )
+
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="not exact",
+    ):
+        get_recorded_pair_measurement_comparison(ledger, result.identity)
 
 
 def test_recorded_pair_compare_without_applicability_is_stoppable_and_records_one_result():
@@ -874,20 +902,15 @@ def test_compare_requires_prior_and_later_pair_results():
         ledger,
         compare_results[0].identity,
     )
-    binding = ledger.get(
-        reading["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-    )
-    assert binding is not None
+    subjects = reading["subject_reference"]
     assert (
-        binding.material["earlier_measurement_reference"][
+        subjects["earlier_measurement_reference"][
             "recorded_occurrence_identity"
         ]
         == pair_results[0].identity
     )
     assert (
-        binding.material["later_measurement_reference"][
+        subjects["later_measurement_reference"][
             "recorded_occurrence_identity"
         ]
         == pair_results[1].identity
@@ -925,14 +948,10 @@ def test_pair_compare_uses_supplied_coordinates_with_ordered_paths(monkeypatch):
     )
     assert len(pair_results) == 2
     assert len(compare_results) == 1
-    binding_reference = compare_results[0].material[
-        "subject_to_act_binding_reference"
-    ]
-    binding = ledger.get(binding_reference["recorded_occurrence_identity"])
-    assert binding is not None
-    assert binding.material["earlier_measurement_reference"][
+    subjects = compare_results[0].material["subject_reference"]
+    assert subjects["earlier_measurement_reference"][
         "recorded_occurrence_identity"
     ] == pair_results[0].identity
-    assert binding.material["later_measurement_reference"][
+    assert subjects["later_measurement_reference"][
         "recorded_occurrence_identity"
     ] == pair_results[1].identity

@@ -318,21 +318,21 @@ def _comparison_input(
         kind=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
         message="comparison of shared-position Measurement result with recorded pair findings requires one exact recorded comparison result",
     )
-    material, binding_reading = (
+    material, subject_reading = (
         _recorded_pair_measurement_comparison_reading(
             ledger,
             event.identity,
             prior_coordinates=prior_coordinates,
         )
     )
-    binding = binding_reading[0]
+    binding, pair_inputs = subject_reading
     binding_reference = material.get("subject_to_act_binding_reference")
     binding_identity = (
         binding_reference.get("recorded_occurrence_identity")
         if type(binding_reference) is dict
         else None
     )
-    if (
+    if binding is not None and (
         binding.identity != binding_identity
         or binding.material.get("comparison_result_identity")
         != material.get("result_identity")
@@ -345,10 +345,7 @@ def _comparison_input(
         "event": event,
         "reference": _result_reference(event),
         "result_material": material,
-        "binding_event_identity": binding.identity,
-        "added_occurrence_identity": binding.material[
-            "added_occurrence_reference"
-        ],
+        "added_occurrence_identity": pair_inputs["added_reference"],
         "finding_references": _comparison_finding_references(event, material),
     }
 
@@ -1184,9 +1181,6 @@ def _binding_material(
         "comparison_result_reference": deepcopy(
             inputs["comparison"]["reference"]
         ),
-        "comparison_binding_event_identity": inputs["comparison"][
-            "binding_event_identity"
-        ],
         "source_material_result_occurrence_identity": inputs["shared_position"]
         ["source_occurrence_identity"],
         "comparison_added_occurrence_identity": inputs["comparison"]

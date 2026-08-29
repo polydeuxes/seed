@@ -292,12 +292,16 @@ def test_exact_measurement_reference_addresses_the_two_results():
         ledger,
         later_pair_reference["recorded_occurrence_identity"],
     )
-    earlier_pair_subject = earlier_pair["subject_to_act_binding_reference"][
-        "subject_reference"
-    ]
-    later_pair_subject = later_pair["subject_to_act_binding_reference"][
-        "subject_reference"
-    ]
+    earlier_pair_subject = earlier_pair.get("subject_reference")
+    if earlier_pair_subject is None:
+        earlier_pair_subject = earlier_pair["subject_to_act_binding_reference"][
+            "subject_reference"
+        ]
+    later_pair_subject = later_pair.get("subject_reference")
+    if later_pair_subject is None:
+        later_pair_subject = later_pair["subject_to_act_binding_reference"][
+            "subject_reference"
+        ]
 
     assert references[0].exact_measurement_reference == (
         earlier_pair_subject["later_measurement_reference"]

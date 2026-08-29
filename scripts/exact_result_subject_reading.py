@@ -173,7 +173,7 @@ def exact_result_subject_sequences(
         pair_subject = (
             pair_binding.get("subject_reference")
             if type(pair_binding) is dict
-            else None
+            else pair_comparison.get("subject_reference")
         )
         if type(pair_subject) is not dict:
             raise ValueError("pair Compare has no exact Measurement subjects")

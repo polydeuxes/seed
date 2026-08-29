@@ -8,8 +8,6 @@ The active recorded-pair Compare road now records:
 earlier byte-pair Measurement result
 + later byte-pair Measurement result
         ↓
-Compare binding occurrence
-        ↓
 Compare Act occurrence
         ↓
 Compare result occurrence
@@ -17,8 +15,8 @@ Compare result occurrence
 
 The former Applicability binding, Applicability Act, and forced-positive
 Applicability result occurrences are absent from this road. The separate
-Compare binding remains. No replacement verdict, Candidate, population,
-selector, or wrapper was introduced.
+Compare binding subsequently failed its own subtraction. No replacement
+verdict, Candidate, selector, or wrapper was introduced.
 
 ## Why Applicability failed
 
@@ -40,22 +38,23 @@ After those refusals, the removed Applicability producer could record only
 in the later Compare result as added, removed, conflicting, and same-content
 findings.
 
-## Preserved binding boundary
+## Amended binding boundary
 
-This subtraction does not claim that the Compare binding occurrence has an
-independently established producer. The operator operation still addresses
-the immediately prior carried pair Measurement and the newly produced pair
-Measurement before appending the binding.
+`recorded_pair_compare_binding_occurrence_subtraction_report_001.md` removes
+the active binding event after testing it independently. The operator operation
+still addresses the preceding carried pair Measurement and the newly produced
+pair Measurement before appending the Compare Act.
 
-The binding occurrence therefore remains under separate pressure:
+The amended boundary is:
 
 ```text
-forced Applicability after binding       withdrawn
-binding-production occurrence before it  not found
+forced Applicability after binding    withdrawn
+separate active binding event         withdrawn
+Compare Act production occurrence     not found
 ```
 
-Deleting the forced stages makes that earlier vacancy visible; it does not
-answer it.
+Deleting the forced stages and copied binding event makes that production
+vacancy visible; it does not answer it.
 
 ## Preserved physiology
 
@@ -65,7 +64,6 @@ The subtraction preserves:
 exact earlier and later pair Measurement subjects
 complete ordered source occurrence populations
 one exact added operator material result
-Compare binding present with Compare Act absent
 Compare Act present with result absent
 Compare Act before result
 one result for one Act
@@ -76,8 +74,8 @@ input mutation and substitution refusal
 later recurrence, shared-position, and Distinction physiology
 ```
 
-The Compare Act and result directly reference the surviving Compare binding.
-Neither carries an Applicability result coordinate.
+The Compare Act and result name the exact earlier and later subjects. Neither
+records an Applicability result coordinate or binding-event reference.
 
 The read-only exact-material harness no longer reports a
 `pair_compare_applicability_results` surface. It reads the exact Compare result
@@ -101,7 +99,7 @@ live Seed occurrence has yet been found that produces its questions.
 exact input rejection before binding             established
 independently variable Applicability verdict     absent
 forced positive ceremony                         failed subtraction
-separate Compare binding occurrence              preserved
+separate active Compare binding occurrence       failed subtraction
 Compare Act/result distinction                   preserved
 callable Applicability control                   retained
 binding-production vacancy                       frozen
