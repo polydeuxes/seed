@@ -194,3 +194,14 @@ This does not alter the frozen ordinary recurrent shared-position control:
 ordinary recurrent shared-position  variable result, no live producer
 active byte-pair input               live producer, forced result withdrawn
 ```
+
+## Amendment after recorded-pair Compare census
+
+The next active inward producer also fails the variable-result discriminator,
+but at a later floor. Recorded-pair Compare validates exact source succession
+before its Compare binding and then records only `applicable`. Its exact
+Compare findings vary later in the Compare result.
+
+The Compare binding-production boundary remains unresolved and is kept
+separate from the proposed forced-Applicability subtraction. See
+`recorded_pair_compare_applicability_census_001.md`.
