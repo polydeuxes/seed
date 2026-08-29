@@ -143,3 +143,9 @@ road: determine whether addressed-byte Determination Applicability can vary
 independently when its exact input coordinate was itself read from the direct
 Measurement result, or whether that lifecycle is another forced positive
 question.
+
+That census is now recorded in
+`addressed_byte_determination_applicability_census_001.md`. The result is
+stronger: the Applicability result has no verdict coordinate and always names
+`applicable_to`, including a control whose Determination result contains zero
+matching result-position references.
