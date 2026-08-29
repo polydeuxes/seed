@@ -161,3 +161,22 @@ The next live specimen must begin with an Applicability occurrence actually
 produced during the inward process. Its prior exact Ledger history—not the
 availability of a public constructor—must account for the occurrence under
 test.
+
+## Amendment after first live-producer census
+
+`byte_pair_input_applicability_census_001.md` finds the earliest live inward
+specimen. The operator operation produces byte-pair input Applicability for
+each exact byte-result position, but its result is unconditionally
+`applicable`. No negative producer exists. The exact source result position,
+source boundaries, movement coordinate, and Locality already exist before its
+two prospective bindings.
+
+That family therefore fails for a different reason than this frozen ordinary
+shared-position control:
+
+```text
+ordinary recurrent shared-position  positive/negative, no live producer
+byte-pair input                      live producer, no variable verdict
+```
+
+The byte-pair road is now under its own direct subtraction falsifier.
