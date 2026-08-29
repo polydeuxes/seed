@@ -1455,13 +1455,45 @@ def _comparison_act_material_from_inputs(
         comparison_result_identity=comparison_result_identity,
     )
     return {
-        "comparison_act_identity": coordinates.pop("exact_act_identity"),
-        "act_occurrence_identity": coordinates.pop(
+        "comparison_act_identity": coordinates["exact_act_identity"],
+        "act_occurrence_identity": coordinates[
             "comparison_act_occurrence_identity"
-        ),
-        "result_identity": coordinates.pop("comparison_result_identity"),
+        ],
+        "result_identity": coordinates["comparison_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
-        **coordinates,
+        "subject_reference": deepcopy(coordinates["subject_reference"]),
+        "book_clause_identity": coordinates["book_clause_identity"],
+        "earlier_measurement_reference": deepcopy(
+            coordinates["earlier_measurement_reference"]
+        ),
+        "later_measurement_reference": deepcopy(
+            coordinates["later_measurement_reference"]
+        ),
+        "earlier_source_occurrence_references": list(
+            coordinates["earlier_source_occurrence_references"]
+        ),
+        "later_source_occurrence_references": list(
+            coordinates["later_source_occurrence_references"]
+        ),
+        "added_occurrence_reference": coordinates["added_occurrence_reference"],
+        "added_occurrence_source_references": list(
+            coordinates["added_occurrence_source_references"]
+        ),
+        "operator_destination_locality_relation_event_identity": coordinates[
+            "operator_destination_locality_relation_event_identity"
+        ],
+        "operator_material_source_result_event_identity": coordinates[
+            "operator_material_source_result_event_identity"
+        ],
+        "operator_material_source_current_coordinate_reference": deepcopy(
+            coordinates["operator_material_source_current_coordinate_reference"]
+        ),
+        "destination_operator_locality_identity": coordinates[
+            "destination_operator_locality_identity"
+        ],
+        "through_event_occurrence_identity": coordinates[
+            "through_event_occurrence_identity"
+        ],
     }
 
 
