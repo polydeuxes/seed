@@ -70,6 +70,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
+    read_operator_current_coordinates_through,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
@@ -825,14 +826,7 @@ def test_every_exact_cross_set_member_receives_one_applicability_act():
         )
         for act in acts
     ) == subjects
-    assert tuple(
-        act.material["through_event_occurrence_identity"] for act in acts
-    ) == (
-        coordinates_before["through_event_occurrence_identity"],
-        acts[0].identity,
-        acts[1].identity,
-        acts[2].identity,
-    )
+    assert all("through_event_occurrence_identity" not in act.material for act in acts)
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         acts[-1].identity
     )
@@ -874,8 +868,6 @@ def test_resumed_applicability_coverage_uses_the_later_exact_current_sets():
         current_coordinates=current_coordinates,
     )
     assert len(initial_inputs) == 4
-    initial_boundary = current_coordinates["through_event_occurrence_identity"]
-
     prior_count = len(ledger.list_locality(LOCALITY))
     first_act = comparison_module._record_active_applicability_act(
         ledger,
@@ -883,7 +875,7 @@ def test_resumed_applicability_coverage_uses_the_later_exact_current_sets():
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
-    assert first_act.material["through_event_occurrence_identity"] == initial_boundary
+    assert "through_event_occurrence_identity" not in first_act.material
 
     ledger, *_third_input, current_coordinates = _record_inputs_with_coordinates(
         ledger,
@@ -926,9 +918,59 @@ def test_resumed_applicability_coverage_uses_the_later_exact_current_sets():
         comparison_module._active_applicability_subject_key(inputs)
         for inputs in expanded_inputs
     }
-    assert first_act.material["through_event_occurrence_identity"] != (
-        resumed.current_coordinates["through_event_occurrence_identity"]
+    first_act_coordinates = read_operator_current_coordinates_through(
+        ledger,
+        locality_identity=LOCALITY,
+        through_event_occurrence_identity=first_act.identity,
     )
+    assert len(
+        comparison_module._active_subject_inputs_from_current_coordinates(
+            ledger,
+            locality_identity=LOCALITY,
+            current_coordinates=first_act_coordinates,
+        )
+    ) == 4
+
+
+def test_applicability_act_refuses_subjects_recorded_after_its_occurrence():
+    ledger, *_inputs_reading, current_coordinates = _two_inputs_with_coordinates()
+    initial_inputs = comparison_module._active_subject_inputs_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    first_act = comparison_module._record_active_applicability_act(
+        ledger,
+        inputs=initial_inputs[0],
+        current_coordinates=current_coordinates,
+    )
+    current_coordinates = _advance_since(
+        ledger,
+        current_coordinates,
+        len(ledger.list_locality(LOCALITY)) - 1,
+    )
+
+    ledger, *_third_input, current_coordinates = _record_inputs_with_coordinates(
+        ledger,
+        current_coordinates=current_coordinates,
+    )
+    expanded_inputs = comparison_module._active_subject_inputs_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    first_act.material["subject_reference"] = deepcopy(
+        comparison_module._active_applicability_act_material(expanded_inputs[-1])[
+            "subject_reference"
+        ]
+    )
+
+    with pytest.raises(ValueError, match="does not follow its subjects"):
+        comparison_module._read_active_applicability_act(
+            ledger,
+            first_act.identity,
+            prior_coordinates=current_coordinates,
+        )
 
 
 def test_no_applicability_occurrence_is_not_inapplicable():
@@ -1175,7 +1217,6 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
             "subject_reference",
             "act",
             "addressed_act",
-            "through_event_occurrence_identity",
         }
         for applicability_act in (
             ledger.get(result.material["act_occurrence_event_identity"])

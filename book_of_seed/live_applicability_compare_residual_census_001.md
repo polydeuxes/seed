@@ -19,9 +19,12 @@ subject_reference:
     recorded-pair Compare result reference
 act: Applicability
 addressed_act: Compare
-through-occurrence boundary
 Locality on the occurrence
 ```
+
+Both subjects precede the Applicability Act occurrence. Current coordinates
+can be reconstructed through that exact Act occurrence; the former copied
+pre-Act boundary is absent.
 
 ### Applicability result occurrence
 
@@ -110,7 +113,8 @@ copied subject/evidence/provenance payload   absent
 copied Compare Act subject reference         absent
 copied Book clause label                     absent
 composite family narration in Act word       absent
-exact boundary                               survives
+selected coverage reading boundary          survives
+copied Applicability Act boundary            absent
 exact Act words                              survive
 exact occurrence references                  survive
 variable Applicability answer                survives
@@ -134,10 +138,15 @@ Compare Act can recover its exact subjects through its positive Applicability
 result and exact Applicability Act occurrence. Its copied subject reference is
 absent.
 
+`live_applicability_act_boundary_copy_subtraction_report_001.md` establishes
+that the Applicability Act occurrence and subject occurrence order preserve
+its exact cut. The copied pre-Act boundary is absent; selected reading
+boundaries still bound coverage reconstruction.
+
 ## Validation
 
 ```text
-focused lifecycle, exact-material, Book, and witness tests   85 passed
+focused lifecycle, exact-material, Book, and witness tests   86 passed
 downstream Distinction Measurement integration               7 passed
 ```
 

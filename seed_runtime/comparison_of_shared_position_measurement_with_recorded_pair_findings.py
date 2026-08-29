@@ -1152,9 +1152,7 @@ def _new_identities(ledger: EventLedger) -> dict[str, str]:
     }
 
 
-def _active_applicability_act_material(
-    inputs: dict[str, Any], boundary: str
-) -> dict[str, Any]:
+def _active_applicability_act_material(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "subject_reference": {
             "shared_position_result_position_reference": deepcopy(
@@ -1166,7 +1164,6 @@ def _active_applicability_act_material(
         },
         "act": _ACTIVE_APPLICABILITY_ACT,
         "addressed_act": _ACTIVE_COMPARE_ACT,
-        "through_event_occurrence_identity": boundary,
     }
 
 
@@ -1184,9 +1181,8 @@ def _active_applicability_act_inputs(
     event: Event,
     *,
     prior_coordinates: dict[str, Any] | None,
-) -> tuple[dict[str, Any], str]:
+) -> dict[str, Any]:
     material = event.material
-    boundary = material.get("through_event_occurrence_identity")
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
             read_operator_current_coordinates_through,
@@ -1195,7 +1191,7 @@ def _active_applicability_act_inputs(
         prior_coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=event.locality_identity,
-            through_event_occurrence_identity=boundary,
+            through_event_occurrence_identity=event.identity,
         )
     subject_reference = material.get("subject_reference")
     shared_reference = (
@@ -1222,7 +1218,27 @@ def _active_applicability_act_inputs(
         ),
         prior_coordinates=prior_coordinates,
     )
-    return inputs, boundary
+    for subject in (
+        inputs["shared_position"]["event"],
+        inputs["comparison"]["event"],
+    ):
+        try:
+            ordered = ledger.occurrences_in_append_order(
+                (subject.identity, event.identity),
+                locality_identity=event.locality_identity,
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "comparison of shared-position Measurement result with recorded pair findings Applicability Act does not follow its subjects"
+            ) from error
+        if tuple(item.identity for item in ordered) != (
+            subject.identity,
+            event.identity,
+        ):
+            raise ValueError(
+                "comparison of shared-position Measurement result with recorded pair findings Applicability Act does not follow its subjects"
+            )
+    return inputs
 
 
 def _record_active_applicability_act(
@@ -1231,10 +1247,10 @@ def _record_active_applicability_act(
     inputs: dict[str, Any],
     current_coordinates: dict[str, Any],
 ) -> Event:
-    boundary = _require_input_current_coordinates(ledger, inputs, current_coordinates)
+    _require_input_current_coordinates(ledger, inputs, current_coordinates)
     return ledger.append(
         COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _active_applicability_act_material(inputs, boundary),
+        _active_applicability_act_material(inputs),
         locality_identity=inputs["locality_identity"],
     )
 
@@ -1255,29 +1271,17 @@ def _read_active_applicability_act(
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Applicability Act carries an authored binding"
         )
-    inputs, boundary = _active_applicability_act_inputs(
+    inputs = _active_applicability_act_inputs(
         ledger,
         event,
         prior_coordinates=prior_coordinates,
     )
     if (
-        type(boundary) is not str
-        or event.locality_identity != inputs["locality_identity"]
-        or event.material
-        != _active_applicability_act_material(inputs, boundary)
+        event.locality_identity != inputs["locality_identity"]
+        or event.material != _active_applicability_act_material(inputs)
     ):
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Applicability Act coordinates are not exact"
-        )
-    ordered = ledger.occurrences_in_append_order(
-        tuple(dict.fromkeys((boundary, event.identity))),
-        locality_identity=event.locality_identity,
-    )
-    if tuple(item.identity for item in ordered) != tuple(
-        dict.fromkeys((boundary, event.identity))
-    ):
-        raise ValueError(
-            "comparison of shared-position Measurement result with recorded pair findings Applicability Act does not follow its boundary"
         )
     return event, inputs
 

@@ -39,8 +39,8 @@ The same active call is resumed at `B2`.
 Resumption records eight Applicability Acts. Together with the first Act, the
 history contains exactly one Act for each of the nine members current at `B2`.
 
-The first Act remains bounded by `B1`. It is not rewritten to carry `B2`.
-The eight later Acts carry their own advancing through-occurrence boundaries.
+The first Act remains an exact occurrence at its earlier place in Locality
+order. It is not rewritten when the later Acts occur.
 
 Therefore this road does not establish one fixed work set carried from `B1`
 through completion:
@@ -57,8 +57,8 @@ one shared completion boundary          absent
 
 ## Exact distinction
 
-The durable facts are the individual Applicability Act occurrences and their
-exact subjects and boundaries.
+The durable facts are the individual Applicability Act occurrences, their
+exact subjects, and occurrence order.
 
 Exhaustive coverage is reconstructed at a selected reading boundary:
 
@@ -79,7 +79,7 @@ fixed B1 member set survives interruption       no
 later invocation reads exact sets at B2          yes
 later membership can enlarge the exact set       yes
 one Act per B2 member after resumption            yes
-individual Act boundaries remain exact           yes
+individual Act occurrence order remains exact    yes
 durable work-set occurrence                       absent
 durable completion occurrence                     absent
 ```
@@ -101,3 +101,18 @@ exhaustive coverage reconstructed at one exact reading boundary
 ```
 
 Do not add a durable population, work, progress, or completion wrapper.
+
+## Amendment after Act-boundary subtraction
+
+`live_applicability_act_boundary_copy_subtraction_report_001.md` establishes
+that each Applicability Act need not copy the boundary immediately preceding
+it. Its exact occurrence and subject occurrence order preserve the Act cut.
+
+Coverage remains bounded by the selected coordinate reading. Thus the exact
+distinction is:
+
+```text
+Applicability Act occurrence order
+!=
+boundary selected for one coverage reconstruction
+```

@@ -198,3 +198,9 @@ earlier boundary.
 Thus “every exact `S(B) × C(B)` member” names a reconstruction at the selected
 reading boundary `B`. It does not name a set frozen by the first Act or a
 durable completion occurrence.
+
+## Amendment after Applicability Act boundary subtraction
+
+The selected boundary `B` remains load-bearing for coverage reconstruction.
+It need not be copied into every Applicability Act. Each Act's exact occurrence
+and the order of its two subject occurrences preserve the individual Act cut.
