@@ -1164,7 +1164,6 @@ def _active_applicability_act_material(
         },
         "act": APPLICABILITY_ACT,
         "addressed_act": COMPARE_ACT,
-        "book_clause_identity": "01.Current.E.1",
         "through_event_occurrence_identity": boundary,
     }
 
@@ -1997,7 +1996,6 @@ def _active_compare_act_material(
     return {
         "act": COMPARE_ACT,
         "subject_reference": _active_compare_subject_reference(inputs),
-        "book_clause_identity": BOOK_CLAUSE,
         "applicability_result_event_identity": applicability.identity,
     }
 

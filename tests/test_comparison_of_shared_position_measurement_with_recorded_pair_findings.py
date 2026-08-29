@@ -1068,6 +1068,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "comparison_added_occurrence_identity" not in act.material
         and "pair_subjects" not in act.material
         and "through_event_occurrence_identity" not in act.material
+        and "book_clause_identity" not in act.material
         for act in acts
     )
     assert all("subject_to_act_binding_reference" not in act.material for act in acts)
@@ -1095,6 +1096,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         and "shared_position_result_position_reference"
         not in applicability_act.material
         and "comparison_result_reference" not in applicability_act.material
+        and "book_clause_identity" not in applicability_act.material
         for applicability_act in (
             ledger.get(result.material["act_occurrence_event_identity"])
             for result in applicability_results
