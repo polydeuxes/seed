@@ -628,16 +628,16 @@ def _source_result_position_coordinates(
             result_position=source["result_position"],
         )
 
-    from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        _recorded_path_comparison_finding_result_content_for_locality_movement,
+    from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+        COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        _recorded_shared_position_comparison_finding_result_content_for_locality_movement,
     )
 
     if (
         source_event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
-        return _recorded_path_comparison_finding_result_content_for_locality_movement(
+        return _recorded_shared_position_comparison_finding_result_content_for_locality_movement(
             ledger,
             result_event_identity=source_event.identity,
             result_position=source["result_position"],
@@ -694,14 +694,14 @@ def _source_result_position_from_reference(
                 "locality_movement_event_identity": None,
             }, source_event
 
-    from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        _recorded_path_comparison_finding_result_content_for_locality_movement,
+    from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+        COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        _recorded_shared_position_comparison_finding_result_content_for_locality_movement,
     )
 
     if (
         source_event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
         if set(reference) != {
             "recorded_occurrence_identity",
@@ -709,7 +709,7 @@ def _source_result_position_from_reference(
         } or type(reference["result_position"]) is not int:
             raise ByteMeasurementError("result position movement carries no exact source")
         try:
-            coordinates = _recorded_path_comparison_finding_result_content_for_locality_movement(
+            coordinates = _recorded_shared_position_comparison_finding_result_content_for_locality_movement(
                 ledger,
                 result_event_identity=source_event.identity,
                 result_position=reference["result_position"],
@@ -742,13 +742,13 @@ def _source_measurement_current_coordinates(source_event: Event) -> dict[str, st
 def _source_result_position_is_carried(
     source_event: Event, current_coordinates: dict[str, Any]
 ) -> bool:
-    from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+        COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     )
 
     if (
         source_event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
         return (
             current_coordinates.get("comparison_result_occurrences", {}).get(
@@ -1399,7 +1399,7 @@ def _move_result_position_reference_to_locality(
     )
     if source_event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
         raise ByteMeasurementError(
-            "this movement road requires a position or path-comparison result position"
+            "this movement road requires a position or shared-position Compare result position"
         )
     if source_event.locality_identity == destination_locality:
         raise ByteMeasurementError("same-Locality result position requires no movement")

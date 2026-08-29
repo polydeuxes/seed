@@ -98,12 +98,12 @@ def exact_result_subject_sequences(
         reading,
         "pair_measurement_result_positions",
     )
-    paths = _results_by_occurrence(
+    shared_position_results = _results_by_occurrence(
         reading,
-        "ordered_relation_path_measurement_results",
+        "shared_position_measurement_results",
     )
     pair_comparisons = _results_by_occurrence(reading, "pair_compare_results")
-    path_comparisons = _results_by_occurrence(reading, "path_compare_results")
+    shared_position_comparisons = _results_by_occurrence(reading, "shared_position_compare_results")
     distinctions = _results_by_occurrence(
         reading,
         "distinction_measurement_results",
@@ -111,29 +111,29 @@ def exact_result_subject_sequences(
 
     sequences = []
     for distinction_identity, distinction in distinctions.items():
-        path_comparison_identity = distinction.get(
+        shared_position_comparison_identity = distinction.get(
             "source_result_occurrence_identity"
         )
-        path_comparison = path_comparisons.get(path_comparison_identity)
+        shared_position_comparison = shared_position_comparisons.get(shared_position_comparison_identity)
         finding = (
-            path_comparison.get("finding")
-            if type(path_comparison) is dict
+            shared_position_comparison.get("finding")
+            if type(shared_position_comparison) is dict
             else None
         )
         subject = finding.get("subject") if type(finding) is dict else None
         if type(subject) is not dict:
             raise ValueError("Distinction source has no exact Compare subjects")
 
-        path_reference = subject.get(
-            "ordered_relation_path_result_position_reference"
+        shared_position_reference = subject.get(
+            "shared_position_result_position_reference"
         )
-        path_identity, path_result_position = _result_position_reference(
-            path_reference,
-            coordinate="ordered-path Measurement result reference",
+        shared_position_identity, shared_position_result_position = _result_position_reference(
+            shared_position_reference,
+            coordinate="shared-position Measurement result reference",
         )
-        path = paths.get(path_identity)
-        if type(path) is not dict or path_result_position != 0:
-            raise ValueError("Compare has no exact ordered-path result subject")
+        shared_position_result = shared_position_results.get(shared_position_identity)
+        if type(shared_position_result) is not dict or shared_position_result_position != 0:
+            raise ValueError("Compare has no exact shared-position result subject")
 
         pair_comparison_reference = subject.get(
             "recorded_pair_comparison_result_reference"
@@ -144,22 +144,30 @@ def exact_result_subject_sequences(
         )
         pair_comparison = pair_comparisons.get(pair_comparison_identity)
         if type(pair_comparison) is not dict:
-            raise ValueError("path Compare has no exact pair Compare result subject")
+            raise ValueError("shared-position Compare has no exact pair Compare result subject")
 
-        path_subject = path["ordered_relation_path"]["subject"]
+        result_positions = shared_position_result.get("result_positions")
+        shared_position_result_position_content = (
+            result_positions[0]
+            if type(result_positions) is list and len(result_positions) == 1
+            else None
+        )
+        if type(shared_position_result_position_content) is not dict:
+            raise ValueError("shared-position Measurement has no exact result position")
+        shared_position_subject = shared_position_result_position_content["subject"]
         first_position_reference = _result_position_reference(
-            path_subject.get("first_position_result_reference"),
+            shared_position_subject.get("first_position_result_reference"),
             coordinate="first position Measurement result reference",
         )
         second_position_reference = _result_position_reference(
-            path_subject.get("second_position_result_reference"),
+            shared_position_subject.get("second_position_result_reference"),
             coordinate="second position Measurement result reference",
         )
-        path_source_identity = path["ordered_relation_path"]["content"].get(
+        source_material_result_identity = shared_position_result_position_content["content"].get(
             "source_material_result_occurrence_identity"
         )
-        if path_source_identity not in material_results:
-            raise ValueError("ordered path has no exact material-result source")
+        if source_material_result_identity not in material_results:
+            raise ValueError("shared-position result has no exact material-result source")
 
         pair_binding = pair_comparison.get("subject_to_act_binding_reference")
         pair_subject = (
@@ -195,8 +203,8 @@ def exact_result_subject_sequences(
         ):
             raise ValueError("pair Measurement byte-result subjects are absent")
 
-        first_pair = path["first_position_result"]["exact_pair"]
-        second_pair = path["second_position_result"]["exact_pair"]
+        first_pair = shared_position_result["first_position_result"]["exact_pair"]
+        second_pair = shared_position_result["second_position_result"]["exact_pair"]
         if (
             type(first_pair) is not list
             or len(first_pair) != 2
@@ -204,20 +212,20 @@ def exact_result_subject_sequences(
             or len(second_pair) != 2
             or first_pair[1] != second_pair[0]
         ):
-            raise ValueError("ordered path has malformed exact content")
+            raise ValueError("shared-position result has malformed exact content")
 
         sequences.append(
             {
-                "path_source_material_result_occurrence_identity": (
-                    path_source_identity
+                "source_material_result_occurrence_identity": (
+                    source_material_result_identity
                 ),
                 "ordered_content": bytes(
                     (first_pair[0], first_pair[1], second_pair[1])
                 ),
                 "ordered_positions": (
-                    path["first_position_result"]["first_position"],
-                    path["first_position_result"]["second_position"],
-                    path["second_position_result"]["second_position"],
+                    shared_position_result["first_position_result"]["first_position"],
+                    shared_position_result["first_position_result"]["second_position"],
+                    shared_position_result["second_position_result"]["second_position"],
                 ),
                 "first_position_measurement_result_reference": (
                     first_position_reference
@@ -225,9 +233,9 @@ def exact_result_subject_sequences(
                 "second_position_measurement_result_reference": (
                     second_position_reference
                 ),
-                "ordered_path_measurement_result_reference": (
-                    path_identity,
-                    path_result_position,
+                "shared_position_measurement_result_reference": (
+                    shared_position_identity,
+                    shared_position_result_position,
                 ),
                 "earlier_pair_measurement_result_occurrence_identity": (
                     earlier_pair_identity
@@ -254,8 +262,8 @@ def exact_result_subject_sequences(
                 "pair_compare_result_occurrence_identity": (
                     pair_comparison_identity
                 ),
-                "path_compare_result_occurrence_identity": (
-                    path_comparison_identity
+                "shared_position_compare_result_occurrence_identity": (
+                    shared_position_comparison_identity
                 ),
                 "distinction_measurement_result_occurrence_identity": (
                     distinction_identity

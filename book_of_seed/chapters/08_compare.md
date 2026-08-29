@@ -25,18 +25,19 @@ The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references and the added occurrence,
 and Locality.
 
-### 04.Compare.B — Ordered relation path and pair findings
+### 04.Compare.B — Same-position Measurement and pair findings
 
-When one exact ordered relation-path result position and one exact recorded
-pair-finding Compare result are current through one exact occurrence boundary,
-both are the exact subjects of one Compare subject-to-Act binding in that
-Locality.
+When result position 0 of one exact same-position Measurement result and one
+exact recorded pair-finding Compare result are current through one exact
+occurrence boundary, both are the exact subjects of one Compare subject-to-Act
+binding in that Locality.
 
 That exact subject-to-Act binding is addressed by one Applicability Act. The
 exact result of that Applicability Act is applicable or inapplicable.
 
-The result preserves each source reference, ordered path-position result
-references, pair subjects, complete finding references, and Locality.
+The result preserves the same-position Measurement result-position reference,
+each pair-position result reference, pair subjects, complete finding
+references, and Locality.
 
 ## References
 

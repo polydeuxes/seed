@@ -1,4 +1,4 @@
-"""Compare each exact path-ordered pair of source-position material."""
+"""Compare each exact shared-position pair of source-position material."""
 
 from __future__ import annotations
 
@@ -9,40 +9,40 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    ordered_source_position_coordinates_of_ordered_relation_path,
+    source_position_coordinates_of_shared_position_result,
 )
 
 
 APPLICABILITY_ACT_KIND = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "applicability_act_recorded"
 )
 COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "compare_subject_to_act_binding_recorded"
 )
 APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "applicability_subject_to_act_binding_recorded"
 )
 APPLICABILITY_RESULT_KIND = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "applicability_result_recorded"
 )
 COMPARE_ACT_KIND = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "compare_act_recorded"
 )
 COMPARE_RESULT_KIND = (
-    "operator.comparison_of_ordered_path_source_position_material."
+    "operator.comparison_of_shared_position_source_position_material."
     "compare_result_recorded"
 )
 
 BOOK_CLAUSE = "04.Compare"
 APPLICABILITY_ACT = (
-    "Applicability of ordered path source position material to Compare"
+    "Applicability of same-position Measurement source position material to Compare"
 )
-COMPARE_ACT = "Compare ordered path source position material"
+COMPARE_ACT = "Compare same-position Measurement source position material"
 EVENT_KIND_BOOK_CLAUSES = {
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "04.Compare",
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "01.Current.E.1",
@@ -53,7 +53,7 @@ EVENT_KIND_BOOK_CLAUSES = {
 }
 
 
-class OrderedPathSourcePositionMaterialComparison(NamedTuple):
+class SharedPositionSourcePositionMaterialComparison(NamedTuple):
     current_coordinates: dict[str, Any]
     result_occurrence: Event
 
@@ -77,7 +77,7 @@ _COMPARE_IDENTITY_COORDINATES = (
     "compare_result_identity",
 )
 
-_PATH_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
+_SOURCE_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
 
 
 def _identity(value: Any, message: str) -> str:
@@ -111,29 +111,29 @@ def _result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _path_input(
+def _shared_position_input(
     ledger: EventLedger,
-    path_result_event_identity: Any,
+    shared_position_measurement_result_event_identity: Any,
     *,
-    path_position_pair: tuple[int, int],
+    source_position_pair: tuple[int, int],
     current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
     event = _event(
         ledger,
-        path_result_event_identity,
+        shared_position_measurement_result_event_identity,
         event_kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-        message="source position Compare requires an exact ordered path result",
+        message="source position Compare requires an exact shared-position Measurement result",
     )
-    path, positions = (
-        ordered_source_position_coordinates_of_ordered_relation_path(
+    shared_position, positions = (
+        source_position_coordinates_of_shared_position_result(
             ledger, event.identity, prior_coordinates=current_coordinates
         )
     )
     if len(positions) != 3:
         raise ValueError("source position Compare requires exact ordered positions")
-    if path_position_pair not in _PATH_POSITION_PAIRS:
-        raise ValueError("source position Compare requires a path-ordered pair")
-    first_path_position, second_path_position = path_position_pair
+    if source_position_pair not in _SOURCE_POSITION_PAIRS:
+        raise ValueError("source position Compare requires a shared-position pair")
+    first_source_position_index, second_source_position_index = source_position_pair
     for coordinate in positions:
         material = coordinate.get("exact_material")
         if (
@@ -169,23 +169,23 @@ def _path_input(
     if (
         type(measurements) is not dict
         or measurements.get(event.identity) != _result_reference(event)
-        or path.get("result_position") != 0
+        or shared_position.get("result_position") != 0
     ):
-        raise ValueError("current coordinates have no exact ordered path result")
+        raise ValueError("current coordinates have no exact shared-position Measurement result")
     return {
         "event": event,
         "reference": _result_reference(event),
-        "path": path,
-        "path_result_position_reference": {
+        "shared_position": shared_position,
+        "shared_position_result_position_reference": {
             "recorded_occurrence_identity": event.identity,
             "result_position": 0,
         },
         "positions": tuple(deepcopy(position) for position in positions),
-        "path_position_pair": path_position_pair,
-        "first_path_position": first_path_position,
-        "second_path_position": second_path_position,
-        "first": deepcopy(positions[first_path_position]),
-        "second": deepcopy(positions[second_path_position]),
+        "source_position_pair": source_position_pair,
+        "first_source_position_index": first_source_position_index,
+        "second_source_position_index": second_source_position_index,
+        "first": deepcopy(positions[first_source_position_index]),
+        "second": deepcopy(positions[second_source_position_index]),
         "source_occurrence_identity": positions[0][
             "source_material_result_occurrence_identity"
         ],
@@ -199,7 +199,7 @@ def _path_input(
 def _mint_compare_identities(ledger: EventLedger) -> dict[str, str]:
     return {
         coordinate: ledger.mint_identity(
-            "ordered_path_source_position_material_" + coordinate
+            "shared_position_source_position_material_" + coordinate
         )
         for coordinate in _COMPARE_IDENTITY_COORDINATES
     }
@@ -208,7 +208,7 @@ def _mint_compare_identities(ledger: EventLedger) -> dict[str, str]:
 def _mint_applicability_identities(ledger: EventLedger) -> dict[str, str]:
     return {
         coordinate: ledger.mint_identity(
-            "ordered_path_source_position_material_" + coordinate
+            "shared_position_source_position_material_" + coordinate
         )
         for coordinate in _APPLICABILITY_IDENTITY_COORDINATES
     }
@@ -233,10 +233,10 @@ def _compare_binding_material(
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
-            "path_result_position_reference": deepcopy(
-                inputs["path_result_position_reference"]
+            "shared_position_result_position_reference": deepcopy(
+                inputs["shared_position_result_position_reference"]
             ),
-            "path_position_pair": list(inputs["path_position_pair"]),
+            "source_position_pair": list(inputs["source_position_pair"]),
             "first_source_position_coordinate": deepcopy(inputs["first"]),
             "second_source_position_coordinate": deepcopy(inputs["second"]),
         },
@@ -246,7 +246,7 @@ def _compare_binding_material(
         ],
         "compare_result_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "path_result_reference": deepcopy(inputs["reference"]),
+        "shared_position_measurement_result_reference": deepcopy(inputs["reference"]),
         "through_event_occurrence_identity": boundary,
         "exact_act": COMPARE_ACT,
     }
@@ -291,11 +291,11 @@ def _applicability_binding_material(
             compare_binding
         ),
         "book_clause_identity": "01.Current.E.1",
-        "path_result_reference": deepcopy(inputs["reference"]),
-        "path_result_position_reference": deepcopy(
-            inputs["path_result_position_reference"]
+        "shared_position_measurement_result_reference": deepcopy(inputs["reference"]),
+        "shared_position_result_position_reference": deepcopy(
+            inputs["shared_position_result_position_reference"]
         ),
-        "path_position_pair": list(inputs["path_position_pair"]),
+        "source_position_pair": list(inputs["source_position_pair"]),
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
         "through_event_occurrence_identity": boundary,
@@ -327,11 +327,11 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": material["compare_result_identity"],
-        "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_result_position_reference": deepcopy(
-            material["path_result_position_reference"]
+        "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
+        "shared_position_result_position_reference": deepcopy(
+            material["shared_position_result_position_reference"]
         ),
-        "path_position_pair": list(material["path_position_pair"]),
+        "source_position_pair": list(material["source_position_pair"]),
         "first_source_position_coordinate": deepcopy(
             material["first_source_position_coordinate"]
         ),
@@ -384,16 +384,16 @@ def _read_compare_binding(
             locality_identity=event.locality_identity,
             boundary=boundary,
         )
-    path_reference = material.get("path_result_reference")
+    shared_position_reference = material.get("shared_position_measurement_result_reference")
     subject = _compare_binding_subject(material)
-    inputs = _path_input(
+    inputs = _shared_position_input(
         ledger,
-        path_reference.get("recorded_occurrence_identity")
-        if type(path_reference) is dict
+        shared_position_reference.get("recorded_occurrence_identity")
+        if type(shared_position_reference) is dict
         else None,
-        path_position_pair=(
-            tuple(subject.get("path_position_pair"))
-            if type(subject.get("path_position_pair")) is list
+        source_position_pair=(
+            tuple(subject.get("source_position_pair"))
+            if type(subject.get("source_position_pair")) is list
             else ()
         ),
         current_coordinates=current_coordinates,
@@ -504,7 +504,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "result_identity": material["applicability_result_identity"],
         "dimensions": {
             "identity": material["applicability_result_identity"],
-            "content": "ordered path source position material",
+            "content": "shared-position Measurement source position material",
         },
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": material["compare_act_identity"],
@@ -530,8 +530,8 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         ),
         "act_occurrence_event_identity": act.identity,
         "applicability": "applicable",
-        "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_position_pair": list(material["path_position_pair"]),
+        "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
+        "source_position_pair": list(material["source_position_pair"]),
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
@@ -568,8 +568,8 @@ def _recorded_applicability_result_material(
             "act_occurrence_event_identity"
         ],
         "applicability": material["applicability"],
-        "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_position_pair": list(material["path_position_pair"]),
+        "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
+        "source_position_pair": list(material["source_position_pair"]),
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
@@ -591,8 +591,8 @@ def _recorded_compare_result_material(
             "applicability_result_event_identity"
         ],
         "finding": deepcopy(material["finding"]),
-        "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_position_pair": list(material["path_position_pair"]),
+        "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
+        "source_position_pair": list(material["source_position_pair"]),
         "act_occurrence_event_identity": material[
             "act_occurrence_event_identity"
         ],
@@ -672,8 +672,8 @@ def _compare_act_material(
         "act": COMPARE_ACT,
         "subject_to_act_binding_reference": _binding_reference(compare_binding),
         "applicability_result_event_identity": applicability.identity,
-        "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_position_pair": list(subject["path_position_pair"]),
+        "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
+        "source_position_pair": list(subject["source_position_pair"]),
         "through_event_occurrence_identity": applicability.identity,
     }
 
@@ -728,10 +728,10 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         else "difference"
     )
     subject = {
-        "ordered_relation_path_result_position_reference": deepcopy(
-            inputs["path_result_position_reference"]
+        "shared_position_result_position_reference": deepcopy(
+            inputs["shared_position_result_position_reference"]
         ),
-        "path_position_pair": list(inputs["path_position_pair"]),
+        "source_position_pair": list(inputs["source_position_pair"]),
         "first_source_position_coordinate": deepcopy(first),
         "second_source_position_coordinate": deepcopy(second),
     }
@@ -757,8 +757,8 @@ def _compare_result_material(
         ),
         "applicability_result_event_identity": applicability.identity,
         "finding": _finding(inputs),
-        "path_result_reference": deepcopy(inputs["reference"]),
-        "path_position_pair": list(inputs["path_position_pair"]),
+        "shared_position_measurement_result_reference": deepcopy(inputs["reference"]),
+        "source_position_pair": list(inputs["source_position_pair"]),
         "act_occurrence_event_identity": act.identity,
     }
 
@@ -813,13 +813,13 @@ def _read_compare_result(
     return event, act, compare_binding, applicability, inputs
 
 
-def get_recorded_ordered_path_source_position_material_comparison(
+def get_recorded_shared_position_source_position_material_comparison(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     return deepcopy(_read_compare_result(ledger, event_identity)[0].material)
 
 
-def validate_ordered_path_source_position_material_comparison_event(
+def validate_shared_position_source_position_material_comparison_event(
     ledger: EventLedger,
     event_identity: str,
     *,
@@ -860,14 +860,14 @@ def _require_tip(ledger: EventLedger, event: Event) -> None:
         raise ValueError("source position Compare stage left its exact boundary")
 
 
-def _record_ordered_path_source_position_material_comparison(
+def _record_shared_position_source_position_material_comparison(
     ledger: EventLedger,
     *,
-    path_result_event_identity: str,
-    path_position_pair: tuple[int, int],
+    shared_position_measurement_result_event_identity: str,
+    source_position_pair: tuple[int, int],
     current_coordinates: dict[str, Any],
-) -> OrderedPathSourcePositionMaterialComparison:
-    """Record one exact path-ordered pair Compare."""
+) -> SharedPositionSourcePositionMaterialComparison:
+    """Record one exact shared-position pair Compare."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source position Compare requires an EventLedger")
@@ -883,10 +883,10 @@ def _record_ordered_path_source_position_material_comparison(
         ).identity
     ):
         raise ValueError("source position Compare requires exact current coordinates")
-    inputs = _path_input(
+    inputs = _shared_position_input(
         ledger,
-        path_result_event_identity,
-        path_position_pair=path_position_pair,
+        shared_position_measurement_result_event_identity,
+        source_position_pair=source_position_pair,
         current_coordinates=current_coordinates,
     )
     compare_identities = _mint_compare_identities(ledger)
@@ -970,22 +970,22 @@ def _record_ordered_path_source_position_material_comparison(
         locality_identity=locality_identity,
     )
     establish_current(result)
-    return OrderedPathSourcePositionMaterialComparison(current_coordinates, result)
+    return SharedPositionSourcePositionMaterialComparison(current_coordinates, result)
 
 
-def yield_ordered_path_source_position_material_comparisons(
+def yield_shared_position_source_position_material_comparisons(
     ledger: EventLedger,
     *,
-    path_result_event_identity: str,
+    shared_position_measurement_result_event_identity: str,
     current_coordinates: dict[str, Any],
-) -> Iterator[OrderedPathSourcePositionMaterialComparison]:
-    """Yield every distinct path-ordered coordinate pair before returning."""
+) -> Iterator[SharedPositionSourcePositionMaterialComparison]:
+    """Yield every distinct shared-position coordinate pair before returning."""
 
-    for path_position_pair in _PATH_POSITION_PAIRS:
-        comparison = _record_ordered_path_source_position_material_comparison(
+    for source_position_pair in _SOURCE_POSITION_PAIRS:
+        comparison = _record_shared_position_source_position_material_comparison(
             ledger,
-            path_result_event_identity=path_result_event_identity,
-            path_position_pair=path_position_pair,
+            shared_position_measurement_result_event_identity=shared_position_measurement_result_event_identity,
+            source_position_pair=source_position_pair,
             current_coordinates=current_coordinates,
         )
         current_coordinates = comparison.current_coordinates

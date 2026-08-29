@@ -2167,7 +2167,7 @@ def validate_source_position_recurrence_event(
     ledger: EventLedger,
     event_identity: str,
 ) -> Event:
-    """Validate every occurrence exposed by the source-position proof road."""
+    """Validate every occurrence read by the source-position proof road."""
 
     event = ledger.get(event_identity)
     if event is None or ledger.integrity_of(event.identity) == CORRUPTED:

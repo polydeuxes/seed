@@ -1,4 +1,4 @@
-"""Exact byte-position Measurement results establish no path."""
+"""Exact byte-position Measurement results establish no relation."""
 
 from __future__ import annotations
 

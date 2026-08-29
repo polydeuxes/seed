@@ -1,4 +1,4 @@
-"""Exact path distinctions are established by an ordered source position."""
+"""Exact source position and order preserve distinctions."""
 
 from scripts.observe_source_position_path_discrimination import observe
 

@@ -357,7 +357,7 @@ def _validated_inputs(
 ) -> SharedPairPositionInputs:
     if _result_position_reference(first) == _result_position_reference(second):
         raise SharedPairPositionError(
-            "one result position cannot occupy first and second path relations"
+            "one result position cannot occupy both exact input positions"
         )
     if (
         first.source_material_result_occurrence_identity
@@ -1641,7 +1641,7 @@ def get_shared_position_measurement_act_occurrence(
     return deepcopy(event.material)
 
 
-def _ordered_relation_path_result_position(
+def _shared_position_result_position(
     *, inputs: SharedPairPositionInputs
 ) -> dict[str, Any]:
     subject = {
@@ -1673,12 +1673,12 @@ def _measurement_result_material(
     applicability: Event,
     inputs: SharedPairPositionInputs,
 ) -> dict[str, Any]:
-    ordered_relation_path = _ordered_relation_path_result_position(inputs=inputs)
+    result_position = _shared_position_result_position(inputs=inputs)
     return {
         "result_identity": binding.material["measurement_result_identity"],
         "dimensions": {
             "identity": binding.material["measurement_result_identity"],
-            "content": "one exact ordered relation path",
+            "content": "one exact shared position of byte-pair occurrences",
         },
         "exact_act": MEASUREMENT_ACT,
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -1697,7 +1697,7 @@ def _measurement_result_material(
         },
         "first_position_result": _reference_material(inputs.first),
         "second_position_result": _reference_material(inputs.second),
-        "ordered_relation_path": ordered_relation_path,
+        "result_positions": [result_position],
     }
 
 
@@ -1752,7 +1752,7 @@ def _recorded_measurement_result_material(
         "completeness_boundary": deepcopy(result["completeness_boundary"]),
         "first_position_result": deepcopy(result["first_position_result"]),
         "second_position_result": deepcopy(result["second_position_result"]),
-        "ordered_relation_path": deepcopy(result["ordered_relation_path"]),
+        "result_positions": deepcopy(result["result_positions"]),
     }
 
 
@@ -1810,46 +1810,51 @@ def get_recorded_shared_position_measurement(
     return deepcopy(carried)
 
 
-def ordered_relation_path_and_input_position_coordinates(
+def shared_position_result_position_and_input_coordinates(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Read one ordered relation path and its two exact input coordinates."""
+    """Read the shared-position result position and its exact inputs."""
 
     reading = get_recorded_shared_position_measurement(
         ledger, event_identity, prior_coordinates=prior_coordinates
     )
-    path = reading.get("ordered_relation_path")
+    result_positions = reading.get("result_positions")
+    result_position = (
+        result_positions[0]
+        if type(result_positions) is list and len(result_positions) == 1
+        else None
+    )
     first = reading.get("first_position_result")
     second = reading.get("second_position_result")
     if (
-        type(path) is not dict
-        or path.get("result_position") != 0
+        type(result_position) is not dict
+        or result_position.get("result_position") != 0
         or type(first) is not dict
         or type(second) is not dict
     ):
         raise SharedPairPositionError(
-            "shared-position result has no exact path and input coordinates"
+            "shared-position result has no exact result position and input coordinates"
         )
-    return deepcopy(path), deepcopy(first), deepcopy(second)
+    return deepcopy(result_position), deepcopy(first), deepcopy(second)
 
 
-def ordered_source_position_coordinates_of_ordered_relation_path(
+def source_position_coordinates_of_shared_position_result(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
-    """Read three exact source-position coordinates of one ordered relation path.
+    """Read the three exact source positions addressed by one result position.
 
     The first returned position addresses the first input position; the second
     returned position addresses the second input position.
     """
 
-    path, first, second = (
-        ordered_relation_path_and_input_position_coordinates(
+    result_position, first, second = (
+        shared_position_result_position_and_input_coordinates(
             ledger, event_identity, prior_coordinates=prior_coordinates
         )
     )
@@ -1857,7 +1862,7 @@ def ordered_source_position_coordinates_of_ordered_relation_path(
     first_shared = first.get("second_position_coordinate_reference")
     second_shared = second.get("first_position_coordinate_reference")
     last_position = second.get("second_position_coordinate_reference")
-    path_shared = path.get("content", {}).get(
+    result_shared = result_position.get("content", {}).get(
         "shared_position_coordinate_reference"
     )
     if (
@@ -1868,16 +1873,16 @@ def ordered_source_position_coordinates_of_ordered_relation_path(
                 first_shared,
                 second_shared,
                 last_position,
-                path_shared,
+                result_shared,
             )
         )
         or first_shared != second_shared
-        or path_shared != first_shared
+        or result_shared != first_shared
     ):
         raise SharedPairPositionError(
             "shared-position result has no exact ordered source positions"
         )
-    return deepcopy(path), tuple(
+    return deepcopy(result_position), tuple(
         deepcopy(coordinate)
         for coordinate in (first_position, first_shared, last_position)
     )

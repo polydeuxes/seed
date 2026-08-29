@@ -151,13 +151,13 @@
       "Applicability": "Applicability_result"
     },
     "04.Compare.B": {
-      "subject": "ordered_relation_path_and_pair_findings",
+      "subject": "same_position_Measurement_result_and_pair_findings",
       "exact_Act": "Compare",
       "current_coordinates": [
-        "ordered_relation_path_result_position",
+        "same_position_Measurement_result_position",
         "recorded_pair_finding_Compare_result"
       ],
-      "result": "ordered_relation_path_Compare_result",
+      "result": "same_position_Measurement_Compare_result",
       "Applicability": "Applicability_result"
     },
     "05.Recording.D": {

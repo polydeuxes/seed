@@ -15,11 +15,11 @@ from seed_runtime.byte_measurement import (
     result_positions_of_recorded_byte_measurement,
     result_positions_of_recorded_byte_position_pair_measurement,
 )
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
-    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings,
+    get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings_applicability,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
@@ -166,7 +166,7 @@ def _exact_material_distinctions_reading(
                 )
             ),
         ),
-        "ordered_relation_path_measurement_results": _kind_readings(
+        "shared_position_measurement_results": _kind_readings(
             ledger,
             locality_identity=locality_identity,
             kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
@@ -202,24 +202,24 @@ def _exact_material_distinctions_reading(
                 )
             ),
         ),
-        "path_compare_applicability_results": _kind_readings(
+        "shared_position_compare_applicability_results": _kind_readings(
             ledger,
             locality_identity=locality_identity,
-            kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+            kind=COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
             reader=lambda exact_ledger, identity: (
-                get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability(
+                get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings_applicability(
                     exact_ledger,
                     identity,
                     prior_coordinates=current_coordinates,
                 )
             ),
         ),
-        "path_compare_results": _kind_readings(
+        "shared_position_compare_results": _kind_readings(
             ledger,
             locality_identity=locality_identity,
-            kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+            kind=COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
             reader=lambda exact_ledger, identity: (
-                get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+                get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings(
                     exact_ledger,
                     identity,
                     prior_coordinates=current_coordinates,
@@ -352,11 +352,11 @@ def _result_coordinates(
         locality_identity,
         SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     ):
-        source_identity = event.material["ordered_relation_path"]["content"][
+        source_identity = event.material["result_positions"][0]["content"][
             "source_material_result_occurrence_identity"
         ]
         coordinates[event.identity] = (
-            "ordered_relation_path_Measurement_result",
+            "shared_position_Measurement_result",
             source_positions[source_identity],
             event.material["first_position_result"]["first_position"],
             event.material["first_position_result"]["second_position"],
@@ -391,10 +391,10 @@ def _result_coordinates(
         ][-1]
         coordinates[identity] = ("pair_Compare_result", earlier, later)
 
-    for identity, result in reading["path_compare_applicability_results"]:
+    for identity, result in reading["shared_position_compare_applicability_results"]:
         subjects = result["subject_to_act_binding_reference"]["subject_reference"]
-        path_coordinate = coordinates[
-            subjects["path_input"]["subject"]["recorded_occurrence_identity"]
+        shared_position_coordinate = coordinates[
+            subjects["shared_position_input"]["subject"]["recorded_occurrence_identity"]
         ]
         comparison_coordinate = coordinates[
             subjects["comparison_input"]["subject"][
@@ -402,16 +402,16 @@ def _result_coordinates(
             ]
         ]
         coordinates[identity] = (
-            "path_Compare_Applicability_result",
-            *path_coordinate[1:],
+            "shared_position_Compare_Applicability_result",
+            *shared_position_coordinate[1:],
             comparison_coordinate[-2],
             comparison_coordinate[-1],
         )
 
-    for identity, result in reading["path_compare_results"]:
+    for identity, result in reading["shared_position_compare_results"]:
         subjects = result["finding"]["subject"]
-        path_coordinate = coordinates[
-            subjects["ordered_relation_path_result_position_reference"][
+        shared_position_coordinate = coordinates[
+            subjects["shared_position_result_position_reference"][
                 "recorded_occurrence_identity"
             ]
         ]
@@ -421,8 +421,8 @@ def _result_coordinates(
             ]
         ]
         coordinates[identity] = (
-            "path_Compare_result",
-            *path_coordinate[1:],
+            "shared_position_Compare_result",
+            *shared_position_coordinate[1:],
             comparison_coordinate[-2],
             comparison_coordinate[-1],
         )

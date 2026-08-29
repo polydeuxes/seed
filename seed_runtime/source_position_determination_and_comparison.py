@@ -1,4 +1,4 @@
-"""Determine each source position, then record available path Comparisons."""
+"""Determine each source position, then record available Comparisons."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from typing import Any, Iterator, NamedTuple
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates,
 )
-from seed_runtime.comparison_of_ordered_path_source_position_material import (
-    yield_ordered_path_source_position_material_comparisons,
+from seed_runtime.comparison_of_shared_position_source_position_material import (
+    yield_shared_position_source_position_material_comparisons,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
@@ -23,10 +23,10 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
-class SourcePositionDeterminationPathAndComparison(NamedTuple):
+class SourcePositionDeterminationAndComparison(NamedTuple):
     source_position_coordinate: dict[str, Any]
     determination_result: Event
-    ordered_path_result: Event | None
+    shared_position_result: Event | None
     comparison_result: Event | None
     current_coordinates: dict[str, Any]
 
@@ -77,7 +77,7 @@ def _advance(
     return current_coordinates
 
 
-def _record_shared_path(
+def _record_shared_position_measurement(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     determination: Event,
@@ -165,20 +165,20 @@ def _record_shared_path(
         applicability=applicability,
         inputs=inputs,
     )
-    path = ledger.append(
+    shared_position_result = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_RESULT_KIND,
         shared_position._recorded_measurement_result_material(result_material),
         locality_identity=measurement_binding.locality_identity,
     )
-    return _advance(ledger, current_coordinates, path), path
+    return _advance(ledger, current_coordinates, shared_position_result), shared_position_result
 
 
-def _yield_source_position_determinations_paths_and_comparisons(
+def _yield_source_position_determinations_and_comparisons(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     current_coordinates: dict[str, Any],
-) -> Iterator[SourcePositionDeterminationPathAndComparison]:
+) -> Iterator[SourcePositionDeterminationAndComparison]:
     """Yield each source-position result before results for later positions."""
 
     if not isinstance(ledger, EventLedger):
@@ -203,13 +203,13 @@ def _yield_source_position_determinations_paths_and_comparisons(
             if len(
                 determination.material["ordered_result_position_references"]
             ) != 2:
-                path = None
+                shared_position_result = None
             else:
-                current_coordinates, path = _record_shared_path(
+                current_coordinates, shared_position_result = _record_shared_position_measurement(
                     ledger, current_coordinates, determination
                 )
-        if path is None:
-            yield SourcePositionDeterminationPathAndComparison(
+        if shared_position_result is None:
+            yield SourcePositionDeterminationAndComparison(
                 coordinate,
                 determination,
                 None,
@@ -217,9 +217,9 @@ def _yield_source_position_determinations_paths_and_comparisons(
                 current_coordinates,
             )
             continue
-        comparisons = yield_ordered_path_source_position_material_comparisons(
+        comparisons = yield_shared_position_source_position_material_comparisons(
             ledger,
-            path_result_event_identity=path.identity,
+            shared_position_measurement_result_event_identity=shared_position_result.identity,
             current_coordinates=current_coordinates,
         )
         while True:
@@ -229,24 +229,24 @@ def _yield_source_position_determinations_paths_and_comparisons(
                 except StopIteration:
                     break
             current_coordinates = comparison.current_coordinates
-            yield SourcePositionDeterminationPathAndComparison(
+            yield SourcePositionDeterminationAndComparison(
                 coordinate,
                 determination,
-                path,
+                shared_position_result,
                 comparison.result_occurrence,
                 current_coordinates,
             )
 
 
-def yield_source_position_determinations_paths_and_comparisons(
+def yield_source_position_determinations_and_comparisons(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     current_coordinates: dict[str, Any],
-) -> Iterator[SourcePositionDeterminationPathAndComparison]:
-    """Yield determinations and available path Comparisons for every position."""
+) -> Iterator[SourcePositionDeterminationAndComparison]:
+    """Yield determinations and available Comparisons for every position."""
 
-    yield from _yield_source_position_determinations_paths_and_comparisons(
+    yield from _yield_source_position_determinations_and_comparisons(
         ledger,
         direct_result_event_identity=direct_result_event_identity,
         current_coordinates=current_coordinates,

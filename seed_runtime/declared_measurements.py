@@ -29,8 +29,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
 )
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 )
 from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
@@ -406,7 +406,7 @@ def _discover_compare_distinction_measurements(
         and (
             (source := ledger.get(occurrence_identity)) is not None
             and source.kind
-            == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+            == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
             and source.locality_identity == locality_identity
             and ledger.integrity_of(source.identity) != CORRUPTED
         )

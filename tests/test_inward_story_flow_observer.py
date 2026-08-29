@@ -1,4 +1,4 @@
-"""One ordered occurrence path is established by an exact relation."""
+"""Occurrence order is established by one exact relation."""
 
 from __future__ import annotations
 

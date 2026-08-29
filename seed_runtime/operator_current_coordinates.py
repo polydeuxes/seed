@@ -166,19 +166,19 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _comparison_act_reading as _recorded_pair_comparison_act_reading,
     _recorded_pair_measurement_comparison_reading,
 )
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    _read_binding as _ordered_relation_path_compare_binding_reading,
-    _read_applicability_binding as _ordered_relation_path_compare_applicability_binding_reading,
-    _read_applicability_act as _ordered_relation_path_compare_applicability_act_reading,
-    _read_applicability_result as _ordered_relation_path_compare_applicability_result_reading,
-    _read_compare_act as _ordered_relation_path_compare_act_reading,
-    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    _read_binding as _shared_position_measurement_compare_binding_reading,
+    _read_applicability_binding as _shared_position_measurement_compare_applicability_binding_reading,
+    _read_applicability_act as _shared_position_measurement_compare_applicability_act_reading,
+    _read_applicability_result as _shared_position_measurement_compare_applicability_result_reading,
+    _read_compare_act as _shared_position_measurement_compare_act_reading,
+    get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings,
 )
 from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
@@ -188,14 +188,14 @@ from seed_runtime.measurement_of_compare_distinctions import (
     _read_act as _read_compare_distinction_measurement_act,
     get_recorded_compare_distinction_measurement,
 )
-from seed_runtime.comparison_of_ordered_path_source_position_material import (
+from seed_runtime.comparison_of_shared_position_source_position_material import (
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_BINDING_EVENT,
     APPLICABILITY_ACT_KIND as ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_ACT_KIND,
     APPLICABILITY_RESULT_KIND as ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_RESULT_KIND,
     COMPARE_ACT_KIND as ORDERED_PATH_SOURCE_POSITION_COMPARE_ACT_KIND,
     COMPARE_RESULT_KIND as ORDERED_PATH_SOURCE_POSITION_COMPARE_RESULT_KIND,
-    validate_ordered_path_source_position_material_comparison_event,
+    validate_shared_position_source_position_material_comparison_event,
 )
 from seed_runtime.source_position_recurrence import (
     COMPARE_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
@@ -310,13 +310,13 @@ _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
 }
-_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+_COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 }
 _COMPARE_DISTINCTION_MEASUREMENT_KINDS = {
     COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
@@ -366,7 +366,7 @@ _SUPPORTED_KINDS = {
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
-    *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
+    *_COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     *_COMPARE_DISTINCTION_MEASUREMENT_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
@@ -976,7 +976,7 @@ def advance_operator_current_coordinates(
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
-            or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
+            or event.kind in _COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_KINDS
             or event.kind in _COMPARE_DISTINCTION_MEASUREMENT_KINDS
             or event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS
             or event.kind in _SOURCE_POSITION_RECURRENCE_KINDS
@@ -1400,46 +1400,46 @@ def advance_operator_current_coordinates(
             )
             comparison_result_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND:
-            _ordered_relation_path_compare_binding_reading(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND:
+            _shared_position_measurement_compare_binding_reading(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND:
-            _ordered_relation_path_compare_applicability_binding_reading(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND:
+            _shared_position_measurement_compare_applicability_binding_reading(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            _ordered_relation_path_compare_applicability_act_reading(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT:
+            _shared_position_measurement_compare_applicability_act_reading(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND:
-            _ordered_relation_path_compare_applicability_result_reading(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND:
+            _shared_position_measurement_compare_applicability_result_reading(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
             applicability_result_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT:
-            _ordered_relation_path_compare_act_reading(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT:
+            _shared_position_measurement_compare_act_reading(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
             )
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND:
-            get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        if event.kind == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND:
+            get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
@@ -1472,7 +1472,7 @@ def advance_operator_current_coordinates(
             )
             continue
         if event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS:
-            validate_ordered_path_source_position_material_comparison_event(
+            validate_shared_position_source_position_material_comparison_event(
                 ledger,
                 event.identity,
                 current_coordinates=pair_prior_coordinates,

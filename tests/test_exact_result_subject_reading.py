@@ -33,21 +33,21 @@ def test_exact_result_subjects_retain_material_and_result_coordinates():
     path_identities = {
         identity
         for identity, _result in reading[
-            "ordered_relation_path_measurement_results"
+            "shared_position_measurement_results"
         ]
     }
     pair_compare_identities = {
         identity for identity, _result in reading["pair_compare_results"]
     }
-    path_compare_identities = {
-        identity for identity, _result in reading["path_compare_results"]
+    shared_position_compare_identities = {
+        identity for identity, _result in reading["shared_position_compare_results"]
     }
     distinction_identities = {
         identity
         for identity, _result in reading["distinction_measurement_results"]
     }
 
-    assert sequence["path_source_material_result_occurrence_identity"] in (
+    assert sequence["source_material_result_occurrence_identity"] in (
         material_identities
     )
     assert sequence[
@@ -62,14 +62,14 @@ def test_exact_result_subjects_retain_material_and_result_coordinates():
     assert sequence[
         "later_pair_measurement_result_occurrence_identity"
     ] in pair_measurement_identities
-    assert sequence["ordered_path_measurement_result_reference"][0] in (
+    assert sequence["shared_position_measurement_result_reference"][0] in (
         path_identities
     )
     assert sequence["pair_compare_result_occurrence_identity"] in (
         pair_compare_identities
     )
-    assert sequence["path_compare_result_occurrence_identity"] in (
-        path_compare_identities
+    assert sequence["shared_position_compare_result_occurrence_identity"] in (
+        shared_position_compare_identities
     )
     assert sequence["distinction_measurement_result_occurrence_identity"] in (
         distinction_identities
@@ -98,13 +98,13 @@ def test_one_compare_result_occupies_multiple_later_compare_bindings():
     ) == 1
     assert len(
         {
-            sequence["ordered_path_measurement_result_reference"]
+            sequence["shared_position_measurement_result_reference"]
             for sequence in sequences
         }
     ) == 2
     assert len(
         {
-            sequence["path_compare_result_occurrence_identity"]
+            sequence["shared_position_compare_result_occurrence_identity"]
             for sequence in sequences
         }
     ) == 2

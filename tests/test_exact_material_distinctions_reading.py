@@ -24,19 +24,19 @@ def test_two_material_occurrences_have_established_result_readings():
     assert len(reading["pair_measurement_result_positions"]) == 2
     assert len(reading["pair_compare_applicability_results"]) == 1
     assert len(reading["pair_compare_results"]) == 1
-    path_applicability = reading["path_compare_applicability_results"]
+    path_applicability = reading["shared_position_compare_applicability_results"]
     assert len(path_applicability) == 2
     assert sorted(
         result["applicability"] for _identity, result in path_applicability
     ) == ["applicable", "inapplicable"]
-    assert len(reading["path_compare_results"]) == 1
+    assert len(reading["shared_position_compare_results"]) == 1
     assert len(reading["distinction_measurement_results"]) == 1
 
-    path_result_identity = reading["path_compare_results"][0][0]
+    comparison_result_identity = reading["shared_position_compare_results"][0][0]
     distinction = reading["distinction_measurement_results"][0][1]
-    assert distinction["source_result_occurrence_identity"] == path_result_identity
+    assert distinction["source_result_occurrence_identity"] == comparison_result_identity
     assert distinction["completeness_boundary"] == {
-        "source_result_occurrence_identity": path_result_identity,
+        "source_result_occurrence_identity": comparison_result_identity,
         "distinction_count": len(distinction["findings"]),
     }
 
@@ -106,47 +106,47 @@ def test_equal_complete_content_remains_exact_under_different_boundaries():
 def test_ordered_path_reading_preserves_exact_content_and_source_occurrence():
     one_source = exact_bounded_material_distinctions_reading(
         (b"ATCATC",),
-        locality_identity="test-one-source-ordered-path-reading",
+        locality_identity="test-one-source-ordered-shared_position-reading",
     )
     two_sources = exact_bounded_material_distinctions_reading(
         (b"ATC", b"ATC"),
-        locality_identity="test-two-source-ordered-path-reading",
+        locality_identity="test-two-source-ordered-shared_position-reading",
     )
 
     def atc_paths(reading):
         return tuple(
-            path
-            for _identity, path in reading[
-                "ordered_relation_path_measurement_results"
+            shared_position
+            for _identity, shared_position in reading[
+                "shared_position_measurement_results"
             ]
-            if path["first_position_result"]["exact_pair"] == [65, 84]
-            and path["second_position_result"]["exact_pair"] == [84, 67]
+            if shared_position["first_position_result"]["exact_pair"] == [65, 84]
+            and shared_position["second_position_result"]["exact_pair"] == [84, 67]
         )
 
     one_source_paths = atc_paths(one_source)
     two_source_paths = atc_paths(two_sources)
 
     assert tuple(
-        path["first_position_result"]["first_position"]
-        for path in one_source_paths
+        shared_position["first_position_result"]["first_position"]
+        for shared_position in one_source_paths
     ) == (0, 3)
     assert tuple(
-        path["first_position_result"]["first_position"]
-        for path in two_source_paths
+        shared_position["first_position_result"]["first_position"]
+        for shared_position in two_source_paths
     ) == (0, 0)
     assert len(
         {
-            path["ordered_relation_path"]["content"][
+            shared_position["result_positions"][0]["content"][
                 "source_material_result_occurrence_identity"
             ]
-            for path in one_source_paths
+            for shared_position in one_source_paths
         }
     ) == 1
     assert len(
         {
-            path["ordered_relation_path"]["content"][
+            shared_position["result_positions"][0]["content"][
                 "source_material_result_occurrence_identity"
             ]
-            for path in two_source_paths
+            for shared_position in two_source_paths
         }
     ) == 2

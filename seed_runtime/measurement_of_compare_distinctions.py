@@ -6,10 +6,10 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     _addressed_comparison_finding,
-    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+    get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison,
@@ -78,20 +78,20 @@ def _exact_distinctions(
         or comparisons.get(comparison_result_occurrence_identity, object()) is not None
         or source is None
         or source.kind
-        != COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        != COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
         or source.locality_identity != current_coordinates.get("locality_identity")
         or ledger.integrity_of(source.identity) == CORRUPTED
     ):
         raise ValueError("Measurement requires one exact current Compare result")
-    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+    reading = get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings(
         ledger,
         source.identity,
         prior_coordinates=current_coordinates,
     )
     finding = reading.get("finding")
     subject = finding.get("subject") if type(finding) is dict else None
-    path_reference = (
-        subject.get("ordered_relation_path_result_position_reference")
+    shared_position_reference = (
+        subject.get("shared_position_result_position_reference")
         if type(subject) is dict
         else None
     )
@@ -104,7 +104,7 @@ def _exact_distinctions(
         finding.get("relation_findings") if type(finding) is dict else None
     )
     if (
-        type(path_reference) is not dict
+        type(shared_position_reference) is not dict
         or type(comparison_reference) is not dict
         or type(comparison_reference.get("recorded_occurrence_identity")) is not str
         or type(relation_findings) is not list
@@ -124,7 +124,7 @@ def _exact_distinctions(
     distinctions = []
     for relation_finding in relation_findings:
         position_reference = (
-            relation_finding.get("path_position_result_reference")
+            relation_finding.get("pair_position_result_reference")
             if type(relation_finding) is dict
             else None
         )
@@ -161,10 +161,10 @@ def _exact_distinctions(
                 raise ValueError("Measurement requires exact Compare Distinctions")
             distinctions.append(
                 {
-                    "ordered_relation_path_result_position_reference": deepcopy(
-                        path_reference
+                    "shared_position_result_position_reference": deepcopy(
+                        shared_position_reference
                     ),
-                    "path_position_result_reference": deepcopy(
+                    "pair_position_result_reference": deepcopy(
                         position_reference
                     ),
                     "recorded_finding_reference": deepcopy(reference),
@@ -629,7 +629,7 @@ def _producing_pair_measurement_subject(
         measurement_result_occurrence_identity,
         prior_coordinates=current_coordinates,
     )
-    source = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+    source = get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings(
         ledger,
         measurement["source_result_occurrence_identity"],
         prior_coordinates=current_coordinates,

@@ -14,11 +14,11 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
 )
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates,
-    record_ordered_path_pair_finding_compare_applicability_from_current_coordinates,
-    record_ordered_path_pair_finding_compare_bindings_from_current_coordinates,
-    record_ordered_path_pair_finding_compare_results_from_current_coordinates,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates,
+    record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates,
+    record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates,
+    record_shared_position_measurement_pair_finding_compare_results_from_current_coordinates,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
@@ -82,8 +82,8 @@ from seed_runtime.occurrence_position_measurement import (
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
-from seed_runtime.source_position_determination_path_and_comparison import (
-    yield_source_position_determinations_paths_and_comparisons,
+from seed_runtime.source_position_determination_and_comparison import (
+    yield_source_position_determinations_and_comparisons,
 )
 from seed_runtime.declared_measurements import (
     _record_declared_measurements_from_carried_current_coordinates,
@@ -191,7 +191,7 @@ def _record_occurrence_position_after_declared_measurements(
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
     for direct_measurement in direct_measurements:
-        for result in yield_source_position_determinations_paths_and_comparisons(
+        for result in yield_source_position_determinations_and_comparisons(
             ledger,
             direct_result_event_identity=direct_measurement.identity,
             current_coordinates=current_coordinates,
@@ -364,30 +364,30 @@ def _record_pair_measurement_comparison(
     return current_coordinates, result
 
 
-def _record_ordered_path_pair_finding_compare(
+def _record_shared_position_measurement_pair_finding_compare(
     ledger,
     current_coordinates,
     *,
     locality_identity,
 ):
-    """Record each exact ordered-path Compare in current coordinates."""
+    """Record each exact shared-position Compare in current coordinates."""
 
-    bindings = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
+    bindings = record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates(
         ledger,
         locality_identity=locality_identity,
         current_coordinates=current_coordinates,
     )
-    applicability = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
+    applicability = record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
         ledger,
         locality_identity=locality_identity,
         current_coordinates=bindings.current_coordinates,
     )
-    acts = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
+    acts = record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates(
         ledger,
         locality_identity=locality_identity,
         current_coordinates=applicability.current_coordinates,
     )
-    results = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
+    results = record_shared_position_measurement_pair_finding_compare_results_from_current_coordinates(
         ledger,
         locality_identity=locality_identity,
         current_coordinates=acts.current_coordinates,
@@ -757,7 +757,7 @@ def run_persistent_operator_console(
                         locality_identity=locality_identity,
                     )
                 )
-                current_coordinates = _record_ordered_path_pair_finding_compare(
+                current_coordinates = _record_shared_position_measurement_pair_finding_compare(
                     ledger,
                     current_coordinates,
                     locality_identity=locality_identity,

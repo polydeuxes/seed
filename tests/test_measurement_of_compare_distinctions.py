@@ -8,8 +8,8 @@ import pytest
 
 import seed_runtime.byte_measurement as byte_measurement
 import seed_runtime.measurement_of_compare_distinctions as compare_distinctions
-from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison,
@@ -40,7 +40,7 @@ def _record_measurement(ledger: EventLedger):
         event
         for event in ledger.list()
         if event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     )
     current_coordinates = read_operator_current_coordinates(
         ledger,
@@ -67,7 +67,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     source_findings = source.material["finding"]["relation_findings"]
     expected = tuple(
         (
-            relation_finding["path_position_result_reference"],
+            relation_finding["pair_position_result_reference"],
             reference,
         )
         for relation_finding in source_findings
@@ -75,7 +75,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     )
     measured = tuple(
         (
-            finding["path_position_result_reference"],
+            finding["pair_position_result_reference"],
             finding["recorded_finding_reference"],
         )
         for finding in reading["findings"]
@@ -88,9 +88,9 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
         "distinction_count": len(expected),
     }
     assert all(
-        finding["ordered_relation_path_result_position_reference"]
+        finding["shared_position_result_position_reference"]
         == source.material["finding"]["subject"][
-            "ordered_relation_path_result_position_reference"
+            "shared_position_result_position_reference"
         ]
         for finding in reading["findings"]
     )
@@ -137,7 +137,7 @@ def test_material_slice_measures_its_current_compare_result_before_eof():
         event
         for event in ledger.list()
         if event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     )
     measurements = tuple(
         event
@@ -169,7 +169,7 @@ def test_material_slice_measures_every_current_compare_result():
         event
         for event in ledger.list()
         if event.kind
-        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     )
     measurements = tuple(
         event
@@ -433,7 +433,7 @@ def test_separate_occurrences_can_carry_equal_measured_content():
             ]
             measured.append(
                 (
-                    finding["path_position_result_reference"]["result_position"],
+                    finding["pair_position_result_reference"]["result_position"],
                     addressed["subject"]["content"],
                     reference["finding_category"],
                     addressed["subject"],
