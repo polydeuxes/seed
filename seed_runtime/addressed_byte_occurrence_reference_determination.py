@@ -1,11 +1,4 @@
-"""Determine pair-position result positions with one addressed byte coordinate.
-
-This D.2 lifecycle consumes one exact recorded direct pair-position Measurement
-and one exact source-byte position-coordinate reference.  It preserves every
-result position reference with that exact coordinate and no other result position; it
-establishes no recurrence, shared position, represented relation, or other
-relation.
-"""
+"""Determine exact pair-position result references at one addressed byte coordinate."""
 
 from __future__ import annotations
 
@@ -21,22 +14,6 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 
 
-DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
-    "operator.addressed_byte_occurrence_reference_determination."
-    "determination_subject_to_act_binding_recorded"
-)
-APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
-    "operator.addressed_byte_occurrence_reference_determination."
-    "applicability_subject_to_act_binding_recorded"
-)
-APPLICABILITY_ACT_OCCURRENCE_EVENT = (
-    "operator.addressed_byte_occurrence_reference_determination."
-    "applicability_act_occurrence_recorded"
-)
-APPLICABILITY_RESULT_KIND = (
-    "operator.addressed_byte_occurrence_reference_determination."
-    "applicability_recorded"
-)
 DETERMINATION_ACT_OCCURRENCE_EVENT = (
     "operator.addressed_byte_occurrence_reference_determination."
     "determination_measurement_act_occurrence_recorded"
@@ -45,18 +22,12 @@ DETERMINATION_RESULT_KIND = (
     "operator.addressed_byte_occurrence_reference_determination."
     "determination_measurement_recorded"
 )
-
 BOOK_CLAUSE = "01.Source.D.2"
-APPLICABILITY_ACT = "addressed byte occurrence reference Applicability"
 DETERMINATION_ACT = (
     "declared Measurement of exact pair-occurrence result-position "
     "references with one addressed source-byte position-coordinate reference"
 )
 EVENT_KIND_BOOK_CLAUSES = {
-    DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D.2",
-    APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
-    APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
-    APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     DETERMINATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     DETERMINATION_RESULT_KIND: "01.Source.D.2",
 }
@@ -84,8 +55,6 @@ def _direct_result_reference(event: Event) -> dict[str, str]:
 
 
 def _determination_result_reference(event: Event) -> dict[str, str]:
-    """Reference one validated D.2 Measurement result."""
-
     return {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
@@ -98,48 +67,6 @@ def _determination_result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _binding_reference(event: Event) -> dict[str, Any]:
-    return {
-        "recorded_occurrence_identity": event.identity,
-        "book_clause_identity": event.material["book_clause_identity"],
-        "exact_act_identity": event.material["exact_act_identity"],
-        "subject_reference": deepcopy(event.material["subject_reference"]),
-    }
-
-
-def _applicability_result_reference(event: Event) -> dict[str, str]:
-    return {
-        "recorded_occurrence_identity": event.identity,
-        "result_identity": event.material["result_identity"],
-        "applicability_act_occurrence_identity": event.material[
-            "applicability_act_occurrence_identity"
-        ],
-        "act_occurrence_event_identity": event.material[
-            "act_occurrence_event_identity"
-        ],
-    }
-
-
-def _references_carrying_addressed_coordinate(
-    ledger: EventLedger,
-    *,
-    result_event_identity: str,
-    coordinate_reference: dict[str, Any],
-    current_coordinates: dict[str, Any] | None = None,
-) -> tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]:
-    try:
-        return references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(
-            ledger,
-            result_event_identity,
-            coordinate_reference,
-            prior_coordinates=current_coordinates,
-        )
-    except (TypeError, ValueError) as error:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires one exact addressed direct result coordinate"
-        ) from error
-
-
 def _source(
     ledger: EventLedger,
     *,
@@ -147,12 +74,17 @@ def _source(
     coordinate_reference: dict[str, Any],
     current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]]:
-    references = _references_carrying_addressed_coordinate(
-        ledger,
-        result_event_identity=result_event_identity,
-        coordinate_reference=coordinate_reference,
-        current_coordinates=current_coordinates,
-    )
+    try:
+        references = references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(
+            ledger,
+            result_event_identity,
+            coordinate_reference,
+            prior_coordinates=current_coordinates,
+        )
+    except (AttributeError, TypeError, ValueError) as error:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination has no exact addressed direct-result coordinate"
+        ) from error
     event = ledger.get(result_event_identity)
     if (
         event is None
@@ -161,7 +93,7 @@ def _source(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires one intact direct result"
+            "determination has no intact direct result"
         )
     return event, references
 
@@ -173,17 +105,25 @@ def _current_coordinates_carry_source(
     source_result: Event,
     required_boundary_identity: str,
 ) -> None:
-    measurements = current_coordinates.get("measurement_occurrences") if type(current_coordinates) is dict else None
-    through = current_coordinates.get("through_event_occurrence_identity") if type(current_coordinates) is dict else None
+    measurements = (
+        current_coordinates.get("measurement_occurrences")
+        if type(current_coordinates) is dict
+        else None
+    )
+    through = (
+        current_coordinates.get("through_event_occurrence_identity")
+        if type(current_coordinates) is dict
+        else None
+    )
     if (
         type(current_coordinates) is not dict
-        or current_coordinates.get("locality_identity") != source_result.locality_identity
+        or current_coordinates.get("locality_identity")
+        != source_result.locality_identity
         or type(measurements) is not dict
-        or measurements.get(source_result.identity) != _direct_result_reference(source_result)
+        or measurements.get(source_result.identity)
+        != _direct_result_reference(source_result)
         or type(through) is not str
-        or not through
         or type(required_boundary_identity) is not str
-        or not required_boundary_identity
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "no exact addressed direct result is current"
@@ -197,11 +137,11 @@ def _current_coordinates_carry_source(
         )
     except (TypeError, ValueError) as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "no addressed direct result is established through the occurrence boundary"
+            "addressed direct result is not established through the boundary"
         ) from error
     if tuple(event.identity for event in read) != ordered:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "no addressed direct result is established through the occurrence boundary"
+            "addressed direct result is not established through the boundary"
         )
 
 
@@ -211,11 +151,9 @@ def _require_exact_current_coordinates(
     source_result: Event,
     current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
-    """Validate the exact current coordinates read by this determination."""
-
     if type(current_coordinates) is not dict:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires exact current coordinates"
+            "determination has no exact current coordinates"
         )
     boundary = current_coordinates.get("through_event_occurrence_identity")
     _current_coordinates_carry_source(
@@ -224,165 +162,31 @@ def _require_exact_current_coordinates(
         source_result=source_result,
         required_boundary_identity=boundary,
     )
-    boundary_event = ledger.get(boundary)
+    event = ledger.get(boundary)
     if (
-        boundary_event is None
-        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or boundary_event.locality_identity != source_result.locality_identity
-        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        event is None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or event.locality_identity != source_result.locality_identity
+        or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires current coordinates through the append boundary"
+            "determination current coordinates do not reach the append boundary"
         )
     return current_coordinates
 
 
-def _require_intact_recorded_occurrence(
-    ledger: EventLedger,
-    *,
-    event: Event,
-    kind: str,
-    material: dict[str, Any],
-    message: str,
-) -> None:
-    if (
-        type(event) is not Event
-        or ledger.get(event.identity) != event
-        or event.kind != kind
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-        or event.material != material
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(message)
-
-
-def _require_stage_at_append_tip(
-    ledger: EventLedger, *, event: Event | None, message: str
-) -> None:
-    if (
-        event is None
-        or ledger.get(event.identity) != event
-        or ledger.integrity_of(event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(message)
-
-
-_DETERMINATION_IDENTITY_COORDINATES = (
-    "determination_act_identity",
-    "determination_act_occurrence_identity",
-    "determination_result_identity",
-)
-
-
-_APPLICABILITY_IDENTITY_COORDINATES = (
-    "applicability_act_identity",
-    "applicability_act_occurrence_identity",
-    "applicability_result_identity",
-)
-
-
-def _determination_binding_material(
-    *,
-    source_result: Event,
-    coordinate_reference: dict[str, Any],
-    through_event_occurrence_identity: str,
-    identities: dict[str, str],
-) -> dict[str, Any]:
-    subject_reference = {
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            coordinate_reference
-        ),
-    }
-    return {
-        "exact_act_identity": identities["determination_act_identity"],
-        "subject_reference": subject_reference,
-        "determination_act_identity": identities["determination_act_identity"],
-        "determination_act_occurrence_identity": identities[
-            "determination_act_occurrence_identity"
-        ],
-        "determination_result_identity": identities[
-            "determination_result_identity"
-        ],
-        "book_clause_identity": BOOK_CLAUSE,
-        "direct_pair_position_result_reference": deepcopy(
-            subject_reference["direct_pair_position_result_reference"]
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            coordinate_reference
-        ),
-        "through_event_occurrence_identity": through_event_occurrence_identity,
-    }
-
-
-def _applicability_binding_material(
-    *,
-    source_result: Event,
-    coordinate_reference: dict[str, Any],
-    through_event_occurrence_identity: str,
-    determination_act_identity: str,
-    identities: dict[str, str],
-) -> dict[str, Any]:
-    subject = {
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            coordinate_reference
-        ),
-    }
-    return {
-        "exact_act_identity": identities["applicability_act_identity"],
-        "subject_reference": {
-            "subject": subject,
-            "addressed_act_identity": determination_act_identity,
-        },
-        "applicability_act_identity": identities["applicability_act_identity"],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
-        "applicability_result_identity": identities[
-            "applicability_result_identity"
-        ],
-        "addressed_act_identity": determination_act_identity,
-        "book_clause_identity": "01.Current.E.1",
-        "direct_pair_position_result_reference": deepcopy(
-            subject["direct_pair_position_result_reference"]
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            coordinate_reference
-        ),
-        "through_event_occurrence_identity": through_event_occurrence_identity,
-    }
-
-
-def record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
-    ledger: EventLedger,
-    *,
-    direct_result_event_identity: str,
-    addressed_source_byte_position_coordinate_reference: dict[str, Any],
-    current_coordinates: dict[str, Any],
-) -> Event:
-    """Bind one exact addressed source coordinate in current coordinates."""
-
-    if not isinstance(ledger, EventLedger):
-        raise TypeError("determination binding requires one EventLedger")
-    source_result, _references = _source(
-        ledger,
-        result_event_identity=_identity(
-            direct_result_event_identity,
-            "determination binding requires one direct result",
-        ),
-        coordinate_reference=addressed_source_byte_position_coordinate_reference,
+def _at_append_tip(ledger: EventLedger, event: Event | None) -> bool:
+    return (
+        event is not None
+        and ledger.get(event.identity) == event
+        and ledger.integrity_of(event.identity) != CORRUPTED
+        and ledger.append_boundary_through_occurrence(event.identity)
+        == ledger.append_boundary()
     )
-    current = _require_exact_current_coordinates(
-        ledger, source_result=source_result, current_coordinates=current_coordinates
-    )
+
+
+def _mint_identities(ledger: EventLedger) -> dict[str, str]:
     identities = {
         "determination_act_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_determination_measurement_act"
@@ -394,889 +198,89 @@ def record_addressed_byte_occurrence_reference_determination_subject_to_act_bind
             "addressed_byte_occurrence_reference_determination_measurement_result"
         ),
     }
-    if len(set(identities.values())) != len(identities):
+    if len(set(identities.values())) != 3:
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination lifecycle identities collapsed"
         )
-    source_material = deepcopy(source_result.material)
-    source_read, _references_read = _source(
-        ledger,
-        result_event_identity=source_result.identity,
-        coordinate_reference=addressed_source_byte_position_coordinate_reference,
-    )
-    _require_intact_recorded_occurrence(
-        ledger,
-        event=source_result,
-        kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        material=source_material,
-        message="determination binding requires an intact exact source",
-    )
-    if source_read != source_result:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination binding requires an intact exact source"
-        )
-    _require_stage_at_append_tip(
-        ledger,
-        event=ledger.get(current["through_event_occurrence_identity"]),
-        message="determination binding coordinates left the current append boundary",
-    )
-    return ledger.append(
-        DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _determination_binding_material(
-            source_result=source_result,
-            coordinate_reference=(
-                addressed_source_byte_position_coordinate_reference
-            ),
-            through_event_occurrence_identity=current[
-                "through_event_occurrence_identity"
-            ],
-            identities=identities,
-        ),
-        locality_identity=source_result.locality_identity,
-    )
+    return identities
 
 
-def _read_binding(
-    ledger: EventLedger,
-    event_identity: str,
+def _act_material(
     *,
-    prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[
-    Event,
-    Event,
-    tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
-]:
-    event = ledger.get(event_identity)
-    if (
-        event is None
-        or event.kind
-        not in {
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        }
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination binding is absent or corrupted"
-        )
-    material = event.material
-    source_reference = material.get("direct_pair_position_result_reference")
-    coordinate_reference = material.get(
-        "addressed_source_byte_position_coordinate_reference"
-    )
-    source_identity = (
-        source_reference.get("recorded_occurrence_identity")
-        if type(source_reference) is dict
-        else None
-    )
-    source_result, references = _source(
-        ledger,
-        result_event_identity=source_identity,
-        coordinate_reference=coordinate_reference,
-        current_coordinates=prior_coordinates,
-    )
-    identity_coordinates = (
-        _DETERMINATION_IDENTITY_COORDINATES
-        if event.kind == DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        else _APPLICABILITY_IDENTITY_COORDINATES
-    )
-    identities = {key: material.get(key) for key in identity_coordinates}
-    through_occurrence = material.get("through_event_occurrence_identity")
-    if event.kind == DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
-        expected = _determination_binding_material(
-            source_result=source_result,
-            coordinate_reference=coordinate_reference,
-            through_event_occurrence_identity=through_occurrence,
-            identities=identities,
-        )
-    else:
-        expected = _applicability_binding_material(
-            source_result=source_result,
-            coordinate_reference=coordinate_reference,
-            through_event_occurrence_identity=through_occurrence,
-            determination_act_identity=material.get("addressed_act_identity"),
-            identities=identities,
-        )
-    if (
-        event.locality_identity != source_result.locality_identity
-        or any(type(value) is not str or not value for value in identities.values())
-        or len(set(identities.values())) != len(identities)
-        or type(through_occurrence) is not str
-        or not through_occurrence
-        or material != expected
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination binding coordinates are not exact"
-        )
-    if prior_coordinates is None:
-        from seed_runtime.operator_current_coordinates import (
-            read_operator_current_coordinates_through,
-        )
-
-        prior_coordinates = read_operator_current_coordinates_through(
-            ledger,
-            locality_identity=source_result.locality_identity,
-            through_event_occurrence_identity=through_occurrence,
-        )
-    _current_coordinates_carry_source(
-        ledger,
-        current_coordinates=prior_coordinates,
-        source_result=source_result,
-        required_boundary_identity=through_occurrence,
-    )
-    try:
-        ledger.occurrences_in_append_order(
-            (through_occurrence, event.identity),
-            locality_identity=event.locality_identity,
-        )
-    except ValueError as error:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination binding has false through-occurrence order"
-        ) from error
-    return event, source_result, references
-
-
-def get_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
-    ledger: EventLedger, event_identity: str
-) -> Event:
-    return _read_binding(ledger, event_identity)[0]
-
-
-def _determination_binding_addressed_by_applicability(
-    ledger: EventLedger,
-    applicability_binding: Event,
-    source_result: Event,
-    references: tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
-    *,
-    prior_coordinates: dict[str, Any] | None = None,
-) -> Event:
-    addressed_act_identity = applicability_binding.material.get(
-        "addressed_act_identity"
-    )
-    matches = tuple(
-        event
-        for event in ledger.iter_locality_kind(
-            applicability_binding.locality_identity,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        )
-        if event.material.get("exact_act_identity") == addressed_act_identity
-    )
-    if len(matches) != 1:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability addresses no exact determination binding"
-        )
-    determination_binding, read_source, read_references = _read_binding(
-        ledger,
-        matches[0].identity,
-        prior_coordinates=prior_coordinates,
-    )
-    if read_source != source_result or read_references != references:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability addresses other determination subjects"
-        )
-    return determination_binding
-
-
-def _require_stage_current_coordinates(
-    ledger: EventLedger,
-    *,
-    current_coordinates: dict[str, Any],
-    source_result: Event,
-    binding: Event,
-    applicability_result: Event | None = None,
-) -> None:
-    current = _require_exact_current_coordinates(
-        ledger, source_result=source_result, current_coordinates=current_coordinates
-    )
-    bindings = current.get("subject_to_act_binding_occurrences")
-    applicability = current.get("applicability_result_occurrences")
-    required_tip = binding.identity
-    if applicability_result is not None:
-        required_tip = applicability_result.identity
-    if (
-        type(bindings) is not dict
-        or bindings.get(binding.identity, object()) is not None
-        or current.get("through_event_occurrence_identity") != required_tip
-        or (
-            applicability_result is not None
-            and (
-                type(applicability) is not dict
-                or applicability.get(applicability_result.identity, object())
-                is not None
-            )
-        )
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "no exact determination stage is current"
-        )
-
-
-def _refuse_existing_act(
-    ledger: EventLedger,
-    *,
-    binding: Event,
-    kind: str,
-    occurrence_coordinate: str,
-) -> None:
-    occurrence_identity = binding.material[occurrence_coordinate]
-    for event in ledger.iter_locality_kind(binding.locality_identity, kind):
-        if (
-            event.material.get(occurrence_coordinate) == occurrence_identity
-            or (
-                type(event.material.get("subject_to_act_binding_reference"))
-                is dict
-                and event.material["subject_to_act_binding_reference"].get(
-                    "recorded_occurrence_identity"
-                )
-                == binding.identity
-            )
-        ):
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "this Act is already established for the determination binding"
-            )
-
-
-def _applicability_act_material(
-    *, binding: Event, source_result: Event
+    source: Event,
+    coordinate: dict[str, Any],
+    boundary: str,
+    identities: dict[str, str],
 ) -> dict[str, Any]:
-    return {
-        "applicability_act_identity": binding.material[
-            "applicability_act_identity"
-        ],
-        "applicability_act_occurrence_identity": binding.material[
-            "applicability_act_occurrence_identity"
-        ],
-        "act": APPLICABILITY_ACT,
-        "subject_to_act_binding_reference": _binding_reference(binding),
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ]
-        ),
-        "addressed_act_identity": binding.material["addressed_act_identity"],
+    subject = {
+        "direct_pair_position_result_reference": _direct_result_reference(source),
+        "addressed_source_byte_position_coordinate_reference": deepcopy(coordinate),
     }
-
-
-def record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
-    ledger: EventLedger,
-    *,
-    binding_event_identity: str,
-    binding_current_coordinates: dict[str, Any],
-) -> Event:
-    determination_binding, source_result, references = _read_binding(
-        ledger, binding_event_identity
-    )
-    if (
-        determination_binding.kind
-        != DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability addresses another determination binding"
-        )
-    _require_stage_current_coordinates(
-        ledger,
-        current_coordinates=binding_current_coordinates,
-        source_result=source_result,
-        binding=determination_binding,
-    )
-    determination_binding_material = deepcopy(determination_binding.material)
-    source_material = deepcopy(source_result.material)
-    _refuse_existing_act(
-        ledger,
-        binding=determination_binding,
-        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="determination_act_occurrence_identity",
-    )
-    source_read, _references_read = _source(
-        ledger,
-        result_event_identity=source_result.identity,
-        coordinate_reference=determination_binding.material[
-            "addressed_source_byte_position_coordinate_reference"
-        ],
-    )
-    _require_intact_recorded_occurrence(
-        ledger,
-        event=source_result,
-        kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        material=source_material,
-        message="Applicability Act requires an intact exact source",
-    )
-    _require_intact_recorded_occurrence(
-        ledger,
-        event=determination_binding,
-        kind=DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        material=determination_binding_material,
-        message="Applicability Act requires an intact exact determination binding",
-    )
-    if source_read != source_result:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability Act requires an intact exact source"
-        )
-    _require_stage_at_append_tip(
-        ledger,
-        event=determination_binding,
-        message="determination binding left the current append boundary",
-    )
-    identities = {
-        "applicability_act_identity": ledger.mint_identity(
-            "addressed_byte_occurrence_reference_applicability_act"
-        ),
-        "applicability_act_occurrence_identity": ledger.mint_identity(
-            "addressed_byte_occurrence_reference_applicability_act_occurrence"
-        ),
-        "applicability_result_identity": ledger.mint_identity(
-            "addressed_byte_occurrence_reference_applicability_result"
-        ),
-    }
-    applicability_binding = ledger.append(
-        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _applicability_binding_material(
-            source_result=source_result,
-            coordinate_reference=determination_binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ],
-            through_event_occurrence_identity=determination_binding.identity,
-            determination_act_identity=determination_binding.material[
-                "determination_act_identity"
-            ],
-            identities=identities,
-        ),
-        locality_identity=determination_binding.locality_identity,
-    )
-    return ledger.append(
-        APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _applicability_act_material(
-            binding=applicability_binding, source_result=source_result
-        ),
-        locality_identity=determination_binding.locality_identity,
-    )
-
-
-def _read_applicability_act(
-    ledger: EventLedger,
-    event_identity: str,
-    *,
-    prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[
-    Event,
-    Event,
-    Event,
-    Event,
-    Event,
-    tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
-]:
-    event = ledger.get(event_identity)
-    if (
-        event is None
-        or event.kind != APPLICABILITY_ACT_OCCURRENCE_EVENT
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability Act occurrence is absent or corrupted"
-        )
-    reference = event.material.get("subject_to_act_binding_reference")
-    binding_identity = (
-        reference.get("recorded_occurrence_identity")
-        if type(reference) is dict
-        else None
-    )
-    applicability_binding, source_result, references = _read_binding(
-        ledger, binding_identity, prior_coordinates=prior_coordinates
-    )
-    if (
-        applicability_binding.kind
-        != APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability Act has no exact Applicability binding"
-        )
-    determination_binding = _determination_binding_addressed_by_applicability(
-        ledger,
-        applicability_binding,
-        source_result,
-        references,
-        prior_coordinates=prior_coordinates,
-    )
-    if (
-        reference != _binding_reference(applicability_binding)
-        or event.locality_identity != applicability_binding.locality_identity
-        or event.material
-        != _applicability_act_material(
-            binding=applicability_binding, source_result=source_result
-        )
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability Act occurrence is not exact"
-        )
-    try:
-        ledger.occurrences_in_append_order(
-            (applicability_binding.identity, event.identity),
-            locality_identity=event.locality_identity,
-        )
-    except ValueError as error:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability Act order is false"
-        ) from error
-    return event, applicability_binding, determination_binding, source_result, references
-
-
-def get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
-    ledger: EventLedger, event_identity: str
-) -> Event:
-    return _read_applicability_act(ledger, event_identity)[0]
-
-
-def _applicability_finding(
-    *,
-    applicability_binding: Event,
-    determination_binding: Event,
-    source_result: Event,
-) -> dict[str, Any]:
-    coordinate = applicability_binding.material[
-        "addressed_source_byte_position_coordinate_reference"
-    ]
     return {
-        "first_subject": {
-            "direct_pair_position_result_reference": _direct_result_reference(
-                source_result
-            ),
-            "addressed_source_byte_position_coordinate_reference": deepcopy(
-                coordinate
-            ),
-        },
-        "relation": "applicable_to",
-        "second_subject": {
-            "exact_act": DETERMINATION_ACT,
-            "act_identity": determination_binding.material["determination_act_identity"],
-            "act_occurrence_identity": determination_binding.material[
-                "determination_act_occurrence_identity"
-            ],
-            "result_identity": determination_binding.material[
-                "determination_result_identity"
-            ],
-        },
-        "source_material_result_occurrence_identity": coordinate[
-            "source_material_result_occurrence_identity"
-        ],
-        "locality_identity": coordinate["locality_identity"],
-        "completeness_boundary_identity": coordinate[
-            "completeness_boundary_identity"
-        ],
-        "subject_to_act_binding_reference": _binding_reference(applicability_binding),
-    }
-
-
-def _applicability_result_material(
-    *,
-    act: Event,
-    applicability_binding: Event,
-    determination_binding: Event,
-    source_result: Event,
-) -> dict[str, Any]:
-    return {
-        "result_identity": applicability_binding.material["applicability_result_identity"],
-        "exact_act": APPLICABILITY_ACT,
-        "applicability_act_identity": applicability_binding.material[
-            "applicability_act_identity"
-        ],
-        "applicability_act_occurrence_identity": applicability_binding.material[
-            "applicability_act_occurrence_identity"
-        ],
-        "addressed_act_identity": determination_binding.material[
-            "determination_act_identity"
-        ],
-        "addressed_act_occurrence_identity": determination_binding.material[
+        "determination_act_identity": identities["determination_act_identity"],
+        "determination_act_occurrence_identity": identities[
             "determination_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(applicability_binding),
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            applicability_binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ]
-        ),
-        "applicability_finding": _applicability_finding(
-            applicability_binding=applicability_binding,
-            determination_binding=determination_binding,
-            source_result=source_result,
-        ),
-    }
-
-
-def _refuse_existing_result(
-    ledger: EventLedger,
-    *,
-    act: Event,
-    result_kind: str,
-    occurrence_coordinate: str,
-) -> None:
-    occurrence_identity = act.material[occurrence_coordinate]
-    for event in ledger.iter_locality_kind(act.locality_identity, result_kind):
-        if (
-            event.material.get("act_occurrence_event_identity") == act.identity
-            or event.material.get(occurrence_coordinate) == occurrence_identity
-        ):
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "a result is already recorded for determination Act"
-            )
-
-
-def _prepare_result(
-    ledger: EventLedger,
-    *,
-    act: Event,
-    occurrence_coordinate: str,
-    result_event_kind: str,
-) -> None:
-    _refuse_existing_result(
-        ledger,
-        act=act,
-        result_kind=result_event_kind,
-        occurrence_coordinate=occurrence_coordinate,
-    )
-    if ledger.append_boundary_through_occurrence(act.identity) != ledger.append_boundary():
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result and exact Act have different append boundaries"
-        )
-
-
-def _recorded_applicability_result_material(
-    material: dict[str, Any], *, act: Event
-) -> dict[str, Any]:
-    return {
-        "result_identity": material["result_identity"],
-        "exact_act": material["exact_act"],
-        "applicability_act_identity": material["applicability_act_identity"],
-        "applicability_act_occurrence_identity": material[
-            "applicability_act_occurrence_identity"
-        ],
-        "addressed_act_identity": material["addressed_act_identity"],
-        "addressed_act_occurrence_identity": material[
-            "addressed_act_occurrence_identity"
-        ],
-        "subject_to_act_binding_reference": deepcopy(
-            material["subject_to_act_binding_reference"]
-        ),
-        "direct_pair_position_result_reference": deepcopy(
-            material["direct_pair_position_result_reference"]
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            material["addressed_source_byte_position_coordinate_reference"]
-        ),
-        "applicability_finding": deepcopy(material["applicability_finding"]),
-        "act_occurrence_event_identity": act.identity,
-    }
-
-
-def record_addressed_byte_occurrence_reference_determination_applicability_result(
-    ledger: EventLedger,
-    *,
-    applicability_act_occurrence_event_identity: str,
-) -> Event:
-    (
-        act,
-        applicability_binding,
-        determination_binding,
-        source_result,
-        _references,
-    ) = _read_applicability_act(
-        ledger, applicability_act_occurrence_event_identity
-    )
-    material = _applicability_result_material(
-        act=act,
-        applicability_binding=applicability_binding,
-        determination_binding=determination_binding,
-        source_result=source_result,
-    )
-    act_material = deepcopy(act.material)
-    applicability_binding_material = deepcopy(applicability_binding.material)
-    determination_binding_material = deepcopy(determination_binding.material)
-    source_material = deepcopy(source_result.material)
-    _prepare_result(
-        ledger,
-        act=act,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-        result_event_kind=APPLICABILITY_RESULT_KIND,
-    )
-    (
-        act_read,
-        applicability_binding_read,
-        determination_binding_read,
-        source_read,
-        _references_read,
-    ) = (
-        _read_applicability_act(ledger, act.identity)
-    )
-    for recorded, read, kind, material_read, message in (
-        (
-            act,
-            act_read,
-            APPLICABILITY_ACT_OCCURRENCE_EVENT,
-            act_material,
-            "Applicability result is not exact: Act is not intact",
-        ),
-        (
-            applicability_binding,
-            applicability_binding_read,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            applicability_binding_material,
-            "Applicability result is not exact: binding is not intact",
-        ),
-        (
-            determination_binding,
-            determination_binding_read,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            determination_binding_material,
-            "Applicability result is not exact: determination binding is not intact",
-        ),
-        (
-            source_result,
-            source_read,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            source_material,
-            "Applicability result is not exact: source is not intact",
-        ),
-    ):
-        _require_intact_recorded_occurrence(
-            ledger,
-            event=recorded,
-            kind=kind,
-            material=material_read,
-            message=message,
-        )
-        if read != recorded:
-            raise AddressedByteOccurrenceReferenceDeterminationError(message)
-    _require_stage_at_append_tip(
-        ledger, event=act, message="Applicability Act left the current append boundary"
-    )
-    return ledger.append(
-        APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(material, act=act),
-        locality_identity=act.locality_identity,
-    )
-
-
-def _read_applicability_result(
-    ledger: EventLedger,
-    event_identity: str,
-    *,
-    prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[
-    Event,
-    Event,
-    Event,
-    Event,
-    Event,
-    tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
-]:
-    event = ledger.get(event_identity)
-    if (
-        event is None
-        or event.kind != APPLICABILITY_RESULT_KIND
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability result is absent or corrupted"
-        )
-    (
-        act,
-        applicability_binding,
-        determination_binding,
-        source_result,
-        references,
-    ) = _read_applicability_act(
-            ledger,
-            event.material.get("act_occurrence_event_identity"),
-            prior_coordinates=prior_coordinates,
-        )
-    expected = {
-        **_applicability_result_material(
-            act=act,
-            applicability_binding=applicability_binding,
-            determination_binding=determination_binding,
-            source_result=source_result,
-        ),
-        "act_occurrence_event_identity": act.identity,
-    }
-    if event.locality_identity != act.locality_identity or event.material != expected:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability result coordinates are not exact"
-        )
-    results = tuple(
-        result
-        for result in ledger.iter_locality_kind(
-            act.locality_identity, APPLICABILITY_RESULT_KIND
-        )
-        if result.material.get("act_occurrence_event_identity") == act.identity
-    )
-    try:
-        ordered = ledger.occurrences_in_append_order(
-            (act.identity, event.identity),
-            locality_identity=act.locality_identity,
-        )
-    except (TypeError, ValueError) as error:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability result occurrence order is false"
-        ) from error
-    if (
-        tuple(item.identity for item in ordered) != (act.identity, event.identity)
-        or len(results) != 1
-        or results[0].identity != event.identity
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability result is not exact"
-        )
-    return (
-        event,
-        act,
-        applicability_binding,
-        determination_binding,
-        source_result,
-        references,
-    )
-
-
-def get_recorded_addressed_byte_occurrence_reference_determination_applicability(
-    ledger: EventLedger, event_identity: str
-) -> dict[str, Any]:
-    return deepcopy(_read_applicability_result(ledger, event_identity)[0].material)
-
-
-def _determination_act_material(
-    *, binding: Event, source_result: Event, applicability_result: Event
-) -> dict[str, Any]:
-    return {
-        "determination_act_identity": binding.material[
-            "determination_act_identity"
-        ],
-        "determination_act_occurrence_identity": binding.material[
-            "determination_act_occurrence_identity"
+        "determination_result_identity": identities[
+            "determination_result_identity"
         ],
         "act": DETERMINATION_ACT,
-        "subject_to_act_binding_reference": _binding_reference(binding),
-        "applicability_result_reference": _applicability_result_reference(
-            applicability_result
+        "subject_reference": subject,
+        "direct_pair_position_result_reference": deepcopy(
+            subject["direct_pair_position_result_reference"]
         ),
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ]
-        ),
-        "result_identity": binding.material["determination_result_identity"],
+        "addressed_source_byte_position_coordinate_reference": deepcopy(coordinate),
+        "through_event_occurrence_identity": boundary,
     }
 
 
 def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     ledger: EventLedger,
     *,
-    applicability_result_event_identity: str,
+    direct_result_event_identity: str,
+    addressed_source_byte_position_coordinate_reference: dict[str, Any],
     current_coordinates: dict[str, Any],
 ) -> Event:
-    (
-        applicability,
-        app_act,
-        applicability_binding,
-        determination_binding,
-        source_result,
-        _references,
-    ) = (
-        _read_applicability_result(ledger, applicability_result_event_identity)
-    )
-    _require_stage_current_coordinates(
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("determination Act needs one EventLedger")
+    source, references = _source(
         ledger,
+        result_event_identity=_identity(
+            direct_result_event_identity, "determination Act has no direct result"
+        ),
+        coordinate_reference=addressed_source_byte_position_coordinate_reference,
         current_coordinates=current_coordinates,
-        source_result=source_result,
-        binding=determination_binding,
-        applicability_result=applicability,
     )
-    applicability_material = deepcopy(applicability.material)
-    app_act_material = deepcopy(app_act.material)
-    determination_binding_material = deepcopy(determination_binding.material)
-    source_material = deepcopy(source_result.material)
-    _refuse_existing_act(
+    current = _require_exact_current_coordinates(
+        ledger, source_result=source, current_coordinates=current_coordinates
+    )
+    boundary = current["through_event_occurrence_identity"]
+    source_material = deepcopy(source.material)
+    identities = _mint_identities(ledger)
+    source_read, references_read = _source(
         ledger,
-        binding=determination_binding,
-        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="determination_act_occurrence_identity",
+        result_event_identity=source.identity,
+        coordinate_reference=addressed_source_byte_position_coordinate_reference,
+        current_coordinates=current_coordinates,
     )
-    (
-        applicability_read,
-        app_act_read,
-        applicability_binding_read,
-        determination_binding_read,
-        source_read,
-        _references_read,
-    ) = _read_applicability_result(ledger, applicability.identity)
-    for recorded, read, kind, material_read, message in (
-        (
-            applicability,
-            applicability_read,
-            APPLICABILITY_RESULT_KIND,
-            applicability_material,
-            "determination Measurement Act requires an intact exact Applicability",
-        ),
-        (
-            app_act,
-            app_act_read,
-            APPLICABILITY_ACT_OCCURRENCE_EVENT,
-            app_act_material,
-            "determination Measurement Act requires an intact exact Applicability Act",
-        ),
-        (
-            applicability_binding,
-            applicability_binding_read,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            deepcopy(applicability_binding.material),
-            "determination Measurement Act requires an intact exact Applicability binding",
-        ),
-        (
-            determination_binding,
-            determination_binding_read,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            determination_binding_material,
-            "determination Measurement Act requires an intact exact binding",
-        ),
-        (
-            source_result,
-            source_read,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            source_material,
-            "determination Measurement Act requires an intact exact source",
-        ),
+    if (
+        source_read != source
+        or source.material != source_material
+        or references_read != references
+        or not _at_append_tip(ledger, ledger.get(boundary))
     ):
-        _require_intact_recorded_occurrence(
-            ledger,
-            event=recorded,
-            kind=kind,
-            material=material_read,
-            message=message,
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination source changed before its Act occurrence"
         )
-        if read != recorded:
-            raise AddressedByteOccurrenceReferenceDeterminationError(message)
-    _require_stage_at_append_tip(
-        ledger,
-        event=applicability,
-        message="determination Measurement Applicability left the current append boundary",
-    )
     return ledger.append(
         DETERMINATION_ACT_OCCURRENCE_EVENT,
-        _determination_act_material(
-            binding=determination_binding,
-            source_result=source_result,
-            applicability_result=applicability,
+        _act_material(
+            source=source,
+            coordinate=addressed_source_byte_position_coordinate_reference,
+            boundary=boundary,
+            identities=identities,
         ),
-        locality_identity=determination_binding.locality_identity,
+        locality_identity=source.locality_identity,
     )
 
 
@@ -1288,61 +292,88 @@ def _read_determination_act(
 ) -> tuple[
     Event,
     Event,
-    Event,
-    Event,
     tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ]:
-    event = ledger.get(event_identity)
+    act = ledger.get(event_identity)
     if (
-        event is None
-        or event.kind != DETERMINATION_ACT_OCCURRENCE_EVENT
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
+        act is None
+        or act.kind != DETERMINATION_ACT_OCCURRENCE_EVENT
+        or act.exact_material is not None
+        or ledger.integrity_of(act.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Act occurrence is absent or corrupted"
         )
-    applicability_reference = event.material.get("applicability_result_reference")
-    applicability_identity = (
-        applicability_reference.get("recorded_occurrence_identity")
-        if type(applicability_reference) is dict
+    reference = act.material.get("direct_pair_position_result_reference")
+    source_identity = (
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
         else None
     )
-    (
-        applicability,
-        _app_act,
-        _applicability_binding,
-        determination_binding,
-        source_result,
-        references,
-    ) = (
-        _read_applicability_result(
-            ledger, applicability_identity, prior_coordinates=prior_coordinates
-        )
+    coordinate = act.material.get(
+        "addressed_source_byte_position_coordinate_reference"
     )
-    if (
-        applicability_reference != _applicability_result_reference(applicability)
-        or event.locality_identity != determination_binding.locality_identity
-        or event.material
-        != _determination_act_material(
-            binding=determination_binding,
-            source_result=source_result,
-            applicability_result=applicability,
+    boundary = act.material.get("through_event_occurrence_identity")
+    if prior_coordinates is None:
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates_through,
         )
+
+        try:
+            prior_coordinates = read_operator_current_coordinates_through(
+                ledger,
+                locality_identity=act.locality_identity,
+                through_event_occurrence_identity=boundary,
+            )
+        except (AttributeError, TypeError, ValueError) as error:
+            raise AddressedByteOccurrenceReferenceDeterminationError(
+                "determination Act has no exact prior coordinates"
+            ) from error
+    source, references = _source(
+        ledger,
+        result_event_identity=source_identity,
+        coordinate_reference=coordinate,
+        current_coordinates=prior_coordinates,
+    )
+    _current_coordinates_carry_source(
+        ledger,
+        current_coordinates=prior_coordinates,
+        source_result=source,
+        required_boundary_identity=boundary,
+    )
+    identities = {
+        key: act.material.get(key)
+        for key in (
+            "determination_act_identity",
+            "determination_act_occurrence_identity",
+            "determination_result_identity",
+        )
+    }
+    expected = _act_material(
+        source=source,
+        coordinate=coordinate,
+        boundary=boundary,
+        identities=identities,
+    )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (boundary, act.identity), locality_identity=act.locality_identity
+        )
+    except (TypeError, ValueError) as error:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination Act order is false"
+        ) from error
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != 3
+        or act.locality_identity != source.locality_identity
+        or act.material != expected
+        or tuple(event.identity for event in ordered) != (boundary, act.identity)
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Act occurrence coordinates are not exact"
         )
-    try:
-        ledger.occurrences_in_append_order(
-            (applicability.identity, event.identity),
-            locality_identity=event.locality_identity,
-        )
-    except ValueError as error:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Act order is false"
-        ) from error
-    return event, applicability, determination_binding, source_result, references
+    return act, source, references
 
 
 def get_addressed_byte_occurrence_reference_determination_act_occurrence(
@@ -1351,74 +382,30 @@ def get_addressed_byte_occurrence_reference_determination_act_occurrence(
     return _read_determination_act(ledger, event_identity)[0]
 
 
-def _determination_result_material(
+def _result_material(
     *,
     act: Event,
-    applicability: Event,
-    binding: Event,
-    source_result: Event,
+    source: Event,
     references: tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ) -> dict[str, Any]:
+    coordinate = act.material[
+        "addressed_source_byte_position_coordinate_reference"
+    ]
     return {
-        "result_identity": binding.material["determination_result_identity"],
+        "result_identity": act.material["determination_result_identity"],
         "exact_act": DETERMINATION_ACT,
-        "determination_act_identity": binding.material[
-            "determination_act_identity"
-        ],
-        "determination_act_occurrence_identity": binding.material[
+        "determination_act_identity": act.material["determination_act_identity"],
+        "determination_act_occurrence_identity": act.material[
             "determination_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(binding),
-        "applicability_result_reference": _applicability_result_reference(
-            applicability
-        ),
-        "direct_pair_position_result_reference": _direct_result_reference(
-            source_result
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ]
-        ),
+        "direct_pair_position_result_reference": _direct_result_reference(source),
+        "addressed_source_byte_position_coordinate_reference": deepcopy(coordinate),
         "completeness_boundary": {
-            "identity": binding.material[
-                "addressed_source_byte_position_coordinate_reference"
-            ][
-                "completeness_boundary_identity"
-            ]
+            "identity": coordinate["completeness_boundary_identity"]
         },
         "ordered_result_position_references": [
-            reference.result_position_reference for reference in references
+            deepcopy(reference.result_position_reference) for reference in references
         ],
-    }
-
-
-def _recorded_determination_result_material(
-    material: dict[str, Any], *, act: Event
-) -> dict[str, Any]:
-    return {
-        "result_identity": material["result_identity"],
-        "exact_act": material["exact_act"],
-        "determination_act_identity": material["determination_act_identity"],
-        "determination_act_occurrence_identity": material[
-            "determination_act_occurrence_identity"
-        ],
-        "subject_to_act_binding_reference": deepcopy(
-            material["subject_to_act_binding_reference"]
-        ),
-        "applicability_result_reference": deepcopy(
-            material["applicability_result_reference"]
-        ),
-        "direct_pair_position_result_reference": deepcopy(
-            material["direct_pair_position_result_reference"]
-        ),
-        "addressed_source_byte_position_coordinate_reference": deepcopy(
-            material["addressed_source_byte_position_coordinate_reference"]
-        ),
-        "completeness_boundary": deepcopy(material["completeness_boundary"]),
-        "ordered_result_position_references": deepcopy(
-            material["ordered_result_position_references"]
-        ),
         "act_occurrence_event_identity": act.identity,
     }
 
@@ -1427,83 +414,47 @@ def record_addressed_byte_occurrence_reference_determination_result(
     ledger: EventLedger,
     *,
     determination_act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    act, applicability, binding, source_result, references = (
-        _read_determination_act(
-            ledger, determination_act_occurrence_event_identity
-        )
-    )
-    material = _determination_result_material(
-        act=act,
-        applicability=applicability,
-        binding=binding,
-        source_result=source_result,
-        references=references,
+    act, source, references = _read_determination_act(
+        ledger,
+        determination_act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
     )
     act_material = deepcopy(act.material)
-    applicability_material = deepcopy(applicability.material)
-    binding_material = deepcopy(binding.material)
-    source_material = deepcopy(source_result.material)
-    _prepare_result(
-        ledger,
-        act=act,
-        occurrence_coordinate="determination_act_occurrence_identity",
-        result_event_kind=DETERMINATION_RESULT_KIND,
-    )
-    (
-        act_read,
-        applicability_read,
-        binding_read,
-        source_read,
-        _references_read,
-    ) = _read_determination_act(ledger, act.identity)
-    for recorded, read, kind, material_read, message in (
-        (
-            act,
-            act_read,
-            DETERMINATION_ACT_OCCURRENCE_EVENT,
-            act_material,
-            "determination Measurement result is not exact: Act is not intact",
-        ),
-        (
-            applicability,
-            applicability_read,
-            APPLICABILITY_RESULT_KIND,
-            applicability_material,
-            "determination Measurement result is not exact: Applicability is not intact",
-        ),
-        (
-            binding,
-            binding_read,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            binding_material,
-            "determination Measurement result is not exact: binding is not intact",
-        ),
-        (
-            source_result,
-            source_read,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            source_material,
-            "determination Measurement result is not exact: source is not intact",
-        ),
-    ):
-        _require_intact_recorded_occurrence(
-            ledger,
-            event=recorded,
-            kind=kind,
-            material=material_read,
-            message=message,
+    source_material = deepcopy(source.material)
+    matches = tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            act.locality_identity, DETERMINATION_RESULT_KIND
         )
-        if read != recorded:
-            raise AddressedByteOccurrenceReferenceDeterminationError(message)
-    _require_stage_at_append_tip(
-        ledger,
-        event=act,
-        message="determination Measurement Act left the current append boundary",
+        if event.material.get("act_occurrence_event_identity") == act.identity
+        or event.material.get("determination_act_occurrence_identity")
+        == act.material["determination_act_occurrence_identity"]
     )
+    if matches:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "a result is already recorded for determination Act"
+        )
+    act_read, source_read, references_read = _read_determination_act(
+        ledger,
+        act.identity,
+        prior_coordinates=current_coordinates,
+    )
+    if (
+        act_read != act
+        or act.material != act_material
+        or source_read != source
+        or source.material != source_material
+        or references_read != references
+        or not _at_append_tip(ledger, act)
+    ):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination coordinates changed before its result occurrence"
+        )
     return ledger.append(
         DETERMINATION_RESULT_KIND,
-        _recorded_determination_result_material(material, act=act),
+        _result_material(act=act, source=source, references=references),
         locality_identity=act.locality_identity,
     )
 
@@ -1517,66 +468,51 @@ def _read_determination_result(
     Event,
     Event,
     Event,
-    Event,
-    Event,
     tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ]:
-    event = ledger.get(event_identity)
+    result = ledger.get(event_identity)
     if (
-        event is None
-        or event.kind != DETERMINATION_RESULT_KIND
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
+        result is None
+        or result.kind != DETERMINATION_RESULT_KIND
+        or result.exact_material is not None
+        or ledger.integrity_of(result.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination result is absent or corrupted"
         )
-    act, applicability, binding, source_result, references = (
-        _read_determination_act(
-            ledger,
-            event.material.get("act_occurrence_event_identity"),
-            prior_coordinates=prior_coordinates,
-        )
+    act, source, references = _read_determination_act(
+        ledger,
+        result.material.get("act_occurrence_event_identity"),
+        prior_coordinates=prior_coordinates,
     )
-    expected = {
-        **_determination_result_material(
-            act=act,
-            applicability=applicability,
-            binding=binding,
-            source_result=source_result,
-            references=references,
-        ),
-        "act_occurrence_event_identity": act.identity,
-    }
-    if event.locality_identity != act.locality_identity or event.material != expected:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result coordinates are not exact"
+    expected = _result_material(act=act, source=source, references=references)
+    matches = tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            result.locality_identity, DETERMINATION_RESULT_KIND
         )
-    results = tuple(
-        result
-        for result in ledger.iter_locality_kind(
-            act.locality_identity, DETERMINATION_RESULT_KIND
-        )
-        if result.material.get("act_occurrence_event_identity") == act.identity
+        if event.material.get("act_occurrence_event_identity") == act.identity
     )
     try:
         ordered = ledger.occurrences_in_append_order(
-            (act.identity, event.identity),
-            locality_identity=act.locality_identity,
+            (act.identity, result.identity), locality_identity=result.locality_identity
         )
     except (TypeError, ValueError) as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination result occurrence order is false"
         ) from error
     if (
-        tuple(item.identity for item in ordered) != (act.identity, event.identity)
-        or len(results) != 1
-        or results[0].identity != event.identity
+        result.locality_identity != act.locality_identity
+        or result.material != expected
+        or tuple(event.identity for event in ordered)
+        != (act.identity, result.identity)
+        or len(matches) != 1
+        or matches[0].identity != result.identity
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result is not exact"
+            "determination result coordinates are not exact"
         )
-    return event, act, applicability, binding, source_result, references
+    return result, act, source, references
 
 
 def get_recorded_addressed_byte_occurrence_reference_determination(
@@ -1593,360 +529,49 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     current_coordinates: dict[str, Any],
     mutate_current_coordinates: bool = False,
 ) -> tuple[dict[str, Any], Event]:
-    """Record one D.2 lifecycle with its exact stage readings."""
-
     if not isinstance(ledger, EventLedger):
-        raise TypeError("determination lifecycle requires one EventLedger")
+        raise TypeError("determination lifecycle needs one EventLedger")
     current = (
         current_coordinates
         if mutate_current_coordinates
         else deepcopy(current_coordinates)
     )
-    locality_identity = current.get("locality_identity")
-    boundary = current.get("through_event_occurrence_identity")
-    source_result, references = _source(
-        ledger,
-        result_event_identity=_identity(
-            direct_result_event_identity,
-            "determination lifecycle requires one direct result",
-        ),
-        coordinate_reference=(
-            addressed_source_byte_position_coordinate_reference
-        ),
-        current_coordinates=current,
-    )
-    _current_coordinates_carry_source(
-        ledger,
-        current_coordinates=current,
-        source_result=source_result,
-        required_boundary_identity=boundary,
-    )
-    _require_stage_at_append_tip(
-        ledger,
-        event=ledger.get(boundary),
-        message="determination binding coordinates left the current append boundary",
-    )
-    source_material = deepcopy(source_result.material)
-    identities = {
-        name: ledger.mint_identity(prefix)
-        for name, prefix in (
-            (
-                "determination_act_identity",
-                "addressed_byte_occurrence_reference_determination_measurement_act",
-            ),
-            (
-                "determination_act_occurrence_identity",
-                "addressed_byte_occurrence_reference_determination_measurement_act_occurrence",
-            ),
-            (
-                "determination_result_identity",
-                "addressed_byte_occurrence_reference_determination_measurement_result",
-            ),
-        )
-    }
-    if len(set(identities.values())) != len(identities):
+    locality = current.get("locality_identity")
+    prior = current.get("through_event_occurrence_identity")
+    count = current.get("event_count")
+    measurements = current.get("measurement_occurrences")
+    if type(count) is not int or type(measurements) is not dict:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination lifecycle identities collapsed"
+            "determination lifecycle has no exact current coordinates"
         )
-
-    exact_stage_material: list[tuple[Event, str, dict[str, Any]]] = [
-        (
-            source_result,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            source_material,
-        )
-    ]
-
-    def require_intact() -> None:
-        for event, kind, material in exact_stage_material:
-            _require_intact_recorded_occurrence(
-                ledger,
-                event=event,
-                kind=kind,
-                material=material,
-                message="one exact determination stage is not intact",
-            )
-
-    def require_prior_at_current_append_boundary(event: Event) -> None:
-        require_intact()
-        _require_stage_at_append_tip(
-            ledger,
-            event=event,
-            message="determination stage left the current append boundary",
-        )
-
-    def establish_current(event: Event, *, prior: str) -> None:
-        bindings = current.get("subject_to_act_binding_occurrences")
-        applicability_results = current.get("applicability_result_occurrences")
-        measurements = current.get("measurement_occurrences")
-        count = current.get("event_count")
-        if (
-            type(bindings) is not dict
-            or type(applicability_results) is not dict
-            or type(measurements) is not dict
-            or type(count) is not int
-            or current.get("through_event_occurrence_identity") != prior
-            or event.locality_identity != locality_identity
-            or ledger.get(event.identity) != event
-            or ledger.integrity_of(event.identity) == CORRUPTED
-            or ledger.append_boundary_through_occurrence(event.identity)
-            != ledger.append_boundary()
-        ):
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "produced determination occurrence is not exact"
-            )
-        if event.kind in {
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        }:
-            lawful = (
-                event.material.get("through_event_occurrence_identity") == prior
-                and event.identity not in bindings
-            )
-        elif event.kind == APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            lawful = (
-                event.material["subject_to_act_binding_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                == prior
-                and prior in bindings
-            )
-        elif event.kind == APPLICABILITY_RESULT_KIND:
-            lawful = (
-                event.material.get("act_occurrence_event_identity") == prior
-                and event.material["subject_to_act_binding_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                in bindings
-                and event.identity not in applicability_results
-            )
-        elif event.kind == DETERMINATION_ACT_OCCURRENCE_EVENT:
-            lawful = (
-                event.material["applicability_result_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                == prior
-                and prior in applicability_results
-            )
-        elif event.kind == DETERMINATION_RESULT_KIND:
-            lawful = (
-                event.material.get("act_occurrence_event_identity") == prior
-                and event.identity not in measurements
-            )
-        else:
-            lawful = False
-        if not lawful:
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "produced determination occurrence has false current coordinates"
-            )
-        if event.kind in {
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        }:
-            bindings[event.identity] = None
-        elif event.kind == APPLICABILITY_RESULT_KIND:
-            applicability_results[event.identity] = None
-        elif event.kind == DETERMINATION_RESULT_KIND:
-            measurements[event.identity] = _determination_result_reference(event)
-        current["through_event_occurrence_identity"] = event.identity
-        current["event_count"] = count + 1
-
-    determination_binding_material = _determination_binding_material(
-        source_result=source_result,
-        coordinate_reference=(
+    act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
+        ledger,
+        direct_result_event_identity=direct_result_event_identity,
+        addressed_source_byte_position_coordinate_reference=(
             addressed_source_byte_position_coordinate_reference
         ),
-        through_event_occurrence_identity=boundary,
-        identities=identities,
+        current_coordinates=current,
     )
-    require_prior_at_current_append_boundary(ledger.get(boundary))
-    determination_binding = ledger.append(
-        DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _determination_binding_material(
-            source_result=source_result,
-            coordinate_reference=(
-                addressed_source_byte_position_coordinate_reference
-            ),
-            through_event_occurrence_identity=boundary,
-            identities=identities,
-        ),
-        locality_identity=locality_identity,
-    )
-    exact_stage_material.append(
-        (
-            determination_binding,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            determination_binding_material,
+    if (
+        current.get("through_event_occurrence_identity") != prior
+        or act.locality_identity != locality
+        or not _at_append_tip(ledger, act)
+    ):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "produced determination Act is not exact"
         )
+    current["through_event_occurrence_identity"] = act.identity
+    current["event_count"] = count + 1
+    result = record_addressed_byte_occurrence_reference_determination_result(
+        ledger,
+        determination_act_occurrence_event_identity=act.identity,
+        current_coordinates=current,
     )
-    require_intact()
-    establish_current(determination_binding, prior=boundary)
-
-    applicability_identities = {
-        name: ledger.mint_identity(prefix)
-        for name, prefix in (
-            (
-                "applicability_act_identity",
-                "addressed_byte_occurrence_reference_applicability_act",
-            ),
-            (
-                "applicability_act_occurrence_identity",
-                "addressed_byte_occurrence_reference_applicability_act_occurrence",
-            ),
-            (
-                "applicability_result_identity",
-                "addressed_byte_occurrence_reference_applicability_result",
-            ),
+    if result.identity in measurements or not _at_append_tip(ledger, result):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "produced determination result is not exact"
         )
-    }
-    require_prior_at_current_append_boundary(determination_binding)
-    applicability_binding = ledger.append(
-        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _applicability_binding_material(
-            source_result=source_result,
-            coordinate_reference=addressed_source_byte_position_coordinate_reference,
-            through_event_occurrence_identity=determination_binding.identity,
-            determination_act_identity=determination_binding.material[
-                "determination_act_identity"
-            ],
-            identities=applicability_identities,
-        ),
-        locality_identity=locality_identity,
-    )
-    applicability_binding_material = _applicability_binding_material(
-        source_result=source_result,
-        coordinate_reference=addressed_source_byte_position_coordinate_reference,
-        through_event_occurrence_identity=determination_binding.identity,
-        determination_act_identity=determination_binding.material[
-            "determination_act_identity"
-        ],
-        identities=applicability_identities,
-    )
-    exact_stage_material.append(
-        (
-            applicability_binding,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            applicability_binding_material,
-        )
-    )
-    require_intact()
-    establish_current(applicability_binding, prior=determination_binding.identity)
-
-    _refuse_existing_act(
-        ledger,
-        binding=determination_binding,
-        kind=APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="determination_act_occurrence_identity",
-    )
-    applicability_act_material = _applicability_act_material(
-        binding=applicability_binding, source_result=source_result
-    )
-    require_prior_at_current_append_boundary(applicability_binding)
-    applicability_act = ledger.append(
-        APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _applicability_act_material(
-            binding=applicability_binding,
-            source_result=source_result,
-        ),
-        locality_identity=locality_identity,
-    )
-    exact_stage_material.append(
-        (
-            applicability_act,
-            APPLICABILITY_ACT_OCCURRENCE_EVENT,
-            applicability_act_material,
-        )
-    )
-    require_intact()
-    establish_current(applicability_act, prior=applicability_binding.identity)
-
-    applicability_material = _applicability_result_material(
-        act=applicability_act,
-        applicability_binding=applicability_binding,
-        determination_binding=determination_binding,
-        source_result=source_result,
-    )
-    _prepare_result(
-        ledger,
-        act=applicability_act,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-        result_event_kind=APPLICABILITY_RESULT_KIND,
-    )
-    require_prior_at_current_append_boundary(applicability_act)
-    applicability_recorded = _recorded_applicability_result_material(
-        applicability_material,
-        act=applicability_act,
-    )
-    applicability = ledger.append(
-        APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            applicability_material,
-            act=applicability_act,
-        ),
-        locality_identity=locality_identity,
-    )
-    exact_stage_material.append(
-        (applicability, APPLICABILITY_RESULT_KIND, applicability_recorded)
-    )
-    require_intact()
-    establish_current(applicability, prior=applicability_act.identity)
-
-    _refuse_existing_act(
-        ledger,
-        binding=determination_binding,
-        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="determination_act_occurrence_identity",
-    )
-    act_material = _determination_act_material(
-        binding=determination_binding,
-        source_result=source_result,
-        applicability_result=applicability,
-    )
-    require_prior_at_current_append_boundary(applicability)
-    act = ledger.append(
-        DETERMINATION_ACT_OCCURRENCE_EVENT,
-        _determination_act_material(
-            binding=determination_binding,
-            source_result=source_result,
-            applicability_result=applicability,
-        ),
-        locality_identity=locality_identity,
-    )
-    exact_stage_material.append(
-        (act, DETERMINATION_ACT_OCCURRENCE_EVENT, act_material)
-    )
-    require_intact()
-    establish_current(act, prior=applicability.identity)
-
-    result_material = _determination_result_material(
-        act=act,
-        applicability=applicability,
-        binding=determination_binding,
-        source_result=source_result,
-        references=references,
-    )
-    _prepare_result(
-        ledger,
-        act=act,
-        occurrence_coordinate="determination_act_occurrence_identity",
-        result_event_kind=DETERMINATION_RESULT_KIND,
-    )
-    require_prior_at_current_append_boundary(act)
-    result_recorded = _recorded_determination_result_material(
-        result_material,
-        act=act,
-    )
-    result = ledger.append(
-        DETERMINATION_RESULT_KIND,
-        _recorded_determination_result_material(
-            result_material,
-            act=act,
-        ),
-        locality_identity=locality_identity,
-    )
-    exact_stage_material.append(
-        (result, DETERMINATION_RESULT_KIND, result_recorded)
-    )
-    require_intact()
-    establish_current(result, prior=act.identity)
+    measurements[result.identity] = _determination_result_reference(result)
+    current["through_event_occurrence_identity"] = result.identity
+    current["event_count"] = count + 2
     return current, result

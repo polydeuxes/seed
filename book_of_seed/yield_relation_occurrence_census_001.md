@@ -198,14 +198,15 @@ governance of Compare, durable reread, and mutation, substitution, corruption,
 and repeated-result refusal. This road is reached by the new exact material
 road.
 
-Addressed-byte Determination Applicability then passed independently. Its exact
-positive result still addresses the complete Determination binding and its
-Applicability Act occurrence. Removing the separate copied event preserved the
-direct pair-position result, addressed source-byte coordinate, Act-before-
-result order, one result for the Act, current-coordinate progression,
-positive-result governance of Determination, durable reread, and mutation,
-substitution, corruption, changed-coordinate, and repeated-result refusal. This
-road is reached by the new exact material road.
+Addressed-byte Determination Applicability then passed the Yield subtraction
+independently. At that checkpoint its positive result still addressed the
+Determination binding and Applicability Act occurrence. A later Applicability
+census found that this family had no verdict coordinate and could only record
+`applicable_to`; the complete forced binding/Applicability floor subsequently
+failed subtraction too. The surviving road is now the exact direct
+pair-position result and addressed source-byte coordinate followed by the
+Determination Act and result. This later subtraction does not alter the earlier
+Yield finding.
 
 Source-position Compare Applicability then passed independently. Its exact
 positive result still addresses the complete source-position Compare binding

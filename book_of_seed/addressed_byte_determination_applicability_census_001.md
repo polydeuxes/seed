@@ -143,3 +143,22 @@ one-result refusal, and downstream D.2 shared-position provenance.
 
 Do not generalize this finding to Applicability families with independently
 variable positive and negative results.
+
+## Amendment after subtraction
+
+`addressed_byte_determination_applicability_subtraction_report_001.md`
+completes the proposed falsifier.
+
+The two binding events and Applicability Act/result are absent. The exact
+direct Measurement result and addressed source-position coordinate now enter
+the Determination Act directly. The Determination result still distinguishes
+zero, one, and two matching result-position references. Act/result order,
+one-result refusal, restart, replay, downstream D.2 provenance, and intervening
+append/mutation refusal survive.
+
+```text
+forced Determination Applicability       failed subtraction
+separate prospective binding events      failed subtraction
+exact Determination subject coordinates  preserved in Act occurrence
+ordinary positive/negative Applicability untouched
+```

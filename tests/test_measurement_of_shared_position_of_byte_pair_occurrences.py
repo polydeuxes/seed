@@ -12,9 +12,6 @@ import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as s
 import seed_runtime.operator_current_coordinates as operator_current_coordinates_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_act_occurrence,
-    record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
-    record_addressed_byte_occurrence_reference_determination_applicability_result,
-    record_addressed_byte_occurrence_reference_determination_subject_to_act_binding,
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.byte_measurement import (
@@ -115,24 +112,10 @@ def _direct_d2(
         position=position,
         exact_material=exact[position : position + 1],
     )
-    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
+    determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        current_coordinates=_current_coordinates(ledger, locality),
-    )
-    applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
-        ledger,
-        binding_event_identity=determination_binding.identity,
-        binding_current_coordinates=_current_coordinates(ledger, locality),
-    )
-    applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
-        ledger,
-        applicability_act_occurrence_event_identity=applicability_act.identity,
-    )
-    determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
-        ledger,
-        applicability_result_event_identity=applicability.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     determination_result = record_addressed_byte_occurrence_reference_determination_result(

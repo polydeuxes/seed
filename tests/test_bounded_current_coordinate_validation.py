@@ -19,7 +19,7 @@ from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from tests.test_addressed_byte_occurrence_reference_determination import (
-    _through_applicability,
+    _determination_source,
 )
 
 
@@ -41,7 +41,7 @@ def _position_material():
 def test_an_unread_coordinate_does_not_require_full_locality_reconstruction():
 
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     unrelated = deepcopy(recorded["current_coordinates"])
     unrelated["representations"] = {"an unread sibling branch": None}
@@ -49,7 +49,10 @@ def test_an_unread_coordinate_does_not_require_full_locality_reconstruction():
     determination_act = (
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=unrelated,
         )
     )
@@ -59,41 +62,43 @@ def test_an_unread_coordinate_does_not_require_full_locality_reconstruction():
 
 def test_a_changed_through_occurrence_is_refused():
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     changed = deepcopy(recorded["current_coordinates"])
-    changed["through_event_occurrence_identity"] = recorded[
-        "determination_binding"
-    ].identity
+    changed["through_event_occurrence_identity"] = recorded["source"].identity
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=changed,
         )
 
 
 def test_earlier_current_coordinates_are_refused_at_the_append_tip():
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     stale = deepcopy(recorded["current_coordinates"])
-    stale["through_event_occurrence_identity"] = recorded[
-        "applicability_act"
-    ].identity
+    stale["through_event_occurrence_identity"] = recorded["source"].identity
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=stale,
         )
 
 
 def test_a_changed_source_measurement_result_is_refused():
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     changed = deepcopy(recorded["current_coordinates"])
     changed["measurement_occurrences"] = {"changed occurrence": {"not": "exact"}}
@@ -101,14 +106,17 @@ def test_a_changed_source_measurement_result_is_refused():
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=changed,
         )
 
 
 def test_a_changed_locality_in_supplied_coordinates_is_refused():
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     changed = deepcopy(recorded["current_coordinates"])
     changed["locality_identity"] = "another-locality"
@@ -116,19 +124,25 @@ def test_a_changed_locality_in_supplied_coordinates_is_refused():
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=changed,
         )
 
 
 def test_supplied_coordinates_that_are_no_mapping_are_refused():
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
-            applicability_result_event_identity=recorded["applicability"].identity,
+            direct_result_event_identity=recorded["direct_result"].identity,
+            addressed_source_byte_position_coordinate_reference=recorded[
+                "coordinate"
+            ],
             current_coordinates=["not", "a", "mapping"],
         )
 
@@ -136,7 +150,7 @@ def test_supplied_coordinates_that_are_no_mapping_are_refused():
 def test_this_validation_performs_no_full_locality_read(monkeypatch):
 
     ledger = EventLedger()
-    recorded = _through_applicability(ledger)
+    recorded = _determination_source(ledger)
 
     calls = []
 

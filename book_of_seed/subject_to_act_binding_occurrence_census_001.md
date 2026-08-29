@@ -79,6 +79,35 @@ the frozen shared-position Measurement case and preserving absence,
 inapplicable, applicable-before-Act, and applicable-with-Act as separate
 states.
 
+## Amendment after forced Determination Applicability subtraction
+
+`addressed_byte_determination_applicability_subtraction_report_001.md` supplies
+the first Applicability-neighborhood control whose complete prospective floor
+fails subtraction.
+
+One exact direct pair-position Measurement result and one addressed
+source-byte position coordinate already establish the complete Determination
+subject. The family-local Applicability result had no positive/negative verdict
+coordinate and always recorded `applicable_to`, including when the final
+Determination result contained zero matching references.
+
+The two binding events and Applicability Act/result are now absent. The
+Determination Act records the exact subject coordinates directly; its result
+still distinguishes zero, one, and two matching references and preserves
+replay, reopen, mutation refusal, one-result refusal, and downstream D.2 use.
+
+```text
+internal recurrent-position binding event        failed subtraction
+internal Compare-Distinction binding event        failed subtraction
+forced Determination binding/App floor            failed subtraction
+true positive/negative Applicability families     not generalized
+```
+
+This narrows the Applicability campaign: an exact prior subject plus a forced
+one-valued Applicability lifecycle does not preserve the negative and
+positive-before-Act states used to protect ordinary shared-position and
+Compare roads.
+
 ## Question
 
 Does one recorded subject-to-Act binding event establish an independent

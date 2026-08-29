@@ -97,15 +97,8 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     _measurement_binding_addressed_by_applicability,
 )
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_BINDING_KIND,
-    APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_BINDING_KIND,
-    APPLICABILITY_ACT_OCCURRENCE_EVENT as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-    APPLICABILITY_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
     DETERMINATION_ACT_OCCURRENCE_EVENT as ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
-    _read_binding as _read_addressed_byte_reference_binding,
-    _read_applicability_act as _read_addressed_byte_reference_applicability_act,
-    _read_applicability_result as _read_addressed_byte_reference_applicability_result,
     _read_determination_act as _read_addressed_byte_reference_determination_act,
     _read_determination_result as _read_addressed_byte_reference_determination_result,
     _determination_result_reference as _addressed_byte_reference_determination_coordinates,
@@ -295,10 +288,6 @@ _SHARED_POSITION_MEASUREMENT_KINDS = {
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 }
 _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
-    ADDRESSED_BYTE_REFERENCE_DETERMINATION_BINDING_KIND,
-    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_BINDING_KIND,
-    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
 }
@@ -1228,32 +1217,6 @@ def advance_operator_current_coordinates(
                 applicability_result_occurrences
             ),
         }
-        if event.kind in {
-            ADDRESSED_BYTE_REFERENCE_DETERMINATION_BINDING_KIND,
-            ADDRESSED_BYTE_REFERENCE_APPLICABILITY_BINDING_KIND,
-        }:
-            _read_addressed_byte_reference_binding(
-                ledger,
-                event.identity,
-                prior_coordinates=addressed_byte_reference_prior_coordinates,
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
-            continue
-        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            _read_addressed_byte_reference_applicability_act(
-                ledger,
-                event.identity,
-                prior_coordinates=addressed_byte_reference_prior_coordinates,
-            )
-            continue
-        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND:
-            _read_addressed_byte_reference_applicability_result(
-                ledger,
-                event.identity,
-                prior_coordinates=addressed_byte_reference_prior_coordinates,
-            )
-            applicability_result_occurrences[event.identity] = None
-            continue
         if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT:
             _read_addressed_byte_reference_determination_act(
                 ledger,
