@@ -18,7 +18,9 @@ from seed_runtime.byte_measurement import (
     _record_byte_position_pair_count_layer_from_current_coordinates,
 )
 from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
     COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     SharedPositionMeasurementPairFindingCompareSubject,
@@ -764,7 +766,7 @@ def test_unassigned_exact_compare_subject_read_returns_every_shared_position_and
     )
 
 
-def test_every_current_compare_subject_records_one_serial_binding():
+def test_cartesian_compare_bindings_exist_before_applicability():
     (
         ledger,
         _first_source,
@@ -829,6 +831,24 @@ def test_every_current_compare_subject_records_one_serial_binding():
         in recorded.current_coordinates["subject_to_act_binding_occurrences"]
         for binding in bindings
     )
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+        )
+    ) == ()
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+        )
+    ) == ()
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+        )
+    ) == ()
     assert recorded.current_coordinates["applicability_result_occurrences"] == (
         coordinates_before["applicability_result_occurrences"]
     )

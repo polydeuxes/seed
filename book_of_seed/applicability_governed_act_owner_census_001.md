@@ -28,6 +28,29 @@ The historical title and body retain `governed` as the narration this census
 used. Active Book and Witness Grammar do not admit it: the exact
 subject-to-Act binding already identifies the Act and subjects.
 
+## Second amendment after binding-candidacy pressure
+
+The owner withdrawal above is limited to the crossing from already-recorded
+Applicability results to Act occurrences. It does not answer how candidacy
+reaches Applicability.
+
+The same live road mechanically forms the Cartesian product of its two current
+input sets and records one prospective Compare binding per pair before any
+Applicability lifecycle for this Compare family occurs. No existing Seed
+occurrence has been found that addresses those bounded inputs without that
+durable expansion.
+
+Therefore:
+
+```text
+selector after positive Applicability results     withdrawn
+owner before population-level Applicability       not established
+binding                                            not candidacy by default
+```
+
+The upstream vacancy is frozen in
+`applicability_binding_candidacy_census_001.md`.
+
 ## Question
 
 What exact occurrence accounts for the crossing from one positive
@@ -35,8 +58,8 @@ Applicability result to the governed Act occurrence?
 
 This census follows the next falsifier in
 `applicability_act_occurrence_boundary_census_001.md`. It inspects the live
-ordered relation-path and recorded pair-finding Compare road because that road
-exposes binding, Applicability, governed Act, and result as four independently
+same-position Measurement and recorded pair-finding Compare road because that
+road presents binding, Applicability, Act, and result as four independently
 stoppable stages.
 
 No new Act, relation, identity, reference, or coordinate is proposed.
@@ -73,7 +96,7 @@ governed Act occurrence
 
 ## Live crossing
 
-`operator_console._record_ordered_path_pair_finding_compare()` invokes four
+`operator_console._record_shared_position_measurement_pair_finding_compare()` invokes four
 family-local operations in sequence:
 
 ```text
@@ -122,7 +145,7 @@ the same coordinates produces no governed Act occurrence.
 
 The operator material result precedes this bounded causal slice, but the
 Compare Act occurrence does not address it as an owner. One material result can
-make zero, one, or several path-and-finding bindings addressable. It does not
+make zero, one, or several same-position-and-finding bindings addressable. It does not
 distinguish which positive Applicability result receives a governed occurrence.
 
 ### Compare Act occurrence

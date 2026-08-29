@@ -1,13 +1,39 @@
 # Bounded Applicability Population Report 001
 
+## Scope correction after pre-Applicability pressure
+
+This report established bounded exhaustive work **after** exact Applicability
+results exist. It did not establish population candidacy without prior
+Cartesian materialization.
+
+The live road first reads two bounded input sets, mechanically forms every
+pair, and records one Compare subject-to-Act binding for every pair. With two
+same-position Measurement results and two pair-Compare results, the Ledger can
+stop at:
+
+```text
+4 exact Compare bindings
+0 Applicability bindings for this Compare family
+0 Applicability Act occurrences for this Compare family
+0 Applicability results for this Compare family
+```
+
+Only after that floor does the Applicability lifecycle address each recorded
+Compare binding. The earlier report therefore proves no selector after
+Applicability and no completion occurrence. It does **not** prove that
+candidacy reaches Applicability without one prospective binding per Cartesian
+member.
+
+`applicability_binding_candidacy_census_001.md` records the upstream census.
+
 ## Question
 
-Does brute-force work over one exact bounded Applicability-result population
-need Candidate, selection, enumeration, or another occurrence between positive
-Applicability and Act occurrences for their exact bindings?
+Does brute-force work over exact Applicability results through one boundary
+need selection or another occurrence between positive Applicability and Act
+occurrences for their exact bindings?
 
-The experiment uses the live ordered relation-path and pair-finding Compare
-road. It changes no active Book clause and adds no Act, result, relation,
+The experiment uses the live same-position Measurement and pair-finding
+Compare road. It changes no active Book clause and adds no Act, result, relation,
 identity, kind, Candidate object, selection object, completion occurrence, or
 constitutional word.
 
@@ -48,7 +74,7 @@ instead of another.
 
 ## Exact bounded reader
 
-`read_ordered_path_pair_finding_compare_applicability_results_and_acts(...)`
+`read_shared_position_measurement_pair_finding_compare_applicability_results_and_acts(...)`
 reads:
 
 ```text
@@ -67,16 +93,13 @@ boundary is reopened.
 The reader records nothing. It returns an
 `ApplicabilityResultActReading`, not a `Population` object.
 
-The current implementation-family name still contains `ordered_path`. This
-report does not admit Path. The exact Compare input resolves as one
+The exact Compare input resolves as one
 shared-position Measurement result occurrence, result position 0, its two
 pair-position result references, shared source-position coordinate, source
-material result, completeness boundary, and Locality. Whether `path` adds any
-distinction beyond those coordinates remains under subtraction.
+material result, completeness boundary, and Locality.
 
-Its identity tuples describe exact results that already occurred. They are not
-Candidate occurrences and do not assert that a possible population was first
-materialized or numbered.
+Its identity tuples describe exact results that already occurred. They do not
+describe how the earlier Compare bindings came to exist.
 
 ## Population subtraction
 
@@ -201,7 +224,7 @@ under one exact boundary.
 
 The two overlapping mitochondrial-reference windows from
 `exact_biological_result_subject_reuse_report_001.md` establish 20 exact
-ordered-path Compare Applicability results:
+same-position Compare Applicability results:
 
 ```text
 10 applicable
@@ -219,17 +242,15 @@ The final bounded population reading establishes:
 ```
 
 One pair Compare result participates in ten later Compare bindings. Brute-force
-processing realizes every positive binding while preserving each path's exact
-material occurrence and local positions. It does not choose one path as the
-reason for another path's exclusion.
+processing realizes every positive binding while preserving each exact
+material occurrence and local positions. It does not choose one binding as the
+reason for another binding's exclusion.
 
-## Population is not Candidate enumeration
+## Post-Applicability coverage
 
-The operation iterates in host language. That mechanical loop does not
-establish:
+The operation over already-recorded Applicability results does not establish:
 
 ```text
-Candidate occurrence for every possibility
 ordered candidate list
 selection occurrence
 priority relation
@@ -238,11 +259,13 @@ scheduler
 reason why one positive member proceeds
 ```
 
-The exact population consists of Applicability results that already exist
-through one exact boundary. Its members are not hypothetical interpretations.
+Those results already exist through one exact boundary. The result-to-Act
+operation does not choose among them; it records an Act for every positive
+result and none for negative results.
 
-Brute force needs a bounded population. It does not need a constitutional
-enumeration of candidates.
+This conclusion begins after the runtime has already recorded one Compare
+binding per mechanically formed input pair. It makes no claim about the
+constitutional shape of candidacy before Applicability.
 
 ## Applicability decomposition
 
@@ -256,6 +279,11 @@ Act occurrence for the exact binding exists or does not exist through B
 
 Applicability owns the middle distinction. It neither creates the earlier
 binding nor performs the later Act.
+
+The first statement is now an active pressure point: the live road creates
+every prospective Compare binding before Applicability, and no existing Seed
+occurrence has been found that instead presents the two bounded input sets to
+one Applicability lifecycle.
 
 The later crossing needs no selecting occurrence when the bounded operation
 processes every positive result. The exact Act occurrence still addresses its
@@ -286,8 +314,8 @@ Applicability result
 Act occurrence for its exact binding
 ```
 
-For this live road, bounded brute-force coverage is established without
-Candidate enumeration:
+For this live road, bounded post-Applicability coverage is established without
+selection:
 
 ```text
 every exact positive result through B → exactly one Act occurrence for its binding
@@ -296,3 +324,7 @@ every exact negative result through B → no Act occurrence for its binding
 
 Future roads may use the same falsifier one family at a time. Do not generalize
 the runtime invariant beyond independently tested populations.
+
+Do not infer from this report that binding and candidacy are the same
+distinction. The present pre-Applicability Cartesian binding floor remains
+mechanism under pressure.
