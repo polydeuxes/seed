@@ -151,9 +151,9 @@ absence distinct from inapplicable               preserved
 ```
 
 The active road records genuinely variable Applicability results for every
-member of the exact bounded cross-set. The Applicability Act is the occurrence
-of the question. Another prior occurrence would restate its subjects and create
-a regress.
+member of the exact cross-set current at the selected reading boundary. The
+Applicability Act is the occurrence of the question. Another prior occurrence
+would restate its subjects and create a regress.
 
 ## Disposition
 
@@ -194,3 +194,13 @@ records the result. The Applicability Act now carries the exact cross-set
 member and addressed Compare coordinates. Both preceding binding occurrences
 are absent from the active road; positive and negative results and complete
 cross-set coverage remain.
+
+## Amendment after boundary interruption
+
+`live_applicability_coverage_boundary_census_001.md` establishes that a later
+invocation uses the exact sets current at its later boundary. It does not
+finish only the members that were current when the first Act occurred.
+
+Complete cross-set coverage is therefore a reading-relative reconstruction at
+one exact boundary. It is not a durable set, work lifecycle, or completion
+occurrence.

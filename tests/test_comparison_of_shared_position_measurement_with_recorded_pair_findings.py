@@ -866,6 +866,71 @@ def test_every_exact_cross_set_member_receives_one_applicability_act():
     assert all("subject_to_act_binding_reference" not in act.material for act in acts)
 
 
+def test_resumed_applicability_coverage_uses_the_later_exact_current_sets():
+    ledger, *_inputs_reading, current_coordinates = _two_inputs_with_coordinates()
+    initial_inputs = comparison_module._active_subject_inputs_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    assert len(initial_inputs) == 4
+    initial_boundary = current_coordinates["through_event_occurrence_identity"]
+
+    prior_count = len(ledger.list_locality(LOCALITY))
+    first_act = comparison_module._record_active_applicability_act(
+        ledger,
+        inputs=initial_inputs[0],
+        current_coordinates=current_coordinates,
+    )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    assert first_act.material["through_event_occurrence_identity"] == initial_boundary
+
+    ledger, *_third_input, current_coordinates = _record_inputs_with_coordinates(
+        ledger,
+        current_coordinates=current_coordinates,
+    )
+    expanded_inputs = comparison_module._active_subject_inputs_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    assert len(expanded_inputs) == 9
+
+    resumed = record_shared_position_measurement_pair_finding_compare_applicability_act_occurrences_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    assert len(resumed.applicability_act_occurrence_occurrences) == 8
+
+    active_acts = tuple(
+        occurrence
+        for occurrence in ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+        )
+        if "subject_to_act_binding_reference" not in occurrence.material
+    )
+    assert len(active_acts) == len(expanded_inputs) == 9
+    assert {
+        (
+            act.material["subject_reference"][
+                "shared_position_result_position_reference"
+            ]["recorded_occurrence_identity"],
+            act.material["subject_reference"]["comparison_result_reference"][
+                "recorded_occurrence_identity"
+            ],
+        )
+        for act in active_acts
+    } == {
+        comparison_module._active_applicability_subject_key(inputs)
+        for inputs in expanded_inputs
+    }
+    assert first_act.material["through_event_occurrence_identity"] != (
+        resumed.current_coordinates["through_event_occurrence_identity"]
+    )
+
+
 def test_no_applicability_occurrence_is_not_inapplicable():
     ledger_before_binding, _results, _current_coordinates_read = (
         _ledger_at_story_floor(0)

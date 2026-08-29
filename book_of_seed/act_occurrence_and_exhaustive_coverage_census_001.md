@@ -134,11 +134,13 @@ S(B) × C(B)
 ```
 
 where both sets are bounded by exact current coordinates at `B`. If the active
-history records one Applicability Act for every exact member, there is no
-selection distinction. The open subtraction question is smaller: whether the
-two binding events appended before each Applicability Act add any exact fact
-beyond the subjects, addressed Compare Act, Locality, and lifecycle
-coordinates that the Applicability Act can carry itself.
+history contains one Applicability Act for every exact member current through
+the reading boundary, there is no selection distinction at that boundary.
+
+The boundary census later establishes that interrupted work is not fixed to
+the member set present when its first Act occurred. A later invocation reads
+the larger exact sets at its later boundary. Coverage is therefore a
+boundary-relative reconstruction, not one durable work-set lifecycle.
 
 ## Finding
 
@@ -147,6 +149,8 @@ Act occurrence needs universal prior occurrence          no
 Act occurrence establishes its own occurrence            yes
 exhaustive coverage needs exact bounded members           yes
 exhaustive coverage needs one Act per member               yes
+fixed member set from the first Act boundary                no
+coverage reconstructed at one reading boundary              yes
 host iteration is another Seed occurrence                 no
 source-position Compare covers all three exact members    yes
 recorded-pair universal coverage                          not established
@@ -183,3 +187,14 @@ question.
 records the completed falsifier. Both pre-Applicability binding events failed
 on the active inward road. All five Applicability/Compare lifecycle floors and
 every exact `S(B) × C(B)` member survive.
+
+## Amendment after boundary interruption
+
+`live_applicability_coverage_boundary_census_001.md` records one of four Acts,
+adds a third exact input family, and resumes. The later exact sets contain nine
+members; resumption records the eight missing Acts. The first Act retains its
+earlier boundary.
+
+Thus “every exact `S(B) × C(B)` member” names a reconstruction at the selected
+reading boundary `B`. It does not name a set frozen by the first Act or a
+durable completion occurrence.
