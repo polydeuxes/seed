@@ -47,10 +47,12 @@ the exact Act occurrence, resolves the two subjects there, reconstructs the
 answer, and validates it. A subsequent subtraction also removed the copied
 same-source and pair-finding-count evidence from the result payload.
 
-Positive Compare Acts still carry their own exact subjects and address the
-positive Applicability result. Negative results remain exact with no Compare
-occurrence. Cross-set coverage, all stoppable floors, restart, replay,
-findings, and refusals survive.
+The later Compare Act subtraction establishes that a positive Compare Act can
+recover those subjects through the positive Applicability result and its exact
+Applicability Act occurrence. The copied Compare Act subject reference is now
+absent. Negative results remain exact with no Compare occurrence. Cross-set
+coverage, all stoppable floors, restart, replay, findings, and refusals
+survive.
 
 ## Finding
 

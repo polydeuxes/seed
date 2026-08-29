@@ -21,7 +21,7 @@ or only make the reader compare fields derived from the same exact inputs.
 
 ## Result
 
-The active Compare Act now carries:
+The first subtraction left the active Compare Act carrying:
 
 ```text
 Compare
@@ -58,3 +58,17 @@ copied top-level result subject reference      no distinction found
 
 An exact reference can be followed. Repeating coordinates recoverable through
 that reference does not make the Act or result more exact.
+
+## Amendment after subject-reference subtraction
+
+`live_compare_act_subject_copy_subtraction_report_001.md` follows the positive
+Applicability result to its exact Applicability Act occurrence and two exact
+subjects. The remaining Compare Act subject reference also fails subtraction.
+
+The active Compare Act now carries only:
+
+```text
+Compare
+positive Applicability result occurrence reference
+Locality
+```

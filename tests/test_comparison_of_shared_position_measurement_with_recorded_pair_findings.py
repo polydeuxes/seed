@@ -1124,16 +1124,12 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
     ) == (applicability_results[0].identity, applicability_results[3].identity)
     assert all(
         set(act.material)
-        == {"act", "subject_reference", "applicability_result_event_identity"}
+        == {"act", "applicability_result_event_identity"}
         for act in acts
     )
     assert all(
-        set(act.material["subject_reference"])
-        == {"shared_position_result_position_reference", "comparison_result_reference"}
-        for act in acts
-    )
-    assert all(
-        "shared_position_result_position_reference" not in act.material
+        "subject_reference" not in act.material
+        and "shared_position_result_position_reference" not in act.material
         and "source_material_result_occurrence_identity" not in act.material
         and "comparison_added_occurrence_identity" not in act.material
         and "pair_subjects" not in act.material
@@ -1301,6 +1297,34 @@ def test_every_current_compare_act_records_one_result():
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         results[-1].identity
     )
+
+
+def test_compare_act_subjects_are_recovered_through_positive_applicability():
+    ledger, acts, _current_coordinates_read = _ledger_at_story_floor(3)
+    act = acts[0]
+
+    assert "subject_reference" not in act.material
+    assert (
+        comparison_module.get_comparison_of_shared_position_measurement_with_recorded_pair_findings_act_occurrence(
+            ledger, act.identity
+        )
+        == act.material
+    )
+
+    applicability = ledger.get(
+        act.material["applicability_result_event_identity"]
+    )
+    applicability_act = ledger.get(
+        applicability.material["act_occurrence_event_identity"]
+    )
+    applicability_act.material["subject_reference"][
+        "comparison_result_reference"
+    ]["recorded_occurrence_identity"] = "substituted-comparison"
+
+    with pytest.raises(ValueError):
+        comparison_module.get_comparison_of_shared_position_measurement_with_recorded_pair_findings_act_occurrence(
+            ledger, act.identity
+        )
 
 def test_current_coordinates_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, shared_position = _inputs()

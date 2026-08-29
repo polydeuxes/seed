@@ -1982,22 +1982,9 @@ def get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_fi
     )
 
 
-def _active_compare_subject_reference(inputs: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "shared_position_result_position_reference": deepcopy(
-            inputs["shared_position"]["result_position_reference"]
-        ),
-        "comparison_result_reference": deepcopy(inputs["comparison"]["reference"]),
-    }
-
-
-def _active_compare_act_material(
-    applicability: Event,
-    inputs: dict[str, Any],
-) -> dict[str, Any]:
+def _active_compare_act_material(applicability: Event) -> dict[str, Any]:
     return {
         "act": _ACTIVE_COMPARE_ACT,
-        "subject_reference": _active_compare_subject_reference(inputs),
         "applicability_result_event_identity": applicability.identity,
     }
 
@@ -2023,7 +2010,7 @@ def _record_active_compare_act(
         )
     return ledger.append(
         COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-        _active_compare_act_material(applicability, inputs),
+        _active_compare_act_material(applicability),
         locality_identity=applicability.locality_identity,
     )
 
@@ -2053,8 +2040,7 @@ def _read_active_compare_act(
         not inputs["applicable"]
         or applicability.material["applicability"] != "applicable"
         or event.locality_identity != applicability.locality_identity
-        or event.material
-        != _active_compare_act_material(applicability, inputs)
+        or event.material != _active_compare_act_material(applicability)
     ):
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Compare Act coordinates are not exact"

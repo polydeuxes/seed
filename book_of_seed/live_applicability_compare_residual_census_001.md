@@ -34,13 +34,14 @@ Locality on the occurrence
 ### Compare Act occurrence
 
 ```text
-subject_reference:
-    shared-position result-position reference
-    recorded-pair Compare result reference
 act: Compare
 positive Applicability result occurrence reference
 Locality on the occurrence
 ```
+
+The positive result addresses its exact Applicability Act occurrence, which
+addresses the two exact subjects and Compare. The Compare reader follows that
+occurrence chain; it does not copy the subjects again.
 
 ### Compare result occurrence
 
@@ -56,8 +57,15 @@ coordinate.
 
 ## Coverage and states
 
-For exact current sets `S(B)` and `C(B)`, active inward processing records one
-Applicability Act and result for every exact member of `S(B) × C(B)`.
+For exact current sets `S(B)` and `C(B)`, a reading at `B` can reconstruct
+whether one Applicability Act and result exists for every exact member of
+`S(B) × C(B)`.
+
+`live_applicability_coverage_boundary_census_001.md` interrupts the work,
+records another exact input family, and resumes it. The later invocation uses
+the larger exact sets current at its later boundary. It does not remain fixed
+to the set current when the first Act occurred. Individual Acts retain their
+own exact boundaries; no durable work-set or completion occurrence exists.
 
 The two-by-two control preserves:
 
@@ -99,6 +107,7 @@ active binding occurrence                    absent
 prospective Act/occurrence/result identity   absent
 copied lifecycle identity                    absent
 copied subject/evidence/provenance payload   absent
+copied Compare Act subject reference         absent
 copied Book clause label                     absent
 composite family narration in Act word       absent
 exact boundary                               survives
@@ -106,17 +115,29 @@ exact Act words                              survive
 exact occurrence references                  survive
 variable Applicability answer                survives
 exact Compare finding                        survives
-exhaustive cross-set coverage                survives
+boundary-relative cross-set coverage        survives
+fixed work-set lifecycle                     absent
 ```
 
 No further active payload subtraction is proposed by this census. Any next
 change must pressure a surviving distinction, not merely continue deleting
 fields from an already exact shape.
 
+## Amendments after closure
+
+`live_applicability_coverage_boundary_census_001.md` establishes that
+cross-set coverage is reconstructed at one selected reading boundary; it is
+not a fixed work-set lifecycle.
+
+`live_compare_act_subject_copy_subtraction_report_001.md` establishes that the
+Compare Act can recover its exact subjects through its positive Applicability
+result and exact Applicability Act occurrence. Its copied subject reference is
+absent.
+
 ## Validation
 
 ```text
-focused lifecycle, exact-material, Book, and witness tests   83 passed
+focused lifecycle, exact-material, Book, and witness tests   85 passed
 downstream Distinction Measurement integration               7 passed
 ```
 
