@@ -28,6 +28,35 @@ binding coordinates                             preserved
 Do not generalize the checkpoint result. The next control must start from an
 exact subject produced by prior Seed physiology.
 
+## Amendment after internal recurrent-position Measurement subtraction
+
+`recurrent_pair_position_measurement_binding_occurrence_subtraction_report_001.md`
+supplies the missing internal control.
+
+An earlier byte-pair Measurement result establishes one exact recurrence result
+position. One exact material result and its bounded source positions establish
+the later Measurement subject. The former separate binding event was removed;
+the Measurement Act occurrence now records the exact subject, Act, Locality,
+lifecycle identities, completeness boundary, occurrence-count boundary, and
+prior through-occurrence directly.
+
+Act/result order, restart, replay, exact result-position addressing, later
+shared-position Measurement, mutation refusal, and one-result refusal survive.
+No binding event or binding-event reference remains on that road.
+
+The amended census is now:
+
+```text
+externally authored checkpoint binding event   failed subtraction
+internal recurrent-position binding event      failed subtraction
+binding coordinates                             preserved in each Act occurrence
+other binding event families                    independently untested
+```
+
+This does not establish autonomous Act occurrence. Family-local mechanics
+still append the Measurement Act. It establishes only that the exact internal
+subject-to-Act binding needs no additional prior occurrence on this road.
+
 ## Question
 
 Does one recorded subject-to-Act binding event establish an independent

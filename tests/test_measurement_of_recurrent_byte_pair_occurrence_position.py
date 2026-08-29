@@ -19,15 +19,12 @@ from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
-    RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
     measure_positions_for_recurrent_byte_pair_result_positions,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
-    record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
@@ -105,16 +102,9 @@ def _fixture(
 
 
 def _record(ledger, locality, finding):
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
     act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
-        subject_to_act_binding_event_identity=binding.identity,
+        finding=finding,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
@@ -151,6 +141,17 @@ def test_pair_occurrence_measurement_result_preserves_the_exact_finding():
     assert result.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
     assert read == finding
     assert result.exact_material is None
+    assert "subject_to_act_binding_reference" not in act.material
+    assert "subject_to_act_binding_reference" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.list_locality(locality)
+        if event.kind
+        == (
+            "operator.measurement_of_recurrent_byte_pair_occurrence_position."
+            "subject_to_act_binding_recorded"
+        )
+    )
     assert "yield_relation_identity" not in result.material
     assert not tuple(
         event
@@ -173,67 +174,33 @@ def test_pair_occurrence_measurement_result_preserves_the_exact_finding():
     )
 
 
-def test_current_coordinates_address_exact_binding_and_distinct_lifecycle_identities():
-    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+def test_act_records_exact_binding_coordinates_without_a_binding_event():
+    ledger, locality, _pair, _recurrence, source, finding = _fixture()
+    kinds_before = tuple(event.kind for event in ledger.list_locality(locality))
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )
-    current_coordinates = read_operator_current_coordinates(
-        ledger, locality_identity=locality
-    )
 
-    assert binding.kind == RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND
-    assert get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger, binding.identity
-    ) == binding
-    assert set(binding.material) == {
-        "exact_act_identity",
-        "subject_reference",
-        "act_occurrence_identity",
-        "measurement_result_identity",
-        "book_clause_identity",
-        "pair_result_position_reference",
-        "source_material_result_occurrence_identity",
-        "source_locality_identity",
-        "completeness_boundary_identity",
-        "occurrence_count_boundary",
-        "through_event_occurrence_identity",
-    }
-    assert current_coordinates["subject_to_act_binding_occurrences"][
-        binding.identity
-    ] is None
-
-    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=current_coordinates,
+    assert tuple(event.kind for event in ledger.list_locality(locality))[len(kinds_before):] == (
+        RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
     )
-    result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
-        ledger,
-        act_occurrence_event_identity=act.identity,
-    )
-    identities = {
-        binding.identity,
-        binding.material["exact_act_identity"],
-        binding.material["act_occurrence_identity"],
-        binding.material["measurement_result_identity"],
-        act.identity,
-        result.identity,
+    assert act.material["subject_reference"] == {
+        "pair_result_position_reference": finding.pair_reference.result_position_reference,
+        "source_material_result_occurrence_identity": source.identity,
     }
-    assert len(identities) == 6
-    assert act.material["subject_to_act_binding_reference"] == {
-        "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
-        "subject_reference": binding.material["subject_reference"],
-    }
-    assert result.material["subject_to_act_binding_reference"] == act.material[
-        "subject_to_act_binding_reference"
-    ]
+    assert act.material["book_clause_identity"] == "01.Source.D"
+    assert len(
+        {
+            act.material["addressed_act_identity"],
+            act.material["act_occurrence_identity"],
+            act.material["measurement_result_identity"],
+            act.identity,
+        }
+    ) == 4
 
 
 def test_stale_coordinates_cannot_address_the_measurement_act():
@@ -241,45 +208,39 @@ def test_stale_coordinates_cannot_address_the_measurement_act():
     stale = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    record_operator_material_occurrence(
         ledger,
-        finding=finding,
-        current_coordinates=stale,
+        locality_identity=locality,
+        exact=b"later",
+        source_boundary="later boundary",
     )
 
     with pytest.raises(ValueError, match="exact current coordinates"):
         record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            finding=finding,
             current_coordinates=stale,
         )
 
 
-def test_changed_coordinates_without_the_exact_binding_cannot_address_the_act():
-    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
+def test_changed_coordinates_cannot_address_the_act():
+    ledger, locality, pair, _recurrence, _source, finding = _fixture()
     substituted_coordinates = deepcopy(
         read_operator_current_coordinates(ledger, locality_identity=locality)
     )
-    substituted_coordinates["subject_to_act_binding_occurrences"] = {
-        "substituted-binding": None
-    }
+    substituted_coordinates["measurement_occurrences"][pair.identity][
+        "result_identity"
+    ] = "substituted-result"
 
     with pytest.raises(ValueError, match="exact current coordinates"):
         record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            finding=finding,
             current_coordinates=substituted_coordinates,
         )
 
 
-def test_binding_read_refuses_a_corrupted_unrelated_coordinate_carrier():
+def test_act_recording_refuses_a_corrupted_unrelated_coordinate_carrier():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     occurrence_finding = measure_occurrence_position(
         ledger, source_locality_identity=locality
@@ -292,45 +253,29 @@ def test_binding_read_refuses_a_corrupted_unrelated_coordinate_carrier():
             ledger, locality_identity=locality
         ),
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
     unrelated.material["responsibility"] = "corrupted unrelated Responsibility"
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
         read_operator_current_coordinates(ledger, locality_identity=locality)
     with pytest.raises(ValueError, match="coordinates are not exact"):
-        get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-            ledger, binding.identity
+        record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            finding=finding,
+            current_coordinates=read_operator_current_coordinates(
+                ledger, locality_identity=locality
+            ),
         )
 
 
-def test_binding_act_and_result_cross_distinct_durable_restarts(tmp_path):
+def test_act_and_result_cross_distinct_durable_restarts(tmp_path):
     database = tmp_path / "recurrent-pair-position.sqlite"
     ledger = SQLiteEventLedger(database)
     ledger, locality, _pair, _recurrence, _source, finding = _fixture(
         ledger=ledger
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
-    ledger.close()
-
-    ledger = SQLiteEventLedger(database)
-    assert get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger, binding.identity
-    ).identity == binding.identity
     act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
-        subject_to_act_binding_event_identity=binding.identity,
+        finding=finding,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
@@ -404,15 +349,10 @@ def test_each_pair_result_position_has_one_exact_occurrence_bound_reference():
     )
 
 
-def test_binding_read_threads_one_exact_coordinate_read_to_pair_validation(monkeypatch):
+def test_act_recording_threads_one_exact_coordinate_read_to_pair_validation(monkeypatch):
     ledger, locality, pair, _recurrence, _source, finding = _fixture()
     prior_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality
-    )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=prior_coordinates,
     )
     pair_reads = []
     original = (
@@ -440,24 +380,25 @@ def test_binding_read_threads_one_exact_coordinate_read_to_pair_validation(monke
         witnessed,
     )
 
-    read_binding, read_finding = pair_occurrence_measurement._read_recurrent_byte_pair_occurrence_position_measurement_binding(
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
-        binding.identity,
-        prior_coordinates=prior_coordinates,
+        finding=finding,
+        current_coordinates=prior_coordinates,
     )
 
-    assert read_binding == binding
-    assert read_finding == finding
+    assert act.material["subject_reference"]["pair_result_position_reference"] == (
+        finding.pair_reference.result_position_reference
+    )
     assert pair_reads == [(pair.identity, prior_coordinates)]
 
 
 @pytest.mark.parametrize("changed_input", ("measurement", "material_result"))
-def test_explicit_prior_coordinates_bind_each_exact_input_occurrence(changed_input):
+def test_explicit_prior_coordinates_address_each_exact_input_occurrence(changed_input):
     ledger, locality, pair, _recurrence, source, finding = _fixture()
     prior_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
         current_coordinates=prior_coordinates,
@@ -476,19 +417,19 @@ def test_explicit_prior_coordinates_bind_each_exact_input_occurrence(changed_inp
         carried["result_identity"] = "substituted-result"
 
     with pytest.raises(ValueError, match="no exact prior coordinates"):
-        pair_occurrence_measurement._read_recurrent_byte_pair_occurrence_position_measurement_binding(
+        pair_occurrence_measurement._finding_of_measurement_from_act_occurrence(
             ledger,
-            binding.identity,
+            act,
             prior_coordinates=changed_coordinates,
         )
 
 
-def test_binding_pair_handoff_refuses_later_pair_corruption():
+def test_act_pair_handoff_refuses_later_pair_corruption():
     ledger, locality, pair, _recurrence, _source, finding = _fixture()
     prior_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
         current_coordinates=prior_coordinates,
@@ -498,19 +439,19 @@ def test_binding_pair_handoff_refuses_later_pair_corruption():
     }
 
     with pytest.raises(ValueError):
-        pair_occurrence_measurement._read_recurrent_byte_pair_occurrence_position_measurement_binding(
+        pair_occurrence_measurement._finding_of_measurement_from_act_occurrence(
             ledger,
-            binding.identity,
+            act,
             prior_coordinates=prior_coordinates,
         )
 
 
-def test_public_binding_read_reconstructs_prior_coordinates(monkeypatch):
+def test_result_read_reconstructs_prior_coordinates(monkeypatch):
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     prior_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
         current_coordinates=prior_coordinates,
@@ -537,12 +478,15 @@ def test_public_binding_read_reconstructs_prior_coordinates(monkeypatch):
         operator_standing, "read_operator_current_coordinates_through", witnessed
     )
 
-    assert get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger, binding.identity
-    ) == binding
+    result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, act_occurrence_event_identity=act.identity
+    )
+    assert get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, result.identity
+    ) == finding
     assert (
         locality,
-        binding.material["through_event_occurrence_identity"],
+        act.material["through_event_occurrence_identity"],
     ) in coordinate_reads
     assert all(
         (
@@ -657,24 +601,20 @@ def test_same_boundary_pair_subjects_keep_each_yield_relation_distinct():
 
 def test_act_occurrence_has_exact_inputs_but_no_result_finding():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )
-    act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
 
-    assert act.material["subject_to_act_binding_reference"][
-        "recorded_occurrence_identity"
-    ] == binding.identity
+    assert act.material["subject_reference"] == {
+        "pair_result_position_reference": finding.pair_reference.result_position_reference,
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
+        ),
+    }
     assert not {
         "result_positions",
         "available_occurrence_count",
@@ -727,7 +667,7 @@ def test_same_bytes_cannot_substitute_another_material_result_occurrence():
     )
 
     with pytest.raises(ValueError, match="outside its exact boundary"):
-        record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+        record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             finding=substituted,
             current_coordinates=read_operator_current_coordinates(
@@ -831,9 +771,9 @@ WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_result_position_has_one_exact_occurrence_bound_reference,
-        test_binding_read_threads_one_exact_coordinate_read_to_pair_validation,
-        test_binding_pair_handoff_refuses_later_pair_corruption,
-        test_public_binding_read_reconstructs_prior_coordinates,
+        test_act_recording_threads_one_exact_coordinate_read_to_pair_validation,
+        test_act_pair_handoff_refuses_later_pair_corruption,
+        test_result_read_reconstructs_prior_coordinates,
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
         test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts,

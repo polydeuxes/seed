@@ -31,7 +31,6 @@ from tests.operator_material_source_test_witness import (
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_result_positions,
-    record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
@@ -212,14 +211,9 @@ def _build_fixture(
     )
     results = []
     for finding in findings:
-        binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-            ledger,
-            finding=finding,
-            current_coordinates=_current_coordinates(ledger, locality),
-        )
         act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            finding=finding,
             current_coordinates=_current_coordinates(ledger, locality),
         )
         results.append(
@@ -273,17 +267,11 @@ def _shared_binding(ledger, locality, first, second):
 def _recurrent_result_coordinates(ledger, reference):
     result = ledger.get(reference.recorded_occurrence_identity)
     act = ledger.get(result.material["act_occurrence_event_identity"])
-    binding = ledger.get(
-        act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-    )
     pair = ledger.get(reference.pair_measurement_occurrence_identity)
     source = ledger.get(reference.source_material_result_occurrence_identity)
     return {
         "result": result,
         "act": act,
-        "binding": binding,
         "pair": pair,
         "source": source,
     }
@@ -552,16 +540,12 @@ def test_two_recurrent_results_share_one_exact_current_coordinate_read(monkeypat
         second_result_occurrence_identity=second.recorded_occurrence_identity,
         second_result_position=second.result_position,
     )
-    second_binding = _recurrent_result_coordinates(
-        ledger, second
-    )["binding"]
-
     assert inputs.first == first
     assert inputs.second == second
     assert coordinate_reads == [
         (
             locality,
-            second_binding.material["through_event_occurrence_identity"],
+            second.recorded_occurrence_identity,
         )
     ]
 
@@ -612,7 +596,7 @@ def test_shared_binding_threads_explicit_prior_without_rereading_coordinates(
 
 @pytest.mark.parametrize(
     "changed_prior",
-    ("stale", "wrong locality", "substituted binding"),
+    ("stale", "wrong locality", "substituted result"),
 )
 def test_shared_binding_refuses_changed_explicit_prior_coordinates(changed_prior):
     ledger, locality, _source, first, second = _fixture()
@@ -636,15 +620,9 @@ def test_shared_binding_refuses_changed_explicit_prior_coordinates(changed_prior
     elif changed_prior == "wrong locality":
         changed_coordinates["locality_identity"] = "another-shared-position-locality"
     else:
-        second_binding = _recurrent_result_coordinates(
-            ledger, second
-        )["binding"]
-        del changed_coordinates["subject_to_act_binding_occurrences"][
-            second_binding.identity
-        ]
-        changed_coordinates["subject_to_act_binding_occurrences"][
-            "substituted-binding"
-        ] = None
+        changed_coordinates["measurement_occurrences"][
+            second.recorded_occurrence_identity
+        ]["result_identity"] = "substituted-result"
 
     with pytest.raises((SharedPairPositionError, ValueError)):
         shared_position_module._read_binding(
@@ -678,7 +656,7 @@ def test_shared_binding_explicit_prior_revalidates_later_input_mutation():
 
 @pytest.mark.parametrize(
     "changed_occurrence",
-    ("result", "act", "binding", "pair", "source"),
+    ("result", "act", "pair", "source"),
 )
 def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coordinate_read(
     monkeypatch, changed_occurrence
@@ -794,8 +772,8 @@ def test_recurrent_result_batch_requires_an_addressed_position_and_one_locality(
 
 def test_recurrent_result_batch_refuses_through_occurrences_without_one_order():
     ledger, _locality, _source, first, second = _fixture()
-    binding = _recurrent_result_coordinates(ledger, first)["binding"]
-    binding.material["through_event_occurrence_identity"] = (
+    act = _recurrent_result_coordinates(ledger, first)["act"]
+    act.material["through_event_occurrence_identity"] = (
         second.recorded_occurrence_identity
     )
 

@@ -12,8 +12,6 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _read_determination_result,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
-    RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
-    RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     _references_from_recorded_recurrent_pair_position_result,
