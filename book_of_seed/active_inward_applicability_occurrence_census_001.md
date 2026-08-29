@@ -191,3 +191,8 @@ Do not add another noun for a prior maker. It would compress a prior thing,
 productive relation, and result. The next falsifier is whether each
 Applicability Act can carry the exact question coordinates without either
 pre-Applicability binding event.
+
+That falsifier subsequently passed. See
+`live_variable_applicability_binding_occurrence_subtraction_report_001.md`.
+The active family retains variable Applicability and exhaustive cross-set
+coverage while appending neither binding event.

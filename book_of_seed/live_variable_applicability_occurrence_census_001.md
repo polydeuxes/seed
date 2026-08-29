@@ -186,3 +186,11 @@ Applicability result is unconditionally `applicable`.
 All residual variable readers outside this road are authored/test-only or
 replay-only. This road is therefore the active positive control for variable
 Applicability and the next binding-event subtraction.
+
+## Amendment after binding subtraction
+
+`live_variable_applicability_binding_occurrence_subtraction_report_001.md`
+records the result. The Applicability Act now carries the exact cross-set
+member and addressed Compare coordinates. Both preceding binding occurrences
+are absent from the active road; positive and negative results and complete
+cross-set coverage remain.

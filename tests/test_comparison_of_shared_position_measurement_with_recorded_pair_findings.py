@@ -36,6 +36,7 @@ from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_f
     record_comparison_of_shared_position_measurement_with_recorded_pair_findings_subject_to_act_binding,
     record_comparison_of_shared_position_measurement_with_recorded_pair_findings_result,
     record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates,
+    record_shared_position_measurement_pair_finding_compare_applicability_act_occurrences_from_current_coordinates,
     record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates,
     record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates,
     record_shared_position_measurement_pair_finding_compare_results_from_current_coordinates,
@@ -121,6 +122,22 @@ def test_compare_requires_current_shared_position_and_pair_results():
         compare_acts[0].identity
     )
     assert len(compare_results[0].material["finding"]["relation_findings"]) == 2
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
+        )
+    ) == ()
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+        )
+    ) == ()
+    assert all(
+        "subject_to_act_binding_reference" not in event.material
+        for event in (*applicability_results, *compare_acts, *compare_results)
+    )
 
 
 def test_each_later_pair_result_has_one_prior_pair_result_for_compare():
@@ -496,12 +513,12 @@ def _ledger_at_story_floor(floor):
     results = ()
     for story_floor in range(1, floor + 1):
         if story_floor == 1:
-            reading = record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates(
+            reading = record_shared_position_measurement_pair_finding_compare_applicability_act_occurrences_from_current_coordinates(
                 ledger,
                 locality_identity=LOCALITY,
                 current_coordinates=current_coordinates,
             )
-            results = reading.binding_occurrences
+            results = reading.applicability_act_occurrence_occurrences
         elif story_floor == 2:
             reading = record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
                 ledger,
@@ -759,7 +776,7 @@ def test_unassigned_exact_compare_subject_read_returns_every_shared_position_and
     )
 
 
-def test_cartesian_compare_bindings_exist_before_applicability():
+def test_every_exact_cross_set_member_receives_one_applicability_act():
     (
         ledger,
         _first_source,
@@ -788,42 +805,41 @@ def test_cartesian_compare_bindings_exist_before_applicability():
         )
     )
 
-    recorded = (
-        record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        )
+    recorded = record_shared_position_measurement_pair_finding_compare_applicability_act_occurrences_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
     )
-    bindings = recorded.binding_occurrences
+    acts = recorded.applicability_act_occurrence_occurrences
 
-    assert len(bindings) == len(subjects) == 4
+    assert len(acts) == len(subjects) == 4
     assert tuple(
         SharedPositionMeasurementPairFindingCompareSubject(
-            shared_position_measurement_result_event_identity=binding.material[
-                "shared_position_measurement_result_reference"
-            ]["recorded_occurrence_identity"],
-            comparison_result_event_identity=binding.material[
-                "comparison_result_reference"
-            ]["recorded_occurrence_identity"],
+            shared_position_measurement_result_event_identity=act.material[
+                "subject_reference"
+            ]["shared_position_input"]["subject"]["recorded_occurrence_identity"],
+            comparison_result_event_identity=act.material["subject_reference"][
+                "comparison_input"
+            ]["subject"]["recorded_occurrence_identity"],
         )
-        for binding in bindings
+        for act in acts
     ) == subjects
     assert tuple(
-        binding.material["through_event_occurrence_identity"]
-        for binding in bindings
+        act.material["through_event_occurrence_identity"] for act in acts
     ) == (
         coordinates_before["through_event_occurrence_identity"],
-        bindings[0].identity,
-        bindings[1].identity,
-        bindings[2].identity,
+        acts[0].identity,
+        acts[1].identity,
+        acts[2].identity,
     )
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
-        bindings[-1].identity
+        acts[-1].identity
     )
-    assert all(
-        binding.identity
-        in recorded.current_coordinates["subject_to_act_binding_occurrences"]
-        for binding in bindings
-    )
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
+        )
+    ) == ()
     assert tuple(
         ledger.iter_locality_kind(
             LOCALITY,
@@ -833,7 +849,7 @@ def test_cartesian_compare_bindings_exist_before_applicability():
     assert tuple(
         ledger.iter_locality_kind(
             LOCALITY,
-            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
         )
     ) == ()
     assert tuple(
@@ -845,12 +861,7 @@ def test_cartesian_compare_bindings_exist_before_applicability():
     assert recorded.current_coordinates["applicability_result_occurrences"] == (
         coordinates_before["applicability_result_occurrences"]
     )
-    assert (
-        unbound_shared_position_measurement_pair_finding_compare_subjects_in_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        )
-        == ()
-    )
+    assert all("subject_to_act_binding_reference" not in act.material for act in acts)
 
 
 def test_no_applicability_occurrence_is_not_inapplicable():
@@ -880,14 +891,18 @@ def test_no_applicability_occurrence_is_not_inapplicable():
         _ledger_at_story_floor(2)
     )
 
-    assert len(
-        tuple(
-            ledger_after_applicability.iter_locality_kind(
-                LOCALITY,
-                COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
-            )
+    assert tuple(
+        ledger_after_applicability.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
         )
-    ) == 4
+    ) == ()
+    assert tuple(
+        ledger_after_applicability.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+        )
+    ) == ()
     assert tuple(result.material["applicability"] for result in results) == (
         "applicable",
         "inapplicable",
@@ -896,8 +911,8 @@ def test_no_applicability_occurrence_is_not_inapplicable():
     )
 
 
-def test_every_current_compare_binding_records_one_separate_applicability_result():
-    ledger, bindings, _current_coordinates_read = _ledger_at_story_floor(1)
+def test_every_current_applicability_act_records_one_result():
+    ledger, acts, _current_coordinates_read = _ledger_at_story_floor(1)
     recorded = (
         record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
             ledger, locality_identity=LOCALITY
@@ -905,31 +920,23 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
     )
     results = recorded.applicability_result_occurrences
 
-    assert len(results) == len(bindings) == 4
+    assert len(results) == len(acts) == 4
     assert tuple(result.material["applicability"] for result in results) == (
         "applicable",
         "inapplicable",
         "inapplicable",
         "applicable",
     )
-    applicability_bindings = tuple(
-        ledger.get(
-            result.material["subject_to_act_binding_reference"][
-                "recorded_occurrence_identity"
-            ]
-        )
+    assert tuple(
+        result.material["act_occurrence_event_identity"] for result in results
+    ) == tuple(act.identity for act in acts)
+    assert tuple(result.material["subject_reference"] for result in results) == tuple(
+        act.material["subject_reference"] for act in acts
+    )
+    assert all(
+        "subject_to_act_binding_reference" not in result.material
         for result in results
     )
-    assert tuple(
-        binding.material["addressed_act_identity"]
-        for binding in applicability_bindings
-    ) == tuple(binding.material["exact_act_identity"] for binding in bindings)
-    assert tuple(
-        binding.material["compare_subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-        for binding in applicability_bindings
-    ) == tuple(binding.identity for binding in bindings)
     assert all(
         result.identity
         in recorded.current_coordinates["applicability_result_occurrences"]
@@ -956,32 +963,32 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
 
 
 def test_holding_one_input_exact_does_not_determine_applicability():
-    ledger, bindings, _current_coordinates_read = _ledger_at_story_floor(1)
+    ledger, acts, _current_coordinates_read = _ledger_at_story_floor(1)
     results = (
         record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
             ledger,
             locality_identity=LOCALITY,
         ).applicability_result_occurrences
     )
-    subjects = tuple(binding.material["subject_reference"] for binding in bindings)
+    subjects = tuple(act.material["subject_reference"] for act in acts)
 
-    assert subjects[0]["shared_position_measurement_result_reference"] == subjects[1][
-        "shared_position_measurement_result_reference"
-    ]
-    assert subjects[0]["comparison_result_reference"] != subjects[1][
-        "comparison_result_reference"
-    ]
+    assert subjects[0]["shared_position_input"]["subject"] == subjects[1][
+        "shared_position_input"
+    ]["subject"]
+    assert subjects[0]["comparison_input"]["subject"] != subjects[1][
+        "comparison_input"
+    ]["subject"]
     assert tuple(result.material["applicability"] for result in results[:2]) == (
         "applicable",
         "inapplicable",
     )
 
-    assert subjects[0]["comparison_result_reference"] == subjects[2][
-        "comparison_result_reference"
-    ]
-    assert subjects[0]["shared_position_measurement_result_reference"] != subjects[2][
-        "shared_position_measurement_result_reference"
-    ]
+    assert subjects[0]["comparison_input"]["subject"] == subjects[2][
+        "comparison_input"
+    ]["subject"]
+    assert subjects[0]["shared_position_input"]["subject"] != subjects[2][
+        "shared_position_input"
+    ]["subject"]
     assert (results[0].material["applicability"], results[2].material["applicability"]) == (
         "applicable",
         "inapplicable",
@@ -1021,12 +1028,6 @@ def test_applicability_binding_refuses_a_substituted_compare_binding_reference()
 
 def test_only_applicable_current_compare_results_record_act_occurrence():
     ledger, applicability_results, current_coordinates = _ledger_at_story_floor(2)
-    bindings = tuple(
-        ledger.iter_locality_kind(
-            LOCALITY,
-            comparison_module.COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
-        )
-    )
     before = read_shared_position_measurement_pair_finding_compare_applicability_results_and_acts(
         ledger,
         locality_identity=LOCALITY,
@@ -1054,19 +1055,14 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
 
     assert len(acts) == 2
     assert tuple(
-        act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-        for act in acts
-    ) == (bindings[0].identity, bindings[3].identity)
-    assert tuple(
         act.material["applicability_result_event_identity"] for act in acts
     ) == (applicability_results[0].identity, applicability_results[3].identity)
     assert all(
-        set(binding.material["subject_reference"])
+        set(act.material["subject_reference"])
         == {"shared_position_measurement_result_reference", "comparison_result_reference"}
-        for binding in (bindings[0], bindings[3])
+        for act in acts
     )
+    assert all("subject_to_act_binding_reference" not in act.material for act in acts)
     assert tuple(
         result.material["addressed_act_occurrence_identity"]
         for result in applicability_results
@@ -1132,15 +1128,11 @@ def test_every_current_compare_act_records_one_result():
         for result in results
     )
     assert tuple(
-        result.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
+        result.material["subject_reference"] for result in results
+    ) == tuple(act.material["subject_reference"] for act in acts)
+    assert all(
+        "subject_to_act_binding_reference" not in result.material
         for result in results
-    ) == tuple(
-        act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ]
-        for act in acts
     )
     for result in results:
         shared_position_reference = result.material["finding"]["subject"][
@@ -1365,7 +1357,7 @@ def test_changed_input_compare_is_refused_on_later_read():
         )
 
 
-def test_higher_input_preserves_the_exact_comparison_binding(monkeypatch):
+def test_higher_input_reads_the_exact_authored_comparison_binding(monkeypatch):
     ledger, _earlier_source, _added, comparison, _path = _inputs()
     binding_reads = []
     original = recorded_pair_comparison_module._binding_reading
@@ -1382,7 +1374,6 @@ def test_higher_input_preserves_the_exact_comparison_binding(monkeypatch):
     binding_identity = comparison.material[
         "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
-    assert reading["binding_event_identity"] == binding_identity
     assert binding_reads == [binding_identity]
 
 

@@ -176,3 +176,10 @@ exhaustive coverage of every exact S(B) × C(B) member
 If those states survive without either binding event, binding remains exact
 coordinates while Applicability remains the occurrence that answers the exact
 question.
+
+## Amendment after subtraction
+
+`live_variable_applicability_binding_occurrence_subtraction_report_001.md`
+records the completed falsifier. Both pre-Applicability binding events failed
+on the active inward road. All five Applicability/Compare lifecycle floors and
+every exact `S(B) × C(B)` member survive.

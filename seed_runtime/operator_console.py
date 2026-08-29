@@ -17,7 +17,6 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
     record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates,
     record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates,
-    record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates,
     record_shared_position_measurement_pair_finding_compare_results_from_current_coordinates,
 )
 from seed_runtime.event import Event
@@ -385,15 +384,10 @@ def _record_shared_position_measurement_pair_finding_compare(
 ):
     """Record each exact shared-position Compare in current coordinates."""
 
-    bindings = record_shared_position_measurement_pair_finding_compare_bindings_from_current_coordinates(
-        ledger,
-        locality_identity=locality_identity,
-        current_coordinates=current_coordinates,
-    )
     applicability = record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
         ledger,
         locality_identity=locality_identity,
-        current_coordinates=bindings.current_coordinates,
+        current_coordinates=current_coordinates,
     )
     acts = record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates(
         ledger,

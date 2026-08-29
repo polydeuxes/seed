@@ -369,7 +369,12 @@ def _result_coordinates(
         coordinates[identity] = ("pair_Compare_result", earlier, later)
 
     for identity, result in reading["shared_position_compare_applicability_results"]:
-        subjects = result["subject_to_act_binding_reference"]["subject_reference"]
+        binding = result.get("subject_to_act_binding_reference")
+        subjects = (
+            binding["subject_reference"]
+            if type(binding) is dict
+            else result["subject_reference"]
+        )
         shared_position_coordinate = coordinates[
             subjects["shared_position_input"]["subject"]["recorded_occurrence_identity"]
         ]
