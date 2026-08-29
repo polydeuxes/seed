@@ -579,7 +579,7 @@ def _recorded_applicability_result_material(
 def _recorded_compare_result_material(
     material: dict[str, Any]
 ) -> dict[str, Any]:
-    return {
+    recorded = {
         "result_identity": material["result_identity"],
         "compare_act_identity": material["compare_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -587,9 +587,6 @@ def _recorded_compare_result_material(
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
-        "applicability_result_event_identity": material[
-            "applicability_result_event_identity"
-        ],
         "finding": deepcopy(material["finding"]),
         "shared_position_measurement_result_reference": deepcopy(material["shared_position_measurement_result_reference"]),
         "source_position_pair": list(material["source_position_pair"]),
@@ -597,6 +594,11 @@ def _recorded_compare_result_material(
             "act_occurrence_event_identity"
         ],
     }
+    if "applicability_result_event_identity" in material:
+        recorded["applicability_result_event_identity"] = material[
+            "applicability_result_event_identity"
+        ]
+    return recorded
 
 
 def _read_exact_result(
@@ -678,12 +680,31 @@ def _compare_act_material(
     }
 
 
+def _compare_act_material_without_applicability(
+    compare_binding: Event,
+) -> dict[str, Any]:
+    material = compare_binding.material
+    subject = _compare_binding_subject(material)
+    return {
+        "act_identity": material["exact_act_identity"],
+        "act_occurrence_identity": material["compare_act_occurrence_identity"],
+        "compare_result_identity": material["compare_result_identity"],
+        "act": COMPARE_ACT,
+        "subject_to_act_binding_reference": _binding_reference(compare_binding),
+        "shared_position_measurement_result_reference": deepcopy(
+            material["shared_position_measurement_result_reference"]
+        ),
+        "source_position_pair": list(subject["source_position_pair"]),
+        "through_event_occurrence_identity": compare_binding.identity,
+    }
+
+
 def _read_compare_act(
     ledger: EventLedger,
     event_identity: Any,
     *,
     current_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, Event, Event, dict[str, Any]]:
+) -> tuple[Event, Event, Event | None, dict[str, Any]]:
     event = _event(
         ledger,
         event_identity,
@@ -698,6 +719,14 @@ def _read_compare_act(
         else None,
         current_coordinates=current_coordinates,
     )
+    if "applicability_result_event_identity" not in event.material:
+        if (
+            event.locality_identity != compare_binding.locality_identity
+            or event.material
+            != _compare_act_material_without_applicability(compare_binding)
+        ):
+            raise ValueError("source position Compare Act is not exact")
+        return event, compare_binding, None, inputs
     (
         applicability,
         _applicability_act,
@@ -743,11 +772,11 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
 
 def _compare_result_material(
     act: Event,
-    applicability: Event,
+    applicability: Event | None,
     inputs: dict[str, Any],
 ) -> dict[str, Any]:
     material = act.material
-    return {
+    result = {
         "result_identity": material["compare_result_identity"],
         "compare_act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -755,12 +784,14 @@ def _compare_result_material(
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
-        "applicability_result_event_identity": applicability.identity,
         "finding": _finding(inputs),
         "shared_position_measurement_result_reference": deepcopy(inputs["reference"]),
         "source_position_pair": list(inputs["source_position_pair"]),
         "act_occurrence_event_identity": act.identity,
     }
+    if applicability is not None:
+        result["applicability_result_event_identity"] = applicability.identity
+    return result
 
 
 def _read_compare_result(
@@ -768,7 +799,7 @@ def _read_compare_result(
     event_identity: Any,
     *,
     current_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, Event, Event, Event, dict[str, Any]]:
+) -> tuple[Event, Event, Event, Event | None, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act, compare_binding, applicability, inputs = _read_compare_act(
         ledger,
@@ -930,39 +961,13 @@ def _record_shared_position_source_position_material_comparison(
         locality_identity=locality_identity,
     )
     establish_current(compare_binding)
-    identities = _mint_applicability_identities(ledger)
-    applicability_binding = ledger.append(
-        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
-        _applicability_binding_material(
-            compare_binding=compare_binding,
-            inputs=inputs,
-            boundary=compare_binding.identity,
-            identities=identities,
-        ),
-        locality_identity=locality_identity,
-    )
-    establish_current(applicability_binding)
-    applicability_act = ledger.append(
-        APPLICABILITY_ACT_KIND,
-        _applicability_act_material(applicability_binding),
-        locality_identity=locality_identity,
-    )
-    establish_current(applicability_act)
-    applicability_material = _applicability_result_material(applicability_act)
-    _require_tip(ledger, applicability_act)
-    applicability = ledger.append(
-        APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(applicability_material),
-        locality_identity=locality_identity,
-    )
-    establish_current(applicability)
     compare_act = ledger.append(
         COMPARE_ACT_KIND,
-        _compare_act_material(compare_binding, applicability),
+        _compare_act_material_without_applicability(compare_binding),
         locality_identity=locality_identity,
     )
     establish_current(compare_act)
-    result_material = _compare_result_material(compare_act, applicability, inputs)
+    result_material = _compare_result_material(compare_act, None, inputs)
     _require_tip(ledger, compare_act)
     result = ledger.append(
         COMPARE_RESULT_KIND,

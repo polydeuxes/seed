@@ -7,6 +7,7 @@ from copy import deepcopy
 import pytest
 
 from seed_runtime.comparison_of_shared_position_source_position_material import (
+    APPLICABILITY_ACT_KIND,
     APPLICABILITY_RESULT_KIND,
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
@@ -148,9 +149,16 @@ def test_every_source_position_pair_is_compared_without_a_chosen_pair():
             "shared-position-pair-population", APPLICABILITY_RESULT_KIND
         )
     )
-    assert all(
-        "yield_relation_identity" not in result.material
-        for result in applicability_results
+    assert applicability_results == ()
+    assert not tuple(
+        event
+        for event in ledger.list_locality("shared-position-pair-population")
+        if event.kind
+        in {
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+            APPLICABILITY_ACT_KIND,
+            APPLICABILITY_RESULT_KIND,
+        }
     )
     assert not tuple(
         event
@@ -173,31 +181,27 @@ def test_every_source_position_pair_is_compared_without_a_chosen_pair():
     )
     assert tuple(event.kind for event in binding_occurrences) == (
         COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
-        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
     ) * 3
     assert all(
-        binding_occurrences[position].material["exact_act_identity"]
-        != binding_occurrences[position + 1].material["exact_act_identity"]
-        for position in range(0, len(binding_occurrences), 2)
+        "applicability_result_event_identity"
+        not in comparison.result_occurrence.material
+        for comparison in recorded
     )
 
 
-def test_repeated_applicability_result_is_refused():
+def test_repeated_compare_result_is_refused_without_applicability():
     ledger = EventLedger()
     _shared_position_result, recorded = _comparisons(
-        ledger, locality="repeated-applicability", exact=b"2+2=5\n"
+        ledger, locality="repeated-compare-result", exact=b"2+2=5\n"
     )
     comparison_result = recorded[0].result_occurrence
-    applicability = ledger.get(
-        comparison_result.material["applicability_result_event_identity"]
-    )
     ledger.append(
-        APPLICABILITY_RESULT_KIND,
-        deepcopy(applicability.material),
-        locality_identity=applicability.locality_identity,
+        COMPARE_RESULT_KIND,
+        deepcopy(comparison_result.material),
+        locality_identity=comparison_result.locality_identity,
     )
 
-    with pytest.raises(ValueError, match="not exact"):
+    with pytest.raises(ValueError, match="single exact result"):
         get_recorded_shared_position_source_position_material_comparison(
             ledger, comparison_result.identity
         )

@@ -86,8 +86,10 @@ three source-position coordinates and each selected pair are established
 before the Applicability lifecycle. The varying fact appears later as the
 Compare finding `same-content` or `difference`.
 
-Disposition: active inward producer, but one-valued ceremony rather than a
-positive control for question production.
+Disposition at census time: active inward producer, but one-valued ceremony
+rather than a positive control for question production. It subsequently failed
+subtraction; see
+`shared_position_source_position_applicability_subtraction_report_001.md`.
 
 ## Residual non-producers
 
@@ -152,7 +154,7 @@ No residual family satisfies both discriminators.
 variable Applicability physiology representable       yes
 variable Applicability result actively recorded       yes
 grounded active production of its exact question       not found
-active one-valued Applicability ceremony                one family remains
+active one-valued Applicability ceremony                withdrawn after census
 ```
 
 Seed can record and refuse mutation of an exact positive or negative answer.
@@ -168,10 +170,10 @@ It also does not infer that physical presentation, encounter, scheduling,
 selection, or exhaustive host work is the missing occurrence. None of those
 physiologies is established by the inspected Ledger histories.
 
-The remaining active one-valued source-position material lifecycle is a
-separate subtraction specimen. Removing it cannot supply the missing variable
-question producer; it can only remove another ceremony whose answer cannot
-vary.
+The remaining active one-valued source-position material lifecycle passed its
+separate subtraction after this census. Its removal supplies no missing
+variable question producer; it removes only another ceremony whose answer
+could not vary.
 
 ## Disposition
 
@@ -187,7 +189,5 @@ Applicability can still record an answer if authored
 ```
 
 Do not add a producer noun or relocate Cartesian formation into another event
-kind. Independently pressure the one remaining active one-valued lifecycle,
-then keep the vacancy frozen unless later material establishes a prior exact
+kind. Keep the vacancy frozen unless later material establishes a prior exact
 occurrence that poses a question without answering it.
-

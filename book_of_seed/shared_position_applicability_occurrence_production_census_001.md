@@ -234,7 +234,8 @@ not follow from that survival.
 The remaining active inward call graph contains no grounded variable positive
 control. See `active_inward_applicability_producer_census_001.md`.
 
-One additional active family records source-position material Compare
-Applicability, but its result is always `applicable`. The source-position
-recurrence family's similar producer is called only through public/test roads.
-Neither can establish how a variable Applicability question is posed.
+One additional active family recorded source-position material Compare
+Applicability, but its result was always `applicable`. That active lifecycle
+subsequently failed subtraction. The source-position recurrence family's
+similar producer is called only through public/test roads. Neither establishes
+how a variable Applicability question is posed.
