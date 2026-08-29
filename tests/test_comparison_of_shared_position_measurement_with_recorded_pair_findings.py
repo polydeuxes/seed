@@ -1063,11 +1063,25 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         for act in acts
     )
     assert all("subject_to_act_binding_reference" not in act.material for act in acts)
-    assert tuple(
-        result.material["addressed_act_occurrence_identity"]
+    assert all(
+        "addressed_act_occurrence_identity" not in result.material
         for result in applicability_results
-        if result.material["applicability"] == "inapplicable"
-    ) == (None, None)
+    )
+    assert all(
+        "addressed_act_occurrence_identity" not in applicability_act.material
+        and "compare_result_identity" not in applicability_act.material
+        for applicability_act in (
+            ledger.get(result.material["act_occurrence_event_identity"])
+            for result in applicability_results
+        )
+    )
+    assert all(
+        type(act.material["act_occurrence_identity"]) is str
+        and type(act.material["result_identity"]) is str
+        and act.material["act_occurrence_identity"]
+        != act.material["result_identity"]
+        for act in acts
+    )
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         acts[-1].identity
     )

@@ -1155,8 +1155,6 @@ _ACTIVE_IDENTITY_COORDINATES = (
     "applicability_act_occurrence_identity",
     "applicability_result_identity",
     "compare_act_identity",
-    "compare_act_occurrence_identity",
-    "compare_result_identity",
 )
 
 
@@ -1173,12 +1171,6 @@ def _new_active_identities(ledger: EventLedger) -> dict[str, str]:
         ),
         "compare_act_identity": ledger.mint_identity(
             "comparison_of_shared_position_measurement_with_recorded_pair_findings_compare_act"
-        ),
-        "compare_act_occurrence_identity": ledger.mint_identity(
-            "comparison_of_shared_position_measurement_with_recorded_pair_findings_compare_occurrence"
-        ),
-        "compare_result_identity": ledger.mint_identity(
-            "comparison_of_shared_position_measurement_with_recorded_pair_findings_result"
         ),
     }
 
@@ -1207,10 +1199,6 @@ def _active_applicability_act_material(
         "result_identity": identities["applicability_result_identity"],
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": addressed_act_identity,
-        "addressed_act_occurrence_identity": identities[
-            "compare_act_occurrence_identity"
-        ],
-        "compare_result_identity": identities["compare_result_identity"],
         "book_clause_identity": "01.Current.E.1",
         "shared_position_measurement_result_reference": deepcopy(
             inputs["shared_position"]["reference"]
@@ -1273,10 +1261,6 @@ def _active_applicability_act_inputs(
         ),
         "applicability_result_identity": material.get("result_identity"),
         "compare_act_identity": material.get("addressed_act_identity"),
-        "compare_act_occurrence_identity": material.get(
-            "addressed_act_occurrence_identity"
-        ),
-        "compare_result_identity": material.get("compare_result_identity"),
     }
     return inputs, boundary, identities
 
@@ -1798,11 +1782,6 @@ def _active_applicability_result_material(
         },
         "exact_act": APPLICABILITY_ACT,
         "addressed_act_identity": act.material["addressed_act_identity"],
-        "addressed_act_occurrence_identity": (
-            act.material["addressed_act_occurrence_identity"]
-            if inputs["applicable"]
-            else None
-        ),
         "applicability_act_identity": act.material["applicability_act_identity"],
         "applicability_act_occurrence_identity": act.material[
             "applicability_act_occurrence_identity"
@@ -2082,15 +2061,16 @@ def _active_compare_act_material(
     applicability_act: Event,
     applicability: Event,
     inputs: dict[str, Any],
+    *,
+    act_occurrence_identity: str,
+    result_identity: str,
 ) -> dict[str, Any]:
     return {
         "compare_act_identity": applicability_act.material[
             "addressed_act_identity"
         ],
-        "act_occurrence_identity": applicability_act.material[
-            "addressed_act_occurrence_identity"
-        ],
-        "result_identity": applicability_act.material["compare_result_identity"],
+        "act_occurrence_identity": act_occurrence_identity,
+        "result_identity": result_identity,
         "act": COMPARE_ACT,
         "subject_reference": _active_compare_subject_reference(inputs),
         "shared_position_result_position_reference": deepcopy(
@@ -2130,9 +2110,31 @@ def _record_active_compare_act(
         raise ValueError(
             "shared-position Compare has no exact applicable current coordinates"
         )
+    act_occurrence_identity = ledger.mint_identity(
+        "comparison_of_shared_position_measurement_with_recorded_pair_findings_compare_occurrence"
+    )
+    result_identity = ledger.mint_identity(
+        "comparison_of_shared_position_measurement_with_recorded_pair_findings_result"
+    )
+    if len(
+        {
+            applicability_act.material["addressed_act_identity"],
+            act_occurrence_identity,
+            result_identity,
+        }
+    ) != 3:
+        raise ValueError(
+            "comparison of shared-position Measurement result with recorded pair findings Compare lifecycle identities are compressed"
+        )
     return ledger.append(
         COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-        _active_compare_act_material(applicability_act, applicability, inputs),
+        _active_compare_act_material(
+            applicability_act,
+            applicability,
+            inputs,
+            act_occurrence_identity=act_occurrence_identity,
+            result_identity=result_identity,
+        ),
         locality_identity=applicability.locality_identity,
     )
 
@@ -2158,12 +2160,30 @@ def _read_active_compare_act(
         event.material.get("applicability_result_event_identity"),
         prior_coordinates=prior_coordinates,
     )
+    act_occurrence_identity = event.material.get("act_occurrence_identity")
+    result_identity = event.material.get("result_identity")
+    lifecycle_identities = (
+        applicability_act.material["addressed_act_identity"],
+        act_occurrence_identity,
+        result_identity,
+    )
     if (
         not inputs["applicable"]
         or applicability.material["applicability"] != "applicable"
+        or any(
+            type(identity) is not str or not identity
+            for identity in lifecycle_identities
+        )
+        or len(set(lifecycle_identities)) != len(lifecycle_identities)
         or event.locality_identity != applicability.locality_identity
         or event.material
-        != _active_compare_act_material(applicability_act, applicability, inputs)
+        != _active_compare_act_material(
+            applicability_act,
+            applicability,
+            inputs,
+            act_occurrence_identity=act_occurrence_identity,
+            result_identity=result_identity,
+        )
     ):
         raise ValueError(
             "comparison of shared-position Measurement result with recorded pair findings Compare Act coordinates are not exact"
