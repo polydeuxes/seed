@@ -15,8 +15,8 @@ coordinates, and Locality.
 The exact material result is an occurrence in that exact Locality.
 
 The supplied material is an exact subject of the subject-to-Act binding for
-one material result. Another operator boundary occurrence is an exact subject
-in another exact subject-to-Act binding.
+one material result. Separate operator boundary occurrences are exact subjects
+in separate exact subject-to-Act binding coordinates.
 
 ### 01.Source.H — Supplied material source boundary
 

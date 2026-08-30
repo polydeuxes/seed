@@ -3,7 +3,8 @@
 ### 06.Locality.A — Exact Locality relation
 
 The exact coordinates of a Locality relation are its first and second exact
-subjects, exact Act, and separate relation occurrence.
+subjects, exact Act, and exact relation occurrence. The exact Act occurrence
+and exact relation occurrence are separate.
 
 ### 06.Locality.B — Through-occurrence boundary in a destination Locality
 
