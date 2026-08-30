@@ -4,12 +4,12 @@
 
 The supplied material, source occurrence, exact source occurrence references,
 Locality, and exact coordinates within its boundary are exact coordinates of
-an exact Source Act occurrence.
+an exact Act occurrence.
 
 ### 01.Source.G — Operator source boundary
 
 The exact coordinates of an operator-source subject-to-Act binding are the
-exact operator boundary, exact Source Act, boundary coordinates, and Locality.
+exact operator boundary, exact Act, boundary coordinates, and Locality.
 
 The exact material result is an occurrence in that exact Locality.
 
@@ -19,7 +19,7 @@ in separate exact subject-to-Act binding coordinates.
 
 ### 01.Source.H — Supplied material source boundary
 
-An exact source boundary is the exact subject bound to one exact Source Act.
+An exact source boundary is the exact subject bound to one exact Act.
 The source boundary, source occurrence references, Locality, and exact
 coordinates within that boundary are exact coordinates of the exact material
 result.

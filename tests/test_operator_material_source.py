@@ -108,13 +108,30 @@ def test_one_read_records_distinct_binding_act_and_exact_raw_result():
     assert binding.exact_material is act_occurrence.exact_material is None
     assert result.exact_material == b"\x00\xffraw\n"
     assert tuple(sorted(binding.material)) == (
-        "act",
         "act_occurrence_identity",
         "book_clause_identity",
         "current_coordinate_reference",
         "exact_act_identity",
         "result_identity",
         "subject_reference",
+    )
+    assert tuple(sorted(act_occurrence.material)) == (
+        "act_occurrence_identity",
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "result_identity",
+        "source_boundary",
+        "subject_to_act_binding_reference",
+    )
+    assert tuple(sorted(result.material)) == (
+        "act_occurrence_event_identity",
+        "act_occurrence_identity",
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "result_identity",
+        "source_boundary",
+        "source_occurrence_references",
+        "subject_to_act_binding_reference",
     )
     assert binding.identity in after_binding[
         "subject_to_act_binding_occurrences"
@@ -493,7 +510,6 @@ def test_act_refuses_binding_absent_from_current_coordinates():
     (
         "book_clause_identity",
         "subject_reference",
-        "act",
         "exact_act_identity",
         "act_occurrence_identity",
         "current_coordinate_reference",
@@ -538,7 +554,6 @@ def test_result_refuses_a_changed_binding_result_identity():
         "result_identity",
         "exact_act_identity",
         "act_occurrence_identity",
-        "exact_act",
         "subject_to_act_binding_reference",
         "current_coordinate_reference",
         "source_boundary",

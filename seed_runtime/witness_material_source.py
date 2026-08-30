@@ -21,9 +21,6 @@ EVENT_KIND_BOOK_CLAUSES = {
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "02.Acts.A",
     WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
 }
-WITNESS_MATERIAL_SOURCE_ACT = "Source"
-
-
 class WitnessMaterialSourceError(MaterialSourceError):
     """One exact Witness material source occurrence is malformed."""
 
@@ -49,7 +46,6 @@ def _subject_to_act_binding_material(
         "subject_reference": {
             "source_boundary": source_boundary,
         },
-        "act": WITNESS_MATERIAL_SOURCE_ACT,
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
@@ -207,7 +203,6 @@ def record_witness_material_source(
         {
             "exact_act_identity": source_act_identity,
             "act_occurrence_identity": act_occurrence_identity,
-            "act": WITNESS_MATERIAL_SOURCE_ACT,
             "subject_to_act_binding_reference": binding_reference,
         },
         locality_identity=locality_identity,
@@ -323,7 +318,6 @@ def _read_witness_material_source_result(
     expected_act_occurrence = {
         "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "act": WITNESS_MATERIAL_SOURCE_ACT,
         "subject_to_act_binding_reference": binding_reference,
     }
     expected_material = {

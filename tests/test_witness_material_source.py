@@ -150,12 +150,16 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "source_boundary": "source boundary",
     }
     assert tuple(sorted(binding.material)) == (
-        "act",
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
         "result_identity",
         "subject_reference",
+    )
+    assert tuple(sorted(act_occurrence.material)) == (
+        "act_occurrence_identity",
+        "exact_act_identity",
+        "subject_to_act_binding_reference",
     )
     assert "result_identity" not in reference
     assert binding.material["result_identity"] == occurred.material["result_identity"]

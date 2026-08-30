@@ -28,13 +28,15 @@ of the result.
 The operator and Witness source roads used narrated Act strings beginning with
 `Preserve`. Their exact Acts do not vary by that verb.
 
-Both are Source Acts. Their exact operator or Witness boundary, supplied
-material, source occurrence references, Locality, and boundary coordinates
-distinguish the two source-to-Act coordinate domains.
+The first subtraction called both `Source` Acts. That name came only from the
+coordinate family and implementation module names. No prior Book coordinate
+or occurrence independently identified `Source` as the Act.
 
-Changing `Source` to another Act invalidates the binding, Act occurrence, and
-result readers. Removing the narrated verb does not merge operator and Witness
-source occurrences.
+The exact Act identity remains a binding and Act-occurrence coordinate without
+an admitted Act name. Exact operator or Witness boundaries, supplied material,
+source occurrence references, Locality, and boundary coordinates distinguish
+the two source-to-Act coordinate domains. Removing the narrated verb and the
+unwarranted replacement name does not merge their occurrences.
 
 ## Preservation Act control
 
@@ -56,6 +58,7 @@ Thus the Act does not borrow survival from the removed result predicate:
 preserve      narrated Source Act verb                 withdrawn
 preserves     narrated exact-coordinate presence       withdrawn
 Preservation  exact Act under its Locality coordinates survives
+Source Act    family name without independent testimony withdrawn
 ```
 
 ## Disposition

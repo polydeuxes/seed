@@ -7,7 +7,7 @@
     },
     "01.Source.A": {
       "subject": "supplied_material_source_coordinates",
-      "exact_Act": "Source",
+      "exact_Act": "exact_Act",
       "result": "exact_source_coordinates"
     },
     "01.Source.D": {
@@ -33,13 +33,13 @@
     },
     "01.Source.G": {
       "subject": "operator_material_boundary",
-      "exact_Act": "Source",
+      "exact_Act": "exact_Act",
       "Locality": "06.Locality.A.Locality",
       "result": "exact_operator_material_result"
     },
     "01.Source.H": {
       "subject": "supplied_material",
-      "exact_Act": "Source",
+      "exact_Act": "exact_Act",
       "result": "exact_material_result",
       "coordinates": [
         "source_boundary",

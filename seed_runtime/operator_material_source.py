@@ -18,7 +18,6 @@ OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT = (
 )
 OPERATOR_MATERIAL_SOURCE_RECORDED_KIND = "operator.material.source_recorded"
 OPERATOR_MATERIAL_SOURCE_RESULT_KIND = "exact operator material boundary result"
-OPERATOR_MATERIAL_SOURCE_ACT = "Source"
 OPERATOR_MATERIAL_SOURCE_BOOK_CLAUSE = "01.Source.G"
 EVENT_KIND_BOOK_CLAUSES = {
     OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
@@ -110,7 +109,6 @@ def _subject_to_act_binding_material(
     return {
         "book_clause_identity": OPERATOR_MATERIAL_SOURCE_BOOK_CLAUSE,
         "subject_reference": subject_reference,
-        "act": OPERATOR_MATERIAL_SOURCE_ACT,
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
@@ -135,7 +133,6 @@ def _act_occurrence_material(binding: Event) -> dict[str, Any]:
         "source_boundary": material["subject_reference"]["source_boundary"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "act": OPERATOR_MATERIAL_SOURCE_ACT,
         "subject_to_act_binding_reference": (
             _subject_to_act_binding_reference(binding)
         ),
@@ -160,7 +157,6 @@ def _result_material(
         "result_identity": material["result_identity"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "exact_act": OPERATOR_MATERIAL_SOURCE_ACT,
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
@@ -180,7 +176,6 @@ def _recorded_result_material(
         "result_identity": result_material["result_identity"],
         "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
-        "exact_act": result_material["exact_act"],
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
         ],
