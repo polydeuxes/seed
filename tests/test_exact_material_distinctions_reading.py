@@ -1,4 +1,4 @@
-"""Compare Measurement results establish exact Distinctions."""
+"""Exact Compare Measurement result Distinctions."""
 
 from scripts.exact_material_distinctions_reading import (
     exact_bounded_material_distinctions_reading,

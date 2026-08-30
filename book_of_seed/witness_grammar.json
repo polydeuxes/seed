@@ -178,7 +178,7 @@
     },
     "06.Locality.A": {
       "subject": "Locality_relation",
-      "exact_Act": "establish_exact_Locality_relation",
+      "exact_Act": "exact_Act",
       "Locality": {
         "first_subject": "exact_subject",
         "relation": "locality",
@@ -197,13 +197,13 @@
     },
     "06.Locality.C": {
       "subject": "recorded_through_occurrence_boundary_reference",
-      "exact_Act": "establish_recorded_boundary_Locality_relation",
+      "exact_Act": "preservation",
       "Locality": "06.Locality.A.Locality",
       "result": "recorded_boundary_Locality_relation"
     },
     "06.Locality.D": {
       "subject": "operator_destination_Locality",
-      "exact_Act": "establish_operator_destination_Locality",
+      "exact_Act": "Locality",
       "Locality": "06.Locality.A.Locality",
       "result": "operator_destination_Locality"
     },

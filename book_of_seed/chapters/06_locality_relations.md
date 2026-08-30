@@ -22,9 +22,8 @@ Act occurrence.
 ### 06.Locality.C — Recorded boundary relation
 
 The exact coordinates of a Locality subject-to-Act binding are one exact
-recorded through-occurrence boundary reference, one exact Act to establish a
-Locality relation from the recorded result, and the destination
-Locality.
+recorded through-occurrence boundary reference, one exact preservation Act,
+and the destination Locality.
 The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the recorded
 reference, destination Locality, and Act occurrence.

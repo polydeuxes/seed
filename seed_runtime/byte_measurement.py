@@ -130,8 +130,8 @@ EVENT_KIND_BOOK_CLAUSES = {
     RESULT_POSITION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
 BYTE_PAIR_RESULT_BOUNDARY = (
-    "establish exact count of byte-pair occurrences in source order within the exact "
-    "bounded source material"
+    "exact byte-pair occurrence count in source order within exact bounded source "
+    "material"
 )
 class ByteMeasurementError(ValueError):
     """The exact byte Measurement could not be performed as declared."""

@@ -1,4 +1,4 @@
-"""Exact pair occurrence coordinates establish one position."""
+"""Exact pair occurrence coordinates have an exact position."""
 
 from __future__ import annotations
 

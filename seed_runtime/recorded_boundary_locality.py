@@ -18,7 +18,7 @@ RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND = (
     "operator.recorded_boundary_locality_recorded"
 )
 RECORDED_BOUNDARY_LOCALITY_ACT = (
-    "Preserve one exact recorded boundary result in one destination Locality"
+    "Preservation"
 )
 RECORDED_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
 EVENT_KIND_BOOK_CLAUSES = {
