@@ -1,4 +1,4 @@
-"""Each exact source-byte position reference is one exact subject."""
+"""Exact source-byte position references are exact subjects."""
 
 from copy import deepcopy
 

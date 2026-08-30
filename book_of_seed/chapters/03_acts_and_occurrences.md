@@ -2,7 +2,7 @@
 
 ### 02.Acts.A — Exact subject-to-Act binding and occurrence
 
-Each exact subject of one exact Act is bound to that Act in its exact
+The exact subjects of one exact Act are bound to that Act in its exact
 Locality.
 
 An Act occurrence is one occurrence of that exact Act. Its exact coordinates

@@ -25,7 +25,6 @@ before
 bind
 binding
 book
-both
 bound
 boundary
 bounded
@@ -45,7 +44,6 @@ declared
 destination
 distinctions
 e
-each
 earlier
 emission
 establish

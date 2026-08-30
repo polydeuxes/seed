@@ -198,7 +198,7 @@ subjects of recorded Acts current through B
 ```
 
 Per-member addressability is carried by the Act subject references. Exhaustive
-membership is carried by the boundary-relative set comparison. Neither word
+coverage is carried by the boundary-relative set comparison. Neither word
 establishes another coordinate between them.
 
 ## Finding
@@ -210,13 +210,22 @@ both     backward reference to two named exact subjects; no distinct physiology
 one      mixed surface; exact cardinality survives, prose uses remain under pressure
 ```
 
-## Next falsifiers
+## Amendment after first subtraction
 
 ```text
-1. replace `each` with exact member/reference wording
-2. replace `both` with the two named exact subjects
-3. pressure `every` against complete exact-set wording
-4. split `one` use by use; preserve every cardinality-one refusal
+`each`  replaced by exact subject/reference wording
+`both`  replaced by the two named exact subjects
+```
+
+Both words leave active Book admission. No runtime or machine-grammar
+coordinate changes. The exact subjects, references, common boundary
+coordinate, and result preservation claims remain.
+
+The next falsifiers are:
+
+```text
+1. pressure `every` against complete exact-set wording
+2. split `one` use by use; preserve every cardinality-one refusal
 ```
 
 Do not add Quantifier, Population, Member, Distribution, Iteration, Progress,

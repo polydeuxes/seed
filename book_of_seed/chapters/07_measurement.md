@@ -10,18 +10,18 @@ The exact material result is the subject of one Measurement of supplied
 material. The result preserves its exact subjects, source occurrences,
 completeness boundary, findings, and Locality.
 
-One exact through-occurrence boundary is one coordinate of each exact
+One exact through-occurrence boundary is one coordinate of every exact
 Measurement subject-to-Act position.
 
 ### 01.Source.D.1 — Count findings
 
-One count finding preserves each exact occurrence reference within its
+One count finding preserves its exact occurrence references within its
 completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
-Each exact source-byte position reference in the supplied-material
-result is one exact subject bound to one exact declared Measurement Act. The
+The exact source-byte position references in the supplied-material
+result are exact subjects bound to one exact declared Measurement Act. The
 exact byte-pair position Measurement result is current through the exact
 occurrence boundary.
 The bounded subjects are exhaustive.

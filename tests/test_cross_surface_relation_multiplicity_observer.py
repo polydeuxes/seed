@@ -1,4 +1,4 @@
-"""Bounded material preserves each exact relation."""
+"""Bounded material preserves exact relation coordinates."""
 
 from __future__ import annotations
 

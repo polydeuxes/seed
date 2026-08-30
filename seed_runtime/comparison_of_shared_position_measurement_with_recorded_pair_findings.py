@@ -40,7 +40,7 @@ APPLICABILITY_ACT = (
     "recorded pair Compare result to one Compare"
 )
 COMPARE_ACT = (
-    "Compare each exact pair position of one same-position Measurement result "
+    "Compare exact pair-position content of one same-position Measurement result "
     "with complete recorded findings of the same exact pair subject"
 )
 _ACTIVE_APPLICABILITY_ACT = "Applicability"
