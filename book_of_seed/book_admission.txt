@@ -21,7 +21,6 @@ are
 attempt
 b
 before
-bind
 binding
 book
 bound
@@ -49,7 +48,6 @@ establish
 established
 every
 exact
-exactly
 exhaustive
 failure
 finding
@@ -63,9 +61,7 @@ have
 i
 in
 inapplicable
-input
 is
-it
 its
 later
 locality
@@ -97,21 +93,17 @@ relation
 reported
 result
 results
-returns
 same
 second
 seed
 separate
-separately
 source
 subject
 subjects
 supplied
 that
 the
-these
 this
-those
 through
 to
 when

@@ -4,7 +4,6 @@
 
 The exact coordinates of a Compare subject-to-Act binding are its exact
 subjects, exact Compare Act, and Locality.
-The exact input coordinates are the exact subjects.
 That exact subject-to-Act binding is addressed by one Applicability Act. The
 exact result of that Applicability Act is applicable or inapplicable.
 The result preserves distinctions established by the exact Compare Act within

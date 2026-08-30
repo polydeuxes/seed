@@ -3552,7 +3552,7 @@ def _pair_applicability_act_material(
         "applicability_act_occurrence_identity": applicability_binding.material[
             "applicability_act_occurrence_identity"
         ],
-        "act": "input Applicability",
+        "act": "Applicability",
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(applicability_binding)
         ),
@@ -3628,7 +3628,7 @@ def _pair_applicability_result_material(
             "content": "exact subject-to-Act binding Applicability",
             "applicability": applicability_result["dimensions"]["applicability"],
         },
-        "exact_act": "input Applicability",
+        "exact_act": "Applicability",
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),

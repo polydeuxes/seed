@@ -24,8 +24,8 @@ subject
 └── Locality
 ```
 
-These coordinates bind the exact subjects to the exact Act. Applicability,
-Act occurrence, Yield, result, and current coordinates are separately exact.
+The exact subjects, exact Act, and Locality are the subject-to-Act binding
+coordinates.
 
 ## Act and occurrence
 

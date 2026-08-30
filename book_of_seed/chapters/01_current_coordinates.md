@@ -11,15 +11,14 @@ For an exact subject, its exact current coordinates through an exact
 occurrence boundary are its exact established coordinates whose occurrences
 are in a Locality through that boundary.
 
-Current coordinates are a bounded reading that returns exactly those
-established coordinates.
+Current coordinates are that bounded reading.
 
 ### 01.Current.A.1 — Current Act result
 
 The exact result of an Act occurrence is a current coordinate for every
-exact subject in that subject-to-Act binding. It is current through an exact
-occurrence boundary in the same Locality occurrence order. The result
-occurrence is that boundary or is before that boundary.
+exact subject in that subject-to-Act binding. The exact result is current
+through an exact occurrence boundary in the same Locality occurrence order.
+The result occurrence is that boundary or is before that boundary.
 
 ### 01.Current.D — Exact relation subjects and occurrence
 
