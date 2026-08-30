@@ -1,4 +1,4 @@
-"""Pair subjects are established by an exact material position."""
+"""Pair subjects have an exact material position."""
 
 from __future__ import annotations
 

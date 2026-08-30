@@ -45,7 +45,6 @@ e
 earlier
 emission
 establish
-established
 every
 exact
 exhaustive

@@ -1,4 +1,4 @@
-"""One ordered result is established by an exact source relation."""
+"""An exact source relation preserves one ordered result."""
 
 from __future__ import annotations
 

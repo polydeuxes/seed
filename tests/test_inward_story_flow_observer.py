@@ -1,4 +1,4 @@
-"""Occurrence order is established by one exact relation."""
+"""One exact relation preserves occurrence order."""
 
 from __future__ import annotations
 

@@ -6,17 +6,18 @@ The exact coordinates of a Compare subject-to-Act binding are its exact
 subjects, exact Compare Act, and Locality.
 That exact subject-to-Act binding is addressed by one Applicability Act. The
 exact result of that Applicability Act is applicable or inapplicable.
-The result preserves distinctions established by the exact Compare Act within
-its completeness boundary.
+The result preserves exact Compare Act distinctions within its completeness
+boundary.
 
 ### 04.Compare.A — Recorded pair findings
 
 When one earlier and one later exact byte-pair position Measurement result are
 current through an exact occurrence boundary, the earlier and later results
-are the exact subjects of a Compare subject-to-Act binding. Earlier and later are established by exact result
-occurrence order in the same Locality. The later ordered source occurrence
-references are the earlier ordered source occurrence references and one added
-exact occurrence. That exact subject-to-Act binding is addressed by one
+are the exact subjects of a Compare subject-to-Act binding. Earlier and later
+are coordinates of exact result occurrence order in the same Locality. The
+later ordered source occurrence references are the earlier ordered source
+occurrence references and one added exact occurrence. That exact
+subject-to-Act binding is addressed by one
 Applicability Act. The exact result of that Applicability Act is applicable or
 inapplicable.
 

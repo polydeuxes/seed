@@ -2,11 +2,10 @@
 
 ## Current coordinates
 
-When no exact coordinate is established for this Seed, no current
-coordinates are established for this Seed.
+With no exact coordinate for this Seed: no current coordinates for this Seed.
 
 For one exact subject, its exact current coordinates through one exact
-occurrence boundary are its exact established coordinates in one Locality
+occurrence boundary are its exact coordinates in one Locality
 through that boundary.
 
 ```
@@ -42,7 +41,7 @@ Act occurrence ── Yield ──> result
 The exact coordinates of Yield are its exact subjects, relation occurrence,
 and Locality.
 
-The result preserves the exact coordinates established by its Act occurrence.
+The result preserves the exact coordinates of its Act occurrence.
 
 ## References
 

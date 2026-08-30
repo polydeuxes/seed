@@ -2,7 +2,7 @@
   "book_coordinates": {
     "01.Current.G": {
       "subject": "this_Seed",
-      "when": "no_exact_coordinate_is_established_for_this_Seed",
+      "when": "no_exact_coordinate_for_this_Seed",
       "current_coordinates": []
     },
     "01.Source.A": {
@@ -57,7 +57,7 @@
     "01.Current.A": {
       "subject": "exact_subject",
       "through_boundary": "exact_occurrence_boundary",
-      "current_coordinates": "exact_established_coordinates_in_one_Locality_through_boundary"
+      "current_coordinates": "exact_coordinates_in_one_Locality_through_boundary"
     },
     "01.Current.A.1": {
       "subject": "exact_subject_bound_to_exact_Act",

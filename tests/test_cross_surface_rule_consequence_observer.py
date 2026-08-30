@@ -1,4 +1,4 @@
-"""Later results are established by exact material."""
+"""Later results have exact material coordinates."""
 
 from __future__ import annotations
 

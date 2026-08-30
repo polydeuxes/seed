@@ -1,4 +1,4 @@
-"""Exact count results are established by an added position."""
+"""Exact count results have an added position."""
 
 from __future__ import annotations
 

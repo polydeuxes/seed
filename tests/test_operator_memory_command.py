@@ -1,4 +1,4 @@
-"""One destination Locality is established by operator movement."""
+"""Operator movement preserves one destination Locality."""
 
 from __future__ import annotations
 

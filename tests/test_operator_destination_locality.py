@@ -1,4 +1,4 @@
-"""One Locality relation occurrence is established by operator material."""
+"""Operator material preserves one Locality relation occurrence."""
 
 from __future__ import annotations
 

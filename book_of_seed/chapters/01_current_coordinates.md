@@ -2,13 +2,12 @@
 
 ### 01.Current.G — No current coordinates
 
-When no exact coordinate is established for this Seed, no current
-coordinates are established for this Seed.
+With no exact coordinate for this Seed: no current coordinates for this Seed.
 
 ### 01.Current.A — Exact current coordinates
 
 For an exact subject, its exact current coordinates through an exact
-occurrence boundary are its exact established coordinates whose occurrences
+occurrence boundary are its exact coordinates whose occurrences
 are in a Locality through that boundary.
 
 Current coordinates are that bounded reading.

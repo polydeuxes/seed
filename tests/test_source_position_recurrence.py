@@ -1,4 +1,4 @@
-"""Exact later results are established by source position."""
+"""Exact later results have source-position coordinates."""
 
 from __future__ import annotations
 

@@ -3,8 +3,8 @@
 ### 01.Source.A — Source preservation
 
 An exact Act occurrence preserves the supplied material, source occurrence,
-exact source occurrence references, Locality, and the coordinates established
-within its boundary.
+exact source occurrence references, Locality, and the exact coordinates within
+its boundary.
 
 ### 01.Source.G — Operator source boundary
 
@@ -23,7 +23,7 @@ in separate exact subject-to-Act binding coordinates.
 An exact source boundary is the exact subject bound to one exact Act to
 preserve the supplied material. The exact material result preserves its source
 boundary, source occurrence references, Locality, and the exact coordinates
-established within that boundary.
+within that boundary.
 
 ### 01.Source.I — Separate source coordinates
 

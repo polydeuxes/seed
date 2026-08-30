@@ -74,15 +74,14 @@ def test_machine_grammar_addresses_current_coordinates_without_retired_objects()
     assert set(grammar) == {"book_coordinates"}
     assert grammar["book_coordinates"]["01.Current.G"] == {
         "subject": "this_Seed",
-        "when": "no_exact_coordinate_is_established_for_this_Seed",
+        "when": "no_exact_coordinate_for_this_Seed",
         "current_coordinates": [],
     }
 
-def test_no_current_coordinates_exist_without_one_established_coordinate():
+def test_no_current_coordinates_exist_without_an_exact_coordinate():
     active_book = _active_book()
     assert active_book.count(
-        "When no exact coordinate is established for this Seed, no current\n"
-        "coordinates are established for this Seed."
+        "With no exact coordinate for this Seed: no current coordinates for this Seed."
     ) == 2
     assert "S0" not in active_book
 
@@ -182,7 +181,7 @@ def test_positional_coordinates_name_their_exact_basis():
     )
 
 
-def test_source_and_destination_coordinates_establish_no_occurrence_order():
+def test_source_and_destination_coordinates_have_no_occurrence_order():
     movement = _grammar()["book_coordinates"]["03.Movement.A"]
     chapter = (CHAPTERS / "10_movement.md").read_text(encoding="utf-8")
 
@@ -194,7 +193,7 @@ def test_source_and_destination_coordinates_establish_no_occurrence_order():
     ]
     assert (
         "Source and destination coordinates\n"
-        "establish no earlier or later occurrence order."
+        "have no earlier or later occurrence order."
     ) in chapter
 
 

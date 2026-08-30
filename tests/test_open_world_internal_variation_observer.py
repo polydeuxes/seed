@@ -1,4 +1,4 @@
-"""Position distinctions are established by exact source material."""
+"""Exact source material preserves position distinctions."""
 
 from pathlib import Path
 import json

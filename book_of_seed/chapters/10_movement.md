@@ -7,7 +7,7 @@ subject, source coordinates, destination coordinates, exact Act, and Locality.
 
 The result preserves the exact subject and one exact source-to-destination
 relation. Source and destination coordinates
-establish no earlier or later occurrence order.
+have no earlier or later occurrence order.
 
 ## References
 
