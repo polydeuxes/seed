@@ -243,3 +243,18 @@ control:
 `every` survives as the distinction that no exact coordinate in the bounded
 extent is omitted. The selected boundary supplies the extent. No set,
 iteration, progress, or completion occurrence is added.
+
+## Amendment after `one` domain census
+
+`one_coordinate_domain_census_001.md` separates:
+
+```text
+exact cardinality one
+singular binding of one addressed instance
+one coordinate role inside a larger exact structure
+one alternative from a stated result set
+```
+
+Exact cardinality and identity-collapse controls survive. Some singular-binder
+and coordinate-role uses remain prose-subtraction candidates. `one` stays in
+active admission; no global replacement is licensed.
