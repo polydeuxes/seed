@@ -192,9 +192,9 @@ def test_current_coordinates_require_an_exact_occurrence_boundary():
         encoding="utf-8"
     )
     assert (
-        "For one exact subject, its exact current coordinates through one exact\n"
+        "For an exact subject, its exact current coordinates through an exact\n"
         "occurrence boundary are its exact established coordinates whose occurrences\n"
-        "are in one Locality through that boundary."
+        "are in a Locality through that boundary."
     ) in chapter
 
 

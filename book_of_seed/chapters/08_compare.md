@@ -2,7 +2,7 @@
 
 ### 04.Compare — Exact subjects
 
-The exact coordinates of one Compare subject-to-Act binding are its exact
+The exact coordinates of a Compare subject-to-Act binding are its exact
 subjects, exact Compare Act, and Locality.
 The exact input coordinates are the exact subjects.
 That exact subject-to-Act binding is addressed by one Applicability Act. The
@@ -13,8 +13,8 @@ its completeness boundary.
 ### 04.Compare.A — Recorded pair findings
 
 When one earlier and one later exact byte-pair position Measurement result are
-current through one exact occurrence boundary, the earlier and later results
-are the exact subjects of one Compare subject-to-Act binding. Earlier and later are established by exact result
+current through an exact occurrence boundary, the earlier and later results
+are the exact subjects of a Compare subject-to-Act binding. Earlier and later are established by exact result
 occurrence order in the same Locality. The later ordered source occurrence
 references are the earlier ordered source occurrence references and one added
 exact occurrence. That exact subject-to-Act binding is addressed by one
@@ -28,9 +28,9 @@ and Locality.
 ### 04.Compare.B — Same-position Measurement and pair findings
 
 When result position 0 of one exact same-position Measurement result and one
-exact recorded pair-finding Compare result are current through one exact
+exact recorded pair-finding Compare result are current through an exact
 occurrence boundary, that result position and recorded pair-finding Compare
-result are the exact subjects of one Compare subject-to-Act binding in that
+result are the exact subjects of a Compare subject-to-Act binding in that
 Locality.
 
 That exact subject-to-Act binding is addressed by one Applicability Act. The

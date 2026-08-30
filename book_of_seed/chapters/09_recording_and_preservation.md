@@ -2,7 +2,7 @@
 
 ### 05.Recording.D — Through-occurrence boundary reference
 
-The exact coordinates of one recording subject-to-Act binding are one exact
+The exact coordinates of a recording subject-to-Act binding are one exact
 addressed occurrence, its exact through-occurrence boundary, one recording
 Act, and the same Locality.
 

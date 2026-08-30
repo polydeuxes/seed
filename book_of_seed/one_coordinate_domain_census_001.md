@@ -159,3 +159,72 @@ Do not globally replace it. Pressure only singular-binder and coordinate-role
 uses against `a`, `an`, or direct exact-coordinate wording. Preserve every use
 whose falsifier distinguishes zero, one, and multiple occurrences or whose
 claim identifies several named surfaces as one occurrence.
+
+## Amendment after predicate-role subtraction
+
+The first residual pass replaces predicate-role wording:
+
+```text
+is one occurrence       → is an occurrence
+is one exact subject    → is an exact subject
+is one current coordinate → is a current coordinate
+is one coordinate       → is a coordinate
+is one exact earlier boundary → is an exact earlier boundary
+```
+
+These clauses assign an addressed thing to a role. They do not compare zero,
+one, and multiple members of an exact bounded extent.
+
+The pass preserves:
+
+```text
+one result per Act
+one exact result position
+one added exact occurrence
+one of applicable or inapplicable
+several named Emission surfaces are one occurrence and one result
+```
+
+Thus `one` remains admitted for exact cardinality and identity collapse while
+its ordinary predicate-role uses recede.
+
+## Amendment after singular-binder subtraction
+
+The second residual pass replaces law-scoping binders:
+
+```text
+coordinates of one relation or binding
+→ coordinates of a relation or binding
+
+One exact occurrence or boundary establishes...
+→ An exact occurrence or boundary establishes...
+
+One count finding preserves...
+→ A count finding preserves...
+```
+
+These clauses state the coordinate law for an addressed instance. They do not
+assert that only one instance exists or compare cardinalities inside a bounded
+extent.
+
+The words `a` and `an` were admitted before this pass and add no new Book
+coordinate. Exact instance identity remains in the qualified occurrence,
+relation, binding, boundary, or finding.
+
+## Amendment after relation-binder subtraction
+
+The third residual pass applies the same falsifier where exact subjects are
+scoped through one relation, Act, boundary, result position, Measurement, or
+Locality:
+
+```text
+subjects of one exact Act        → subjects of an exact Act
+through one exact boundary       → through an exact boundary
+in one Locality                  → in a Locality
+content in one result position   → content in an exact result position
+subjects of one Compare binding  → subjects of a Compare binding
+subject of one Measurement       → subject of a Measurement
+```
+
+The containing coordinate remains exact. These uses did not establish global
+cardinality or a one-to-one result refusal.

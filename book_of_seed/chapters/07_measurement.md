@@ -2,20 +2,20 @@
 
 ### 01.Source.D — Declared Measurement
 
-The exact subject and every coordinate of one declared Measurement
-subject-to-Act binding are exact and current through one exact occurrence
+The exact subject and every coordinate of a declared Measurement
+subject-to-Act binding are exact and current through an exact occurrence
 boundary.
 
-The exact material result is the subject of one Measurement of supplied
+The exact material result is the subject of a Measurement of supplied
 material. The result preserves its exact subjects, source occurrences,
 completeness boundary, findings, and Locality.
 
-One exact through-occurrence boundary is one coordinate of every exact
+An exact through-occurrence boundary is a coordinate of every exact
 Measurement subject-to-Act position.
 
 ### 01.Source.D.1 — Count findings
 
-One count finding preserves its exact occurrence references within its
+A count finding preserves its exact occurrence references within its
 completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference

@@ -2,21 +2,21 @@
 
 ### 07.Emission.A — Emission subject-to-Act binding
 
-The exact coordinates of one emission subject-to-Act binding are one exact
+The exact coordinates of an emission subject-to-Act binding are one exact
 source material result, one exact destination boundary, one Locality, and one
 exact emission Act.
 
 ### 07.Emission.C — Exact-material boundary write
 
 That emission Act occurrence and the exact destination boundary result are the
-first and second subjects of one Yield relation. For an exact-material boundary
+first and second subjects of a Yield relation. For an exact-material boundary
 write, the result preserves the exact material accepted by the boundary and its
 reported count. That count is reported by the
 destination boundary.
 
 The emission Act occurrence, its attempt, and its accepted write are one
 occurrence and one result. A failure is a separate Act occurrence with its own
-result, and its reported count is one coordinate of that failure.
+result, and its reported count is a coordinate of that failure.
 
 ### 07.Emission.D — Material supplied in the destination Locality
 

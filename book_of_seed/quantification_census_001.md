@@ -258,3 +258,15 @@ one alternative from a stated result set
 Exact cardinality and identity-collapse controls survive. Some singular-binder
 and coordinate-role uses remain prose-subtraction candidates. `one` stays in
 active admission; no global replacement is licensed.
+
+## Closure
+
+`quantification_closure_census_001.md` records the completed campaign.
+
+Predicate-role, singular-binder, and relation-binder subtraction reduce active
+`one` from 76 uses to 31. The residual uses preserve exact cardinality,
+coordinate-tuple arity, one-to-one Act/result relations, stated alternatives,
+or identity collapse.
+
+`each` and `both` are absent from active admission. `every` and `one` survive
+under exact qualified domains.

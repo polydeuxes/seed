@@ -105,7 +105,7 @@ def test_applicability_remains_separate_from_the_governed_act():
     }
     current = (CHAPTERS / "01_current_coordinates.md").read_text(encoding="utf-8")
     assert "exact coordinates of that Applicability Act occurrence" in current
-    assert "exact coordinates of one Applicability result occurrence" in current
+    assert "exact coordinates of an Applicability result occurrence" in current
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]

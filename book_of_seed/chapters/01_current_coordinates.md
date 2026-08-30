@@ -7,28 +7,28 @@ coordinates are established for this Seed.
 
 ### 01.Current.A — Exact current coordinates
 
-For one exact subject, its exact current coordinates through one exact
+For an exact subject, its exact current coordinates through an exact
 occurrence boundary are its exact established coordinates whose occurrences
-are in one Locality through that boundary.
+are in a Locality through that boundary.
 
 Current coordinates are a bounded reading that returns exactly those
 established coordinates.
 
 ### 01.Current.A.1 — Current Act result
 
-The exact result of one Act occurrence is one current coordinate for every
-exact subject in that subject-to-Act binding. It is current through one exact
+The exact result of an Act occurrence is a current coordinate for every
+exact subject in that subject-to-Act binding. It is current through an exact
 occurrence boundary in the same Locality occurrence order. The result
 occurrence is that boundary or is before that boundary.
 
 ### 01.Current.D — Exact relation subjects and occurrence
 
-The exact coordinates of one exact relation are its exact subjects and exact
+The exact coordinates of an exact relation are its exact subjects and exact
 relation occurrence.
 
 ### 01.Current.D.1 — Result-position coordinates
 
-Exact content in one recorded result position is one subject. Its exact
+Exact content in an exact recorded result position is a subject. Its exact
 coordinates are its recorded result occurrence, result position, exact source
 occurrence references, and Locality.
 
@@ -37,16 +37,16 @@ separate exact addressed coordinates.
 
 ### 01.Current.D.2 — Current addressed result content
 
-Exact addressed result content that is current through one exact occurrence
-boundary is one exact subject in one subject-to-Act binding.
+Exact addressed result content that is current through an exact occurrence
+boundary is an exact subject in an exact subject-to-Act binding.
 
 ### 01.Current.E.1 — Applicability
 
-One exact subject-to-Act binding is addressed by one Applicability Act. The
+An exact subject-to-Act binding is addressed by one Applicability Act. The
 exact coordinates of that Applicability Act occurrence are that binding, the
 exact Act addressed by that binding, and Locality.
 
-The exact coordinates of one Applicability result occurrence are that
+The exact coordinates of an Applicability result occurrence are that
 Applicability Act occurrence and one of `applicable` or `inapplicable`.
 
 ## References

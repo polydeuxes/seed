@@ -2,13 +2,13 @@
 
 ### 02.Acts.A — Exact subject-to-Act binding and occurrence
 
-The exact subjects of one exact Act are bound to that Act in its exact
+The exact subjects of an exact Act are bound to that Act in its exact
 Locality.
 
 An Act occurrence is one occurrence of that exact Act. Its exact coordinates
 are the subject-to-Act binding and the exact coordinates of that binding.
 
-Yield is the exact relation from one Act occurrence to its exact result:
+Yield is the exact relation from an Act occurrence to its exact result:
 
 ```
 Act occurrence --Yield--> result
