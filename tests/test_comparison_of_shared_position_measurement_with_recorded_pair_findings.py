@@ -1069,6 +1069,42 @@ def test_every_current_applicability_act_records_one_result():
         )
 
 
+def test_inapplicable_result_preserves_its_addressed_compare_without_compare_occurrence():
+    ledger, _compare_results, _current_coordinates_read = _ledger_at_story_floor(4)
+    applicability_results = tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+        )
+    )
+    negative = next(
+        result
+        for result in applicability_results
+        if result.material["applicability"] == "inapplicable"
+    )
+    compare_acts = tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
+        )
+    )
+    assert negative.identity not in {
+        act.material["applicability_result_event_identity"] for act in compare_acts
+    }
+
+    applicability_act = ledger.get(
+        negative.material["act_occurrence_event_identity"]
+    )
+    assert applicability_act.material["addressed_act"] == "Compare"
+    applicability_act.material["addressed_act"] = "Measurement"
+
+    with pytest.raises(ValueError):
+        get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings_applicability(
+            ledger,
+            negative.identity,
+        )
+
+
 def test_holding_one_input_exact_does_not_determine_applicability():
     ledger, acts, _current_coordinates_read = _ledger_at_story_floor(1)
     results = (

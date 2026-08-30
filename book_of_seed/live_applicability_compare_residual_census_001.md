@@ -143,10 +143,16 @@ that the Applicability Act occurrence and subject occurrence order preserve
 its exact cut. The copied pre-Act boundary is absent; selected reading
 boundaries still bound coverage reconstruction.
 
+`live_applicability_addressed_act_census_001.md` pressure-tests the remaining
+addressed Compare coordinate against the inapplicable branch. It survives:
+the family-specific occurrence declaration does not establish the addressed
+Act, and no Compare occurrence exists on the negative branch from which to
+recover it.
+
 ## Validation
 
 ```text
-focused lifecycle, exact-material, Book, and witness tests   86 passed
+focused lifecycle, exact-material, Book, and witness tests   87 passed
 downstream Distinction Measurement integration               7 passed
 ```
 
