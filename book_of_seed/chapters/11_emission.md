@@ -10,9 +10,9 @@ exact emission Act.
 
 That emission Act occurrence and the exact destination boundary result are the
 first and second subjects of a Yield relation. For an exact-material boundary
-write, the result preserves the exact material accepted by the boundary and its
-reported count. That count is reported by the
-destination boundary.
+write, the exact material accepted by the boundary and its reported count are
+exact coordinates of the result. That count is reported by the destination
+boundary.
 
 The emission Act occurrence, its attempt, and its accepted write are one
 occurrence and one result. A failure is a separate Act occurrence with its own

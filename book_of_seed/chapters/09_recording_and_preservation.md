@@ -6,8 +6,8 @@ The exact coordinates of a recording subject-to-Act binding are one exact
 addressed occurrence, its exact through-occurrence boundary, one recording
 Act, and the same Locality.
 
-The result preserves the addressed occurrence, through-occurrence boundary
-reference, Act occurrence, and Locality.
+The addressed occurrence, through-occurrence boundary reference, Act
+occurrence, and Locality are exact coordinates of the result.
 
 ## References
 

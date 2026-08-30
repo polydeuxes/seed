@@ -79,8 +79,6 @@ own
 pair
 position
 preservation
-preserve
-preserves
 prior
 reading
 recorded

@@ -21,7 +21,7 @@ EVENT_KIND_BOOK_CLAUSES = {
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "02.Acts.A",
     WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
 }
-WITNESS_MATERIAL_SOURCE_ACT = "Preserve exact material supplied by this Witness"
+WITNESS_MATERIAL_SOURCE_ACT = "Source"
 
 
 class WitnessMaterialSourceError(MaterialSourceError):

@@ -41,7 +41,7 @@ Act occurrence ── Yield ──> result
 The exact coordinates of Yield are its exact subjects, relation occurrence,
 and Locality.
 
-The result preserves the exact coordinates of its Act occurrence.
+The exact Act occurrence coordinates are addressed by the result.
 
 ## References
 

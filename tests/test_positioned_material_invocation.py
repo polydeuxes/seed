@@ -1,4 +1,4 @@
-"""Material position preserves exact occurrence order."""
+"""Material position: exact occurrence order."""
 
 from __future__ import annotations
 

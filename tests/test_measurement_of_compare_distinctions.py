@@ -1,4 +1,4 @@
-"""Measurement preserves exact Compare Distinctions."""
+"""Measurement: exact Compare Distinctions."""
 
 from __future__ import annotations
 

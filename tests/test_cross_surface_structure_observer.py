@@ -1,4 +1,4 @@
-"""An exact source relation preserves one ordered result."""
+"""An exact source relation: one ordered result."""
 
 from __future__ import annotations
 

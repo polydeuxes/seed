@@ -1,4 +1,4 @@
-"""Supplied Book material preserves exact occurrence order."""
+"""Supplied Book material: exact occurrence order."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Operator recording preserves one exact through occurrence boundary."""
+"""Operator recording: an exact through occurrence boundary."""
 
 from __future__ import annotations
 

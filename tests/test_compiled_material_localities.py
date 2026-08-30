@@ -1,4 +1,4 @@
-"""Byte movement preserves exact occurrence references in one destination Locality."""
+"""Byte movement: exact occurrence references in one destination Locality."""
 
 from __future__ import annotations
 

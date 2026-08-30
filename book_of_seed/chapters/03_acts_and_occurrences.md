@@ -20,7 +20,7 @@ subject, relation occurrence, and Locality.
 One Act occurrence and one result occurrence have no Yield relation with no
 exact Yield relation occurrence.
 
-A result preserves exact coordinates of its Act occurrence.
+The exact Act occurrence coordinates are addressed by the result.
 
 ## References
 

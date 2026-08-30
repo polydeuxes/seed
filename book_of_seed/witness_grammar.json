@@ -7,7 +7,7 @@
     },
     "01.Source.A": {
       "subject": "supplied_material_source_coordinates",
-      "exact_Act": "preserve_exact_source_coordinates",
+      "exact_Act": "Source",
       "result": "exact_source_coordinates"
     },
     "01.Source.D": {
@@ -33,13 +33,13 @@
     },
     "01.Source.G": {
       "subject": "operator_material_boundary",
-      "exact_Act": "preserve_supplied_operator_material",
+      "exact_Act": "Source",
       "Locality": "06.Locality.A.Locality",
       "result": "exact_operator_material_result"
     },
     "01.Source.H": {
       "subject": "supplied_material",
-      "exact_Act": "preserve_supplied_material",
+      "exact_Act": "Source",
       "result": "exact_material_result",
       "coordinates": [
         "source_boundary",
@@ -191,7 +191,7 @@
     "06.Locality.B": {
       "subject": "through_occurrence_boundary_in_destination_Locality",
       "prior_through_boundary": "exact_earlier_boundary_in_same_Locality_occurrence_order",
-      "exact_Act": "preserve_through_occurrence_boundary_in_destination_Locality",
+      "exact_Act": "preservation",
       "Locality": "06.Locality.A.Locality",
       "result": "through_occurrence_boundary_in_destination_Locality"
     },

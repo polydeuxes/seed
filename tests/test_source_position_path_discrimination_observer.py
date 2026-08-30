@@ -1,4 +1,4 @@
-"""Exact source position and order preserve distinctions."""
+"""Exact source position and order: distinctions."""
 
 from scripts.observe_source_position_path_discrimination import observe
 

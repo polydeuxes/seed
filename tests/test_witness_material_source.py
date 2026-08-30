@@ -1,4 +1,4 @@
-"""This Witness preserves exact supplied material and boundary results."""
+"""This Witness: exact supplied material and boundary results."""
 
 from __future__ import annotations
 
