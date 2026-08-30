@@ -181,7 +181,7 @@ def test_positional_coordinates_name_their_exact_basis():
     )
 
 
-def test_source_and_destination_coordinates_have_no_occurrence_order():
+def test_source_and_destination_are_exact_ordered_relation_coordinates():
     movement = _grammar()["book_coordinates"]["03.Movement.A"]
     chapter = (CHAPTERS / "10_movement.md").read_text(encoding="utf-8")
 
@@ -191,9 +191,14 @@ def test_source_and_destination_coordinates_have_no_occurrence_order():
         "destination_coordinates",
         "Locality",
     ]
+    assert movement["source_to_destination_coordinates"] == {
+        "first": "source_coordinates",
+        "second": "destination_coordinates",
+    }
     assert (
-        "Source and destination coordinates\n"
-        "have no earlier or later occurrence order."
+        "The first coordinates of that relation are the exact source\n"
+        "coordinates. The second coordinates of that relation are the exact destination\n"
+        "coordinates."
     ) in chapter
 
 

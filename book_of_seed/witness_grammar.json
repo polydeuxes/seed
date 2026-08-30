@@ -128,6 +128,10 @@
         "destination_coordinates",
         "Locality"
       ],
+      "source_to_destination_coordinates": {
+        "first": "source_coordinates",
+        "second": "destination_coordinates"
+      },
       "result": "exact_movement_result"
     },
     "04.Compare": {
