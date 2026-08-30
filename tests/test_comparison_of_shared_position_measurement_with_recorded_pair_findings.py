@@ -545,6 +545,51 @@ def _ledger_at_story_floor(floor):
     return ledger, tuple(results), current_coordinates
 
 
+def test_exact_applicability_result_is_current_relative_to_selected_boundary():
+    ledger, acts, current_coordinates = _ledger_at_story_floor(1)
+    before_result = acts[-1].identity
+    recorded = (
+        record_shared_position_measurement_pair_finding_compare_applicability_from_current_coordinates(
+            ledger,
+            locality_identity=LOCALITY,
+            current_coordinates=current_coordinates,
+        )
+    )
+    result = recorded.applicability_result_occurrences[0]
+
+    assert (
+        get_recorded_comparison_of_shared_position_measurement_with_recorded_pair_findings_applicability(
+            ledger,
+            result.identity,
+        )
+        == result.material
+    )
+    through_earlier_boundary = read_operator_current_coordinates_through(
+        ledger,
+        locality_identity=LOCALITY,
+        through_event_occurrence_identity=before_result,
+    )
+    through_result = read_operator_current_coordinates_through(
+        ledger,
+        locality_identity=LOCALITY,
+        through_event_occurrence_identity=result.identity,
+    )
+
+    assert result.identity not in through_earlier_boundary[
+        "applicability_result_occurrences"
+    ]
+    assert result.identity in through_result["applicability_result_occurrences"]
+
+    later = record_applicable_shared_position_measurement_pair_finding_compare_act_occurrence_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=recorded.current_coordinates,
+    )
+    assert result.identity in later.current_coordinates[
+        "applicability_result_occurrences"
+    ]
+
+
 def _record_comparison(ledger, comparison, shared_position):
     binding = record_comparison_of_shared_position_measurement_with_recorded_pair_findings_subject_to_act_binding(
         ledger,
