@@ -224,9 +224,22 @@ coordinate, and result preservation claims remain.
 The next falsifiers are:
 
 ```text
-1. pressure `every` against complete exact-set wording
-2. split `one` use by use; preserve every cardinality-one refusal
+1. split `one` use by use; preserve every cardinality-one refusal
 ```
 
 Do not add Quantifier, Population, Member, Distribution, Iteration, Progress,
 or Completion occurrences.
+
+## Amendment after `every` falsifier
+
+`every_boundary_exhaustion_census_001.md` uses the interrupted Applicability
+control:
+
+```text
+1 recorded Act / 4 exact pairs   not exhaustive
+9 recorded Acts / 9 exact pairs  exhaustive
+```
+
+`every` survives as the distinction that no exact coordinate in the bounded
+extent is omitted. The selected boundary supplies the extent. No set,
+iteration, progress, or completion occurrence is added.
