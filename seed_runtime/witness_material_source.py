@@ -38,7 +38,6 @@ def _subject_to_act_binding_material(
     *,
     source_boundary: str,
     exact_act_identity: str,
-    act_occurrence_identity: str,
 ) -> dict[str, object]:
     return {
         "book_clause_identity": "01.Source.H",
@@ -46,7 +45,6 @@ def _subject_to_act_binding_material(
             "source_boundary": source_boundary,
         },
         "exact_act_identity": exact_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
     }
 
 
@@ -157,15 +155,11 @@ def record_witness_material_source(
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
     source_act_identity = ledger.mint_identity("witness_material_source_act")
-    act_occurrence_identity = ledger.mint_identity(
-        "witness_material_source_act_occurrence"
-    )
     subject_to_act_binding = ledger.append(
         WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _subject_to_act_binding_material(
             source_boundary=source_boundary,
             exact_act_identity=source_act_identity,
-            act_occurrence_identity=act_occurrence_identity,
         ),
         locality_identity=locality_identity,
     )
@@ -175,7 +169,6 @@ def record_witness_material_source(
     recorded_result_event_identity = ledger.allocate_event_identity()
     result: dict[str, object] = {
         "exact_act_identity": source_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "source_occurrence_references": list(
@@ -197,7 +190,6 @@ def record_witness_material_source(
         WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
         {
             "exact_act_identity": source_act_identity,
-            "act_occurrence_identity": act_occurrence_identity,
             "subject_to_act_binding_reference": binding_reference,
         },
         locality_identity=locality_identity,
@@ -225,7 +217,6 @@ def _read_witness_material_source_result(
     source_references = material.get("source_occurrence_references")
     read_occurrences = material.get("read_occurrences", [])
     source_act_identity = material.get("exact_act_identity")
-    act_occurrence_identity = material.get("act_occurrence_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_boundary = material.get("source_boundary")
     binding_reference = material.get("subject_to_act_binding_reference")
@@ -255,8 +246,6 @@ def _read_witness_material_source_result(
         or type(event.exact_material) is not bytes
         or type(source_act_identity) is not str
         or not source_act_identity
-        or type(act_occurrence_identity) is not str
-        or not act_occurrence_identity
         or type(source_boundary) is not str
         or not source_boundary
         or binding is None
@@ -289,7 +278,6 @@ def _read_witness_material_source_result(
     expected_binding = _subject_to_act_binding_material(
         source_boundary=source_boundary,
         exact_act_identity=source_act_identity,
-        act_occurrence_identity=act_occurrence_identity,
     )
     if binding.material != expected_binding:
         raise MaterialSourceError(
@@ -297,7 +285,6 @@ def _read_witness_material_source_result(
         )
     result: dict[str, object] = {
         "exact_act_identity": source_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "source_occurrence_references": source_references,
@@ -307,7 +294,6 @@ def _read_witness_material_source_result(
         result["read_occurrences"] = read_occurrences
     expected_act_occurrence = {
         "exact_act_identity": source_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "subject_to_act_binding_reference": binding_reference,
     }
     expected_material = {

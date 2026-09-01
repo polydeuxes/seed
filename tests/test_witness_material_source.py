@@ -150,13 +150,11 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "source_boundary": "source boundary",
     }
     assert tuple(sorted(binding.material)) == (
-        "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
         "subject_reference",
     )
     assert tuple(sorted(act_occurrence.material)) == (
-        "act_occurrence_identity",
         "exact_act_identity",
         "subject_to_act_binding_reference",
     )
@@ -275,7 +273,9 @@ def test_equal_material_has_distinct_source_act_and_result_occurrences():
     second = _preserve(ledger, b"same exact material")
 
     assert exact_material_result_bytes(first) == exact_material_result_bytes(second)
-    assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
+    assert first.material["act_occurrence_event_identity"] != second.material[
+        "act_occurrence_event_identity"
+    ]
     assert first.identity != second.identity
     assert first.material["act_occurrence_event_identity"] != second.material[
         "act_occurrence_event_identity"
@@ -293,8 +293,10 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     assert occurred.material["source_occurrence_references"] == []
     reference = occurred.material["subject_to_act_binding_reference"]
     binding = ledger.get(reference["recorded_occurrence_identity"])
-    assert "result_identity" not in binding.material
-    assert "result_identity" not in occurred.material
+    act = ledger.get(occurred.material["act_occurrence_event_identity"])
+    for occurrence in (binding, act, occurred):
+        assert "act_occurrence_identity" not in occurrence.material
+        assert "result_identity" not in occurrence.material
     assert "invocation" not in str(occurred.material)
 
 
