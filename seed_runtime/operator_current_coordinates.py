@@ -548,15 +548,19 @@ def _subject_to_act_binding_of_exact_result(
         and value
     }
     result_identity = event.material.get("result_identity")
-    operator_source_result_without_family_identity = (
-        event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    source_result_without_family_identity = (
+        event.kind
+        in {
+            OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+            WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        }
         and not declared_results
         and result_identity is None
         and "result_identity" not in reference
     )
     if (
         result_identity not in declared_results
-        and not operator_source_result_without_family_identity
+        and not source_result_without_family_identity
     ):
         raise ValueError(
             "recorded subject-to-Act binding disagrees with its occurrence"
@@ -1557,11 +1561,7 @@ def advance_operator_current_coordinates(
         source_result = read_exact_material_result(
             ledger, event.identity
         )
-        material_result_reference = (
-            source_result.identity
-            if source_result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-            else source_result.material["result_identity"]
-        )
+        material_result_reference = source_result.identity
         occurrence = {
             "subject_reference": material_result_reference,
             "result_occurrence_identity": source_result.identity,

@@ -153,7 +153,6 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
-        "result_identity",
         "subject_reference",
     )
     assert tuple(sorted(act_occurrence.material)) == (
@@ -162,7 +161,6 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "subject_to_act_binding_reference",
     )
     assert "result_identity" not in reference
-    assert binding.material["result_identity"] == occurred.material["result_identity"]
     assert act_occurrence.material[
         "subject_to_act_binding_reference"
     ] == reference
@@ -278,7 +276,7 @@ def test_equal_material_has_distinct_source_act_and_result_occurrences():
 
     assert exact_material_result_bytes(first) == exact_material_result_bytes(second)
     assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
-    assert first.material["result_identity"] != second.material["result_identity"]
+    assert first.identity != second.identity
     assert first.material["act_occurrence_event_identity"] != second.material[
         "act_occurrence_event_identity"
     ]
@@ -295,9 +293,8 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     assert occurred.material["source_occurrence_references"] == []
     reference = occurred.material["subject_to_act_binding_reference"]
     binding = ledger.get(reference["recorded_occurrence_identity"])
-    assert binding.material["result_identity"] == occurred.material[
-        "result_identity"
-    ]
+    assert "result_identity" not in binding.material
+    assert "result_identity" not in occurred.material
     assert "invocation" not in str(occurred.material)
 
 
@@ -372,7 +369,7 @@ def test_witness_material_identity_is_reserved_across_reopen(tmp_path):
                 exact_bytes=f"material {index}".encode(),
                 source_boundary="source boundary",
             )
-            identities.append(material.material["result_identity"])
+            identities.append(material.identity)
         finally:
             ledger.close()
 

@@ -80,7 +80,7 @@ def _attempt(ledger, text, *, locality="s", locality_standing=None):
     standing = {
         "current_standing": {
             "material_result_occurrence": {
-                "subject_reference": event.material["result_identity"],
+                "subject_reference": event.identity,
                 "result_occurrence_identity": event.identity,
             }
         }

@@ -718,7 +718,7 @@ def _require_exact_prior_subject_coordinates(
         ledger, finding.source_material_result_occurrence_identity
     )
     exact_material_result_occurrence = {
-        "subject_reference": source_result.material["result_identity"],
+        "subject_reference": source_result.identity,
         "result_occurrence_identity": source_result.identity,
     }
     carried_material_results = (
