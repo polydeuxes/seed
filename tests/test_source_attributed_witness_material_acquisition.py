@@ -120,10 +120,10 @@ def test_each_source_attributed_witness_material_has_one_exact_ordered_material_
     assert len({reference.recorded_occurrence_identity for reference in references}) == len(
         references
     )
-    assert len({reference.act_occurrence_identity for reference in references}) == len(
+    assert len({reference.act_occurrence_event_identity for reference in references}) == len(
         references
     )
-    assert len({reference.result_identity for reference in references}) == len(references)
+    assert len({reference.recorded_occurrence_identity for reference in references}) == len(references)
     assert tuple(
         ledger.occurrences_in_append_order(
             tuple(occurrence.identity for occurrence in acquisition_results),

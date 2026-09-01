@@ -2749,9 +2749,9 @@ def recurring_added_returned_coordinate(
         raise ValueError("addition Act occurrence entered recurrence twice")
 
     addition_coordinates = (
-        addition.source_admission_result_reference.result_identity,
+        addition.source_admission_result_reference.recorded_occurrence_identity,
         addition.source_admitted_material_position,
-        addition.added_admission_result_reference.result_identity,
+        addition.added_admission_result_reference.recorded_occurrence_identity,
         addition.added_admitted_material_position,
         addition.position,
         len(addition.source_material),
@@ -2771,9 +2771,9 @@ def recurring_added_returned_coordinate(
         ):
             continue
         prior_coordinates = (
-            prior.source_admission_result_reference.result_identity,
+            prior.source_admission_result_reference.recorded_occurrence_identity,
             prior.source_admitted_material_position,
-            prior.added_admission_result_reference.result_identity,
+            prior.added_admission_result_reference.recorded_occurrence_identity,
             prior.added_admitted_material_position,
             prior.position,
             len(prior.source_material),
@@ -3179,7 +3179,7 @@ def recurring_removed_returned_coordinate(
         raise ValueError("removal Act occurrence entered recurrence twice")
     coordinates = (
         (
-            removal.source_admission_result_reference.result_identity,
+            removal.source_admission_result_reference.recorded_occurrence_identity,
             removal.source_admitted_material_position,
         )
         if removal.source_admission_result_reference is not None
@@ -3200,7 +3200,7 @@ def recurring_removed_returned_coordinate(
             raise ValueError("Compare occurrence has no exact removal Act occurrence")
         prior_coordinates = (
             (
-                prior.source_admission_result_reference.result_identity,
+                prior.source_admission_result_reference.recorded_occurrence_identity,
                 prior.source_admitted_material_position,
             )
             if prior.source_admission_result_reference is not None

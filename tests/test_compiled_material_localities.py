@@ -242,7 +242,7 @@ def test_each_returned_material_enters_a_fresh_locality(material_invocations):
     assert len({reference.exact_material for reference in references}) < len(
         references
     )
-    assert len({reference.result_identity for reference in references}) == len(
+    assert len({reference.recorded_occurrence_identity for reference in references}) == len(
         references
     )
 

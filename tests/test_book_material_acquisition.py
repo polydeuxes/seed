@@ -360,8 +360,8 @@ def test_every_current_book_file_has_one_exact_material_acquisition_result(
     assert tuple(reference.exact_material for reference in references) == tuple(
         path.read_bytes() for path in paths
     )
-    assert len({reference.result_identity for reference in references}) == len(paths)
-    assert len({reference.act_occurrence_identity for reference in references}) == len(
+    assert len({reference.recorded_occurrence_identity for reference in references}) == len(paths)
+    assert len({reference.act_occurrence_event_identity for reference in references}) == len(
         paths
     )
     assert all(
@@ -786,8 +786,8 @@ def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
     ) == tuple(path.read_bytes() for path in paths)
     assert all(
         earlier.recorded_occurrence_identity != later.recorded_occurrence_identity
-        and earlier.act_occurrence_identity != later.act_occurrence_identity
-        and earlier.result_identity != later.result_identity
+        and earlier.act_occurrence_event_identity
+        != later.act_occurrence_event_identity
         for earlier, later in zip(earlier_references, later_references)
     )
     assert all(

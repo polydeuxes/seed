@@ -30,8 +30,7 @@ def _source(identity: str, exact: bytes, *, locality: str = "pair-locality"):
     return MaterialAcquisitionResultReference(
         recorded_occurrence_identity=f"{identity}-recorded",
         locality_identity=locality,
-        act_occurrence_identity=f"{identity}-act",
-        result_identity=f"{identity}-result",
+        act_occurrence_event_identity=f"{identity}-act",
         exact_material=exact,
     )
 

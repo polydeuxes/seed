@@ -68,16 +68,14 @@ class MaterialImplementationFunction:
 class MaterialAcquisitionResultReference:
     recorded_occurrence_identity: str
     locality_identity: str
-    act_occurrence_identity: str
-    result_identity: str
+    act_occurrence_event_identity: str
     exact_material: bytes
 
     def __post_init__(self) -> None:
         coordinates = (
             self.recorded_occurrence_identity,
             self.locality_identity,
-            self.act_occurrence_identity,
-            self.result_identity,
+            self.act_occurrence_event_identity,
         )
         if any(
             type(coordinate) is not str or not coordinate
@@ -861,8 +859,9 @@ def material_acquisition_result_reference(
     return MaterialAcquisitionResultReference(
         recorded_occurrence_identity=event.identity,
         locality_identity=event.locality_identity,
-        act_occurrence_identity=event.material["act_occurrence_identity"],
-        result_identity=event.material["result_identity"],
+        act_occurrence_event_identity=event.material[
+            "act_occurrence_event_identity"
+        ],
         exact_material=event.exact_material,
     )
 
@@ -1526,9 +1525,9 @@ def recurring_added_result_coordinates(
         raise ValueError("source invocation differs from the addition Act")
 
     addition_coordinates = (
-        addition.source_admission_result_reference.result_identity,
+        addition.source_admission_result_reference.recorded_occurrence_identity,
         addition.source_admitted_material_position,
-        addition.added_admission_result_reference.result_identity,
+        addition.added_admission_result_reference.recorded_occurrence_identity,
         addition.added_admitted_material_position,
         addition.position,
         len(addition.source_material),
@@ -1549,9 +1548,9 @@ def recurring_added_result_coordinates(
         ):
             continue
         prior_coordinates = (
-            prior.source_admission_result_reference.result_identity,
+            prior.source_admission_result_reference.recorded_occurrence_identity,
             prior.source_admitted_material_position,
-            prior.added_admission_result_reference.result_identity,
+            prior.added_admission_result_reference.recorded_occurrence_identity,
             prior.added_admitted_material_position,
             prior.position,
             len(prior.source_material),

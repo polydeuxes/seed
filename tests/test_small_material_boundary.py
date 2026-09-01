@@ -64,8 +64,7 @@ def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatc
         MaterialAcquisitionResultReference(
             recorded_occurrence_identity=f"one-reading-acquisition_result-{position}",
             locality_identity="one-reading-locality",
-            act_occurrence_identity=f"one-reading-act-{position}",
-            result_identity=f"one-reading-result-{position}",
+            act_occurrence_event_identity=f"one-reading-act-{position}",
             exact_material=bytes((position,)),
         )
         for position in range(8)
@@ -742,7 +741,7 @@ def test_each_returned_material_can_enter_a_fresh_locality(
     assert tuple(reference.exact_material for reference in references) == tuple(
         invocation.stdout_bytes for invocation in invocations
     )
-    assert len({reference.result_identity for reference in references}) == len(
+    assert len({reference.recorded_occurrence_identity for reference in references}) == len(
         references
     )
 

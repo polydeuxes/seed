@@ -79,7 +79,7 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
         "supplied-material"
     }
     assert len({event.identity for event in acquisition_results}) == len(acquisition_results)
-    assert len({reference.result_identity for reference in references}) == len(
+    assert len({reference.recorded_occurrence_identity for reference in references}) == len(
         references
     )
     assert tuple(occurrence.invocation_position for occurrence in occurrences) == tuple(
