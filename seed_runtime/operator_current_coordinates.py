@@ -480,12 +480,12 @@ def _result_subject_to_act_binding_coordinate(
 def _subject_to_act_binding_of_exact_result(
     ledger: EventLedger, event
 ) -> dict[str, Any] | None:
-    """Read the exact subject-to-Act binding of one exact result.
+    """Read the exact subject-to-Act binding coordinates of an exact result.
 
-    The Act occurrence carries the binding, its subject, and the Book clause.
-    This read composes none of those coordinates. ``None`` reports that no
-    binding was recorded. A malformed or disagreeing recorded reference is
-    refused rather than reduced to absence.
+    The Act occurrence carries the binding coordinates directly or carries an
+    exact reference to their separate occurrence. This read composes neither
+    shape. ``None`` reports their absence. Malformed or disagreeing coordinates
+    are refused rather than reduced to absence.
     """
 
     act_occurrence_event_identity = event.material.get("act_occurrence_event_identity")
@@ -495,6 +495,27 @@ def _subject_to_act_binding_of_exact_result(
     if act_occurrence is None:
         return None
     reference = act_occurrence.material.get("subject_to_act_binding_reference")
+    if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+        expected_coordinates = {
+            "exact_act_identity": act_occurrence.material.get(
+                "exact_act_identity"
+            ),
+            "subject_reference": deepcopy(
+                act_occurrence.material.get("subject_reference")
+            ),
+        }
+        if (
+            ledger.integrity_of(act_occurrence.identity) == CORRUPTED
+            or act_occurrence.locality_identity != event.locality_identity
+            or act_occurrence.material != expected_coordinates
+        ):
+            raise ValueError(
+                "Witness source Act binding coordinates are not exact"
+            )
+        return {
+            "act_occurrence_event_identity": act_occurrence.identity,
+            **expected_coordinates,
+        }
     if reference is None:
         return None
     if ledger.integrity_of(act_occurrence.identity) == CORRUPTED:

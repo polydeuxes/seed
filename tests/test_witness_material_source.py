@@ -15,7 +15,6 @@ from seed_runtime.material_source import (
     read_exact_material_result,
 )
 from seed_runtime.witness_material_source import (
-    WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     WitnessMaterialSourceError,
     record_witness_material_source,
@@ -132,48 +131,32 @@ def test_durable_witness_source_preserves_raw_material_and_exact_act(tmp_path):
         reopened.close()
 
 
-def test_witness_material_source_fixes_its_exact_source_subject():
+def test_witness_material_source_act_fixes_its_exact_source_subject():
     ledger = EventLedger()
     occurred = _preserve(ledger)
 
     assert occurred.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-    reference = occurred.material["subject_to_act_binding_reference"]
-    binding = ledger.get(reference["recorded_occurrence_identity"])
     act_occurrence = ledger.get(
         occurred.material["act_occurrence_event_identity"]
     )
-    assert binding is not None and act_occurrence is not None
-    assert binding.kind == (
-        WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    )
-    assert binding.material["subject_reference"] == {
+    assert act_occurrence is not None
+    assert act_occurrence.material["subject_reference"] == {
         "source_boundary": "source boundary",
     }
-    assert tuple(sorted(binding.material)) == (
-        "book_clause_identity",
+    assert tuple(sorted(act_occurrence.material)) == (
         "exact_act_identity",
         "subject_reference",
     )
-    assert tuple(sorted(act_occurrence.material)) == (
-        "exact_act_identity",
-        "subject_to_act_binding_reference",
-    )
-    assert "result_identity" not in reference
-    assert act_occurrence.material[
-        "subject_to_act_binding_reference"
-    ] == reference
     assert [
         event.identity
         for event in ledger.occurrences_in_append_order(
             (
-                binding.identity,
                 act_occurrence.identity,
                 occurred.identity,
             ),
             locality_identity=occurred.locality_identity,
         )
     ] == [
-        binding.identity,
         act_occurrence.identity,
         occurred.identity,
     ]
@@ -277,9 +260,6 @@ def test_equal_material_has_distinct_source_act_and_result_occurrences():
         "act_occurrence_event_identity"
     ]
     assert first.identity != second.identity
-    assert first.material["act_occurrence_event_identity"] != second.material[
-        "act_occurrence_event_identity"
-    ]
     assert "yield_relation_identity" not in first.material
     assert "yield_relation_identity" not in second.material
     assert read_exact_material_result(ledger, first.identity) == first
@@ -291,12 +271,15 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(ledger, b"different\n")
 
     assert occurred.material["source_occurrence_references"] == []
-    reference = occurred.material["subject_to_act_binding_reference"]
-    binding = ledger.get(reference["recorded_occurrence_identity"])
     act = ledger.get(occurred.material["act_occurrence_event_identity"])
-    for occurrence in (binding, act, occurred):
+    for occurrence in (act, occurred):
         assert "act_occurrence_identity" not in occurrence.material
         assert "result_identity" not in occurrence.material
+        assert "subject_to_act_binding_reference" not in occurrence.material
+    assert not any(
+        event.kind == "witness.material.source_subject_to_act_binding_recorded"
+        for event in ledger.list()
+    )
     assert "invocation" not in str(occurred.material)
 
 
@@ -310,6 +293,18 @@ def test_material_result_read_refuses_a_changed_source_coordinate():
     ledger = EventLedger()
     occurred = _preserve(ledger, b"exact")
     occurred.material["source_boundary"] = "different boundary"
+
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, occurred.identity)
+
+
+def test_material_result_read_refuses_changed_act_subject_coordinates():
+    ledger = EventLedger()
+    occurred = _preserve(ledger, b"exact")
+    act = ledger.get(occurred.material["act_occurrence_event_identity"])
+    act.material["subject_reference"] = {
+        "source_boundary": "different boundary"
+    }
 
     with pytest.raises(MaterialSourceError, match="absent or corrupted"):
         read_exact_material_result(ledger, occurred.identity)

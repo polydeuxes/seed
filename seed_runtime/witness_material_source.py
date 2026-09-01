@@ -2,22 +2,16 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import MaterialSourceError
 
 
-WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
-    "witness.material.source_subject_to_act_binding_recorded"
-)
 WITNESS_MATERIAL_SOURCE_RECORDED_KIND = "witness.material.source_result_recorded"
 WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT = (
     "witness.material.source_act_occurrence_recorded"
 )
 EVENT_KIND_BOOK_CLAUSES = {
-    WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.H",
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "02.Acts.A",
     WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
 }
@@ -25,22 +19,12 @@ class WitnessMaterialSourceError(MaterialSourceError):
     """One exact Witness material source occurrence is malformed."""
 
 
-def _subject_to_act_binding_reference(binding: Event) -> dict[str, object]:
-    return {
-        "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
-        "subject_reference": deepcopy(binding.material["subject_reference"]),
-    }
-
-
-def _subject_to_act_binding_material(
+def _act_occurrence_material(
     *,
     source_boundary: str,
     exact_act_identity: str,
 ) -> dict[str, object]:
     return {
-        "book_clause_identity": "01.Source.H",
         "subject_reference": {
             "source_boundary": source_boundary,
         },
@@ -155,22 +139,18 @@ def record_witness_material_source(
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
     source_act_identity = ledger.mint_identity("witness_material_source_act")
-    subject_to_act_binding = ledger.append(
-        WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _subject_to_act_binding_material(
+    act_occurrence = ledger.append(
+        WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
+        _act_occurrence_material(
             source_boundary=source_boundary,
             exact_act_identity=source_act_identity,
         ),
         locality_identity=locality_identity,
     )
-    binding_reference = _subject_to_act_binding_reference(
-        subject_to_act_binding
-    )
     recorded_result_event_identity = ledger.allocate_event_identity()
     result: dict[str, object] = {
         "exact_act_identity": source_act_identity,
         "source_boundary": source_boundary,
-        "subject_to_act_binding_reference": binding_reference,
         "source_occurrence_references": list(
             source_occurrence_references
         ),
@@ -186,14 +166,6 @@ def record_witness_material_source(
         result["read_occurrences"] = [
             dict(occurrence) for occurrence in read_occurrences
         ]
-    act_occurrence = ledger.append(
-        WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
-        {
-            "exact_act_identity": source_act_identity,
-            "subject_to_act_binding_reference": binding_reference,
-        },
-        locality_identity=locality_identity,
-    )
     return ledger.append_many(
         (
             Event(
@@ -219,7 +191,6 @@ def _read_witness_material_source_result(
     source_act_identity = material.get("exact_act_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_boundary = material.get("source_boundary")
-    binding_reference = material.get("subject_to_act_binding_reference")
     boundary_outcomes = {
         name: material[name]
         for name in (
@@ -234,11 +205,6 @@ def _read_witness_material_source_result(
         if type(act_occurrence_event_identity) is str
         else None
     )
-    binding = (
-        ledger.get(binding_reference.get("recorded_occurrence_identity"))
-        if type(binding_reference) is dict
-        else None
-    )
     if (
         event.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         or type(event.locality_identity) is not str
@@ -248,13 +214,6 @@ def _read_witness_material_source_result(
         or not source_act_identity
         or type(source_boundary) is not str
         or not source_boundary
-        or binding is None
-        or binding.kind
-        != WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        or binding.locality_identity != event.locality_identity
-        or binding.exact_material is not None
-        or ledger.integrity_of(binding.identity) == CORRUPTED
-        or binding_reference != _subject_to_act_binding_reference(binding)
         or any(type(value) is not bool for value in boundary_outcomes.values())
         or type(source_references) is not list
         or len(set(source_references)) != len(source_references)
@@ -275,27 +234,18 @@ def _read_witness_material_source_result(
         raise MaterialSourceError(
             "Witness material result is absent or corrupted"
         )
-    expected_binding = _subject_to_act_binding_material(
+    expected_act_occurrence = _act_occurrence_material(
         source_boundary=source_boundary,
         exact_act_identity=source_act_identity,
     )
-    if binding.material != expected_binding:
-        raise MaterialSourceError(
-            "Witness material result is absent or corrupted"
-        )
     result: dict[str, object] = {
         "exact_act_identity": source_act_identity,
         "source_boundary": source_boundary,
-        "subject_to_act_binding_reference": binding_reference,
         "source_occurrence_references": source_references,
     }
     result.update(boundary_outcomes)
     if read_occurrences:
         result["read_occurrences"] = read_occurrences
-    expected_act_occurrence = {
-        "exact_act_identity": source_act_identity,
-        "subject_to_act_binding_reference": binding_reference,
-    }
     expected_material = {
         **result,
         "act_occurrence_event_identity": act_occurrence.identity,
@@ -318,7 +268,6 @@ def _read_witness_material_source_result(
     try:
         ordered = ledger.occurrences_in_append_order(
             (
-                binding.identity,
                 act_occurrence.identity,
                 event.identity,
             ),
@@ -329,7 +278,6 @@ def _read_witness_material_source_result(
             "Witness material result carries no intact Act"
         ) from error
     if [occurrence.identity for occurrence in ordered] != [
-        binding.identity,
         act_occurrence.identity,
         event.identity,
     ]:

@@ -137,7 +137,7 @@ def test_missing_result_binding_reference_adds_no_current_binding():
     assert _subject_to_act_binding_of_exact_result(ledger, result) is None
 
 
-def test_witness_result_carries_its_recorded_binding():
+def test_witness_result_carries_its_act_binding_coordinates():
     ledger = EventLedger()
     result = record_witness_material_source(
         ledger,
@@ -149,11 +149,15 @@ def test_witness_result_carries_its_recorded_binding():
     carried = _current_result_binding(ledger, "witness", result.identity)
     act_occurrence = ledger.get(result.material["act_occurrence_event_identity"])
 
-    assert carried == act_occurrence.material[
-        "subject_to_act_binding_reference"
-    ]
-    assert set(carried) == REQUIRED_BINDING_COORDINATES
-    assert carried["book_clause_identity"] == "01.Source.H"
+    assert carried == {
+        "act_occurrence_event_identity": act_occurrence.identity,
+        **act_occurrence.material,
+    }
+    assert set(carried) == {
+        "act_occurrence_event_identity",
+        "exact_act_identity",
+        "subject_reference",
+    }
     assert carried["subject_reference"] == {
         "source_boundary": "fixture boundary",
     }
