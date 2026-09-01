@@ -82,7 +82,7 @@ def _binding_material(
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
         "operator_material_occurrence_reference": command.identity,
-        "operator_material_result_identity": command.material["result_identity"],
+        "operator_material_result_occurrence_identity": command.identity,
         "operator_locality_identity": command.locality_identity,
         "operator_through_event_occurrence_identity": (
             through_event_occurrence_identity

@@ -548,7 +548,16 @@ def _subject_to_act_binding_of_exact_result(
         and value
     }
     result_identity = event.material.get("result_identity")
-    if result_identity not in declared_results:
+    operator_source_result_without_family_identity = (
+        event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        and not declared_results
+        and result_identity is None
+        and "result_identity" not in reference
+    )
+    if (
+        result_identity not in declared_results
+        and not operator_source_result_without_family_identity
+    ):
         raise ValueError(
             "recorded subject-to-Act binding disagrees with its occurrence"
         )
@@ -1548,7 +1557,11 @@ def advance_operator_current_coordinates(
         source_result = read_exact_material_result(
             ledger, event.identity
         )
-        material_result_reference = source_result.material["result_identity"]
+        material_result_reference = (
+            source_result.identity
+            if source_result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+            else source_result.material["result_identity"]
+        )
         occurrence = {
             "subject_reference": material_result_reference,
             "result_occurrence_identity": source_result.identity,
@@ -2387,15 +2400,10 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
     material_result_coordinate = None
     if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
-        result_identity = event.material.get("result_identity")
-        if (
-            exact_result is None
-            or type(result_identity) is not str
-            or not result_identity
-        ):
+        if exact_result is None:
             raise ValueError("operator material source result is not exact")
         material_result_coordinate = {
-            "subject_reference": result_identity,
+            "subject_reference": event.identity,
             "result_occurrence_identity": event.identity,
         }
     if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:

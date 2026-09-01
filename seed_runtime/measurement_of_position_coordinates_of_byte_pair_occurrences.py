@@ -67,7 +67,6 @@ class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
     """
 
     source_material_result_occurrence_identity: str
-    source_result_identity: str
     source_locality_identity: str
     source_completeness_boundary_identity: str
     bounded_locality_replay_through_event_occurrence_identity: str
@@ -297,7 +296,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
         exact_coordinates = {
             key: material.get(key)
             for key in (
-                "result_identity",
                 "act_occurrence_identity",
                 "source_boundary",
             )
@@ -310,7 +308,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
         sources.append(
             UnboundPositionCoordinateMeasurementMaterialResultReading(
                 source_material_result_occurrence_identity=source.identity,
-                source_result_identity=exact_coordinates["result_identity"],
                 source_locality_identity=source.locality_identity,
                 source_completeness_boundary_identity=(
                     ledger.append_boundary_through_occurrence(source.identity).identity

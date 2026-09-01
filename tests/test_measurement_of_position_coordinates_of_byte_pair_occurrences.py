@@ -158,7 +158,7 @@ def test_exact_unbound_material_results_are_read_through_frozen_b():
         subject.source_material_result_occurrence_identity for subject in through_second
     ) == (first.identity, second.identity)
     first_source = through_first[0]
-    assert first_source.source_result_identity == first.material["result_identity"]
+    assert first_source.source_material_result_occurrence_identity == first.identity
     assert first_source.source_locality_identity == "s"
     assert (
         first_source.source_completeness_boundary_identity

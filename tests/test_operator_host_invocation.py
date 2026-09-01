@@ -427,7 +427,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     assert {event.locality_identity for event in acquisition_results[1:]} == {
         relation.material["destination_locality_identity"]
     }
-    assert len({event.material["result_identity"] for event in acquisition_results}) == 4
+    assert len({event.identity for event in acquisition_results}) == 4
     assert len(
         [
             event

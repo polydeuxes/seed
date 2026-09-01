@@ -79,7 +79,7 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
         "act_occurrence_identity",
         "result_identity",
         "operator_material_occurrence_reference",
-        "operator_material_result_identity",
+        "operator_material_result_occurrence_identity",
         "operator_locality_identity",
         "operator_through_event_occurrence_identity",
         "destination_locality_identity",
