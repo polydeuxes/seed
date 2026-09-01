@@ -1,0 +1,484 @@
+"""Measurement: exact Compare Distinctions."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+import pytest
+
+import seed_runtime.byte_measurement as byte_measurement
+import seed_runtime.measurement_of_compare_distinctions as compare_distinctions
+from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_findings import (
+    COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+)
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    get_recorded_pair_measurement_comparison,
+)
+from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.measurement_of_compare_distinctions import (
+    COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+    compare_distinction_measurement_references_from_current_coordinates,
+    get_recorded_compare_distinction_measurement,
+    record_compare_distinction_measurement_result,
+)
+from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
+from tests.binary_input import binary_input
+
+
+LOCALITY = "compare-distinction-measurement"
+
+
+def _record_measurement(ledger: EventLedger):
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\n"),
+    )
+    source = next(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    result = next(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+    )
+    return source, result, current_coordinates
+
+
+def test_measurement_records_every_distinction_of_one_current_compare_result():
+    ledger = EventLedger()
+
+    source, result, current_coordinates = _record_measurement(ledger)
+    reading = get_recorded_compare_distinction_measurement(
+        ledger,
+        result.identity,
+        prior_coordinates=current_coordinates,
+    )
+
+    source_findings = source.material["finding"]["relation_findings"]
+    expected = tuple(
+        (
+            relation_finding["pair_position_result_reference"],
+            reference,
+        )
+        for relation_finding in source_findings
+        for reference in relation_finding["comparison_finding_references"]
+    )
+    measured = tuple(
+        (
+            finding["pair_position_result_reference"],
+            finding["recorded_finding_reference"],
+        )
+        for finding in reading["findings"]
+    )
+
+    assert measured == expected
+    assert reading["source_result_occurrence_identity"] == source.identity
+    assert reading["completeness_boundary"] == {
+        "source_result_occurrence_identity": source.identity,
+        "distinction_count": len(expected),
+    }
+    assert all(
+        finding["shared_position_result_position_reference"]
+        == source.material["finding"]["subject"][
+            "shared_position_result_position_reference"
+        ]
+        for finding in reading["findings"]
+    )
+    assert result.identity in current_coordinates["measurement_occurrences"]
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    assert act is not None
+    assert act.material["subject_reference"] == {
+        "comparison_result_occurrence_identity": source.identity,
+    }
+    assert "subject_to_act_binding_reference" not in act.material
+    assert "subject_to_act_binding_reference" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.list_locality(LOCALITY)
+        if event.kind
+        == "operator.measurement.compare_distinctions.subject_to_act_binding_recorded"
+    )
+    assert "yield_relation_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "compare_distinction_measurement"
+    )
+    with pytest.raises(ValueError, match="already has a result"):
+        record_compare_distinction_measurement_result(
+            ledger,
+            act_occurrence_event_identity=result.material[
+                "act_occurrence_event_identity"
+            ],
+        )
+
+
+def test_changed_measured_distinction_is_refused():
+    ledger = EventLedger()
+    _source, result, _current_coordinates = _record_measurement(ledger)
+    changed = deepcopy(result.material["findings"][0])
+    changed["recorded_finding_reference"]["finding_position"] = 10_000
+    result.material["findings"][0] = changed
+
+    with pytest.raises(ValueError, match="not exact"):
+        get_recorded_compare_distinction_measurement(ledger, result.identity)
+
+
+def test_material_slice_measures_its_current_compare_result_before_eof():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\n"),
+    )
+
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+    measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+    )
+
+    assert len(compare_results) == 1
+    assert len(measurements) == 1
+    assert measurements[0].material["source_result_occurrence_identity"] == (
+        compare_results[0].identity
+    )
+    assert len(measurements[0].material["findings"]) == sum(
+        len(finding["comparison_finding_references"])
+        for finding in compare_results[0].material["finding"]["relation_findings"]
+    )
+
+
+def test_material_slice_measures_every_current_compare_result():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+    measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+    )
+
+    assert len(compare_results) == 3
+    assert tuple(
+        measurement.material["source_result_occurrence_identity"]
+        for measurement in measurements
+    ) == tuple(result.identity for result in compare_results)
+
+
+def test_material_slice_preserves_current_coordinates_through_pair_measurement(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    original = byte_measurement._read_byte_measurement_subject_to_act_binding
+    reads = 0
+
+    def require_current_coordinates(*args, **kwargs):
+        nonlocal reads
+        reads += 1
+        assert kwargs.get("prior_coordinates") is not None
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        byte_measurement,
+        "_read_byte_measurement_subject_to_act_binding",
+        require_current_coordinates,
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+
+    assert reads > 0
+
+
+def test_material_slice_preserves_current_coordinates_through_distinction_result(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    original = compare_distinctions._read_act
+    reads = 0
+
+    def require_current_coordinates(*args, **kwargs):
+        nonlocal reads
+        reads += 1
+        assert kwargs.get("prior_coordinates") is not None
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        compare_distinctions,
+        "_read_act",
+        require_current_coordinates,
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+
+    assert reads > 0
+
+
+def test_exact_measurement_reference_addresses_the_two_results():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    references = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    assert len(references) == 1
+    earlier = ledger.get(references[0].earlier_result_occurrence_identity)
+    later = ledger.get(references[0].later_result_occurrence_identity)
+    earlier_source = ledger.get(
+        earlier.material["source_result_occurrence_identity"]
+    )
+    later_source = ledger.get(later.material["source_result_occurrence_identity"])
+    earlier_pair_reference = earlier_source.material["finding"]["subject"][
+        "recorded_pair_comparison_result_reference"
+    ]
+    later_pair_reference = later_source.material["finding"]["subject"][
+        "recorded_pair_comparison_result_reference"
+    ]
+    earlier_pair = get_recorded_pair_measurement_comparison(
+        ledger,
+        earlier_pair_reference["recorded_occurrence_identity"],
+    )
+    later_pair = get_recorded_pair_measurement_comparison(
+        ledger,
+        later_pair_reference["recorded_occurrence_identity"],
+    )
+    earlier_pair_subject = earlier_pair.get("subject_reference")
+    if earlier_pair_subject is None:
+        earlier_pair_subject = earlier_pair["subject_to_act_binding_reference"][
+            "subject_reference"
+        ]
+    later_pair_subject = later_pair.get("subject_reference")
+    if later_pair_subject is None:
+        later_pair_subject = later_pair["subject_to_act_binding_reference"][
+            "subject_reference"
+        ]
+
+    assert references[0].exact_measurement_reference == (
+        earlier_pair_subject["later_measurement_reference"]
+    )
+    assert references[0].exact_measurement_reference == (
+        later_pair_subject["earlier_measurement_reference"]
+    )
+
+
+def test_one_exact_measurement_reference_can_address_multiple_results_on_each_side():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\nabcd\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    references = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    result_occurrences_by_measurement: dict[str, tuple[set[str], set[str]]] = {}
+    for reference in references:
+        measurement_occurrence_identity = reference.exact_measurement_reference[
+            "recorded_occurrence_identity"
+        ]
+        earlier, later = result_occurrences_by_measurement.setdefault(
+            measurement_occurrence_identity,
+            (set(), set()),
+        )
+        earlier.add(reference.earlier_result_occurrence_identity)
+        later.add(reference.later_result_occurrence_identity)
+
+    assert sorted(
+        (len(earlier), len(later))
+        for earlier, later in result_occurrences_by_measurement.values()
+    ) == [(1, 2), (2, 3)]
+
+
+def test_exact_measurement_references_are_reconstructed_after_restart(tmp_path):
+    database = tmp_path / "compare-distinction-measurements.sqlite"
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    before = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    durable = SQLiteEventLedger(str(database))
+    durable.append_many(ledger.list())
+    durable.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    after = compare_distinction_measurement_references_from_current_coordinates(
+        reopened,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    assert after == before
+
+
+def test_measurement_reference_does_not_depend_on_projection_order():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\nabcd\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    expected = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    reordered_coordinates = deepcopy(current_coordinates)
+    reordered_coordinates["measurement_occurrences"] = dict(
+        reversed(tuple(current_coordinates["measurement_occurrences"].items()))
+    )
+
+    observed = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=reordered_coordinates,
+    )
+
+    def exact_references(reference):
+        return (
+            reference.earlier_result_occurrence_identity,
+            reference.later_result_occurrence_identity,
+            reference.exact_measurement_reference[
+                "recorded_occurrence_identity"
+            ],
+        )
+
+    assert sorted(map(exact_references, observed)) == sorted(
+        map(exact_references, expected)
+    )
+
+
+def test_separate_occurrences_can_carry_equal_measured_content():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nab\nab\nab\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    references = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    def measured_content(reading):
+        measured = []
+        for finding in reading["findings"]:
+            reference = finding["recorded_finding_reference"]
+            comparison = get_recorded_pair_measurement_comparison(
+                ledger,
+                reference["recorded_comparison_occurrence_identity"],
+                prior_coordinates=current_coordinates,
+            )
+            addressed = comparison["findings"][reference["finding_category"]][
+                reference["finding_position"]
+            ]
+            measured.append(
+                (
+                    finding["pair_position_result_reference"]["result_position"],
+                    addressed["subject"]["content"],
+                    reference["finding_category"],
+                    addressed["subject"],
+                )
+            )
+        return tuple(measured)
+
+    readings = tuple(
+        (
+            get_recorded_compare_distinction_measurement(
+                ledger,
+                reference.earlier_result_occurrence_identity,
+                prior_coordinates=current_coordinates,
+            ),
+            get_recorded_compare_distinction_measurement(
+                ledger,
+                reference.later_result_occurrence_identity,
+                prior_coordinates=current_coordinates,
+            ),
+        )
+        for reference in references
+    )
+
+    assert len(readings) == 2
+    assert measured_content(readings[0][0]) != measured_content(readings[0][1])
+    assert readings[1][0]["findings"] != readings[1][1]["findings"]
+    assert measured_content(readings[1][0]) == measured_content(readings[1][1])
+    assert (
+        readings[1][0]["source_result_occurrence_identity"]
+        != readings[1][1]["source_result_occurrence_identity"]
+    )

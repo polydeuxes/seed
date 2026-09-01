@@ -1,0 +1,1914 @@
+"""Measure exact yielded pair-result positions at one shared position."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import Any, NamedTuple
+
+from seed_runtime.event import Event
+from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.addressed_byte_occurrence_reference_determination import (
+    _determination_result_reference,
+    _read_determination_result,
+)
+from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+    _references_from_recorded_recurrent_pair_position_result,
+    _references_to_addressed_recorded_recurrent_pair_position_results,
+    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+    references_to_recorded_recurrent_byte_pair_occurrence_positions,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    ReferenceToRecordedPositionOfBytePairOccurrence,
+    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
+)
+
+
+SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.shared_pair_position.subject_to_act_binding_recorded"
+)
+SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.shared_pair_position.applicability_subject_to_act_binding_recorded"
+)
+SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
+    "operator.shared_pair_position.applicability_act_occurrence_recorded"
+)
+SHARED_POSITION_APPLICABILITY_RESULT_KIND = (
+    "operator.shared_pair_position.applicability_recorded"
+)
+SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT = (
+    "operator.shared_pair_position.measurement_act_occurrence_recorded"
+)
+SHARED_POSITION_MEASUREMENT_RESULT_KIND = (
+    "operator.shared_pair_position.measurement_recorded"
+)
+BOOK_CLAUSE = "01.Source.D"
+APPLICABILITY_ACT = (
+    "Applicability of exact pair occurrence coordinates to one same-position "
+    "Measurement"
+)
+MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"
+MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
+D2_RESULT_REFERENCE_COORDINATE = (
+    "addressed_byte_occurrence_reference_determination_result_reference"
+)
+
+EVENT_KIND_BOOK_CLAUSES = {
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
+    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
+    SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
+    SHARED_POSITION_APPLICABILITY_RESULT_KIND: "01.Current.E.1",
+    SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND: "01.Source.D",
+}
+class SharedPairPositionError(ValueError):
+    """One shared-position Measurement is incoherent."""
+
+
+RecordedPairPositionReference = (
+    ReferenceToRecordedRecurrentBytePairOccurrencePosition
+    | ReferenceToRecordedPositionOfBytePairOccurrence
+)
+
+
+class SharedPairPositionInputs(NamedTuple):
+    first: RecordedPairPositionReference
+    second: RecordedPairPositionReference
+
+    @property
+    def first_relation_second_position_coordinate_reference(self) -> dict[str, Any]:
+        return _position_coordinate_reference(self.first, position_name="second")
+
+    @property
+    def second_relation_first_position_coordinate_reference(self) -> dict[str, Any]:
+        return _position_coordinate_reference(self.second, position_name="first")
+
+    @property
+    def has_one_position_coordinate_reference(self) -> bool:
+        return (
+            self.first_relation_second_position_coordinate_reference
+            == self.second_relation_first_position_coordinate_reference
+        )
+
+    @property
+    def shared_position_coordinate_reference(self) -> dict[str, Any] | None:
+        if not self.has_one_position_coordinate_reference:
+            return None
+        return self.first_relation_second_position_coordinate_reference
+
+
+def _position_coordinate_reference(
+    reference: RecordedPairPositionReference,
+    *,
+    position_name: str,
+) -> dict[str, Any]:
+    if type(reference) is ReferenceToRecordedPositionOfBytePairOccurrence:
+        if position_name == "first":
+            return reference.first_position_coordinate_reference
+        if position_name == "second":
+            return reference.second_position_coordinate_reference
+        raise SharedPairPositionError("one exact pair position is required")
+    if position_name == "first":
+        position = reference.first_position
+        exact_material = reference.exact_pair[:1]
+    elif position_name == "second":
+        position = reference.second_position
+        exact_material = reference.exact_pair[1:]
+    else:
+        raise SharedPairPositionError("one exact pair position is required")
+    return {
+        "source_material_result_occurrence_identity": (
+            reference.source_material_result_occurrence_identity
+        ),
+        "locality_identity": reference.locality_identity,
+        "completeness_boundary_identity": (
+            reference.completeness_boundary_identity
+        ),
+        "position": position,
+        "exact_material": list(exact_material),
+    }
+
+
+def _identity(value: Any, message: str) -> str:
+    if type(value) is not str or not value:
+        raise SharedPairPositionError(message)
+    return value
+
+
+def _reference_material(
+    reference: RecordedPairPositionReference,
+) -> dict[str, Any]:
+    material = {
+        "recorded_occurrence_identity": reference.recorded_occurrence_identity,
+        "result_position_reference": _result_position_reference(reference),
+        "source_material_result_occurrence_identity": (
+            reference.source_material_result_occurrence_identity
+        ),
+        "locality_identity": reference.locality_identity,
+        "completeness_boundary_identity": (
+            reference.completeness_boundary_identity
+        ),
+        "exact_pair": list(reference.exact_pair),
+        "first_position": reference.first_position,
+        "second_position": reference.second_position,
+        "first_position_coordinate_reference": _position_coordinate_reference(
+            reference, position_name="first"
+        ),
+        "second_position_coordinate_reference": _position_coordinate_reference(
+            reference, position_name="second"
+        ),
+    }
+    if type(reference) not in {
+        ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+        ReferenceToRecordedPositionOfBytePairOccurrence,
+    }:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact result-position reference"
+        )
+    return material
+
+
+def _result_position_reference(
+    reference: RecordedPairPositionReference,
+) -> dict[str, Any]:
+    return {
+        "recorded_occurrence_identity": reference.recorded_occurrence_identity,
+        "result_position": reference.result_position,
+    }
+
+
+def _references(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+) -> tuple[RecordedPairPositionReference, ...]:
+    result_occurrence_identity = _identity(
+        result_occurrence_identity,
+        "shared-position Measurement requires one exact result occurrence",
+    )
+    result = ledger.get(result_occurrence_identity)
+    if result is None:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact result occurrence"
+        )
+    if (
+        result.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        return references_to_recorded_recurrent_byte_pair_occurrence_positions(
+            ledger,
+            result_occurrence_identity=result_occurrence_identity,
+        )
+    if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        return references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger,
+            result_occurrence_identity,
+        )
+    raise SharedPairPositionError(
+        "shared-position Measurement requires one exact pair-position result"
+    )
+
+
+def _resolve_reference(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+    result_position: int,
+) -> RecordedPairPositionReference:
+    return _resolve_references(
+        ledger,
+        result_occurrence_identity=_identity(
+            result_occurrence_identity,
+            "shared-position Measurement requires one exact result occurrence",
+        ),
+        result_positions=(result_position,),
+    )[0]
+
+
+def _resolve_references(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+    result_positions: tuple[int, ...],
+) -> tuple[RecordedPairPositionReference, ...]:
+    result_occurrence_identity = _identity(
+        result_occurrence_identity,
+        "shared-position Measurement requires one exact result occurrence",
+    )
+    result = ledger.get(result_occurrence_identity)
+    if result is None:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact result occurrence"
+        )
+    if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        if any(type(position) is not int or position < 0 for position in result_positions):
+            raise SharedPairPositionError(
+                "shared-position Measurement requires exact result positions"
+            )
+        try:
+            return references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
+                ledger,
+                result_occurrence_identity,
+                result_positions,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement requires exact result positions"
+            ) from error
+    if (
+        result.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        try:
+            return _references_from_recorded_recurrent_pair_position_result(
+                result,
+                get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+                    ledger, result.identity
+                ),
+                result_positions=result_positions,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement requires exact result positions"
+            ) from error
+    raise SharedPairPositionError(
+        "shared-position Measurement requires one exact pair-position result"
+    )
+
+
+def _inputs(
+    ledger: EventLedger,
+    *,
+    first_result_occurrence_identity: str,
+    first_result_position: int,
+    second_result_occurrence_identity: str,
+    second_result_position: int,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> SharedPairPositionInputs:
+    if first_result_occurrence_identity == second_result_occurrence_identity:
+        first, second = _resolve_references(
+            ledger,
+            result_occurrence_identity=second_result_occurrence_identity,
+            result_positions=(
+                first_result_position,
+                second_result_position,
+            ),
+        )
+    else:
+        result_occurrences = tuple(
+            ledger.get(identity)
+            if type(identity) is str and identity
+            else None
+            for identity in (
+                first_result_occurrence_identity,
+                second_result_occurrence_identity,
+            )
+        )
+        if all(
+            result is not None
+            and result.kind
+            == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+            for result in result_occurrences
+        ):
+            first, second = (
+                _references_to_addressed_recorded_recurrent_pair_position_results(
+                    ledger,
+                    result_and_result_positions=(
+                        (
+                            _identity(
+                                first_result_occurrence_identity,
+                                "shared-position Measurement requires one exact result occurrence",
+                            ),
+                            first_result_position,
+                        ),
+                        (
+                            _identity(
+                                second_result_occurrence_identity,
+                                "shared-position Measurement requires one exact result occurrence",
+                            ),
+                            second_result_position,
+                        ),
+                    ),
+                    prior_coordinates=prior_coordinates,
+                )
+            )
+            return _validated_inputs(first, second)
+        first = _resolve_reference(
+            ledger,
+            result_occurrence_identity=first_result_occurrence_identity,
+            result_position=first_result_position,
+        )
+        second = _resolve_reference(
+            ledger,
+            result_occurrence_identity=second_result_occurrence_identity,
+            result_position=second_result_position,
+        )
+    return _validated_inputs(first, second)
+
+
+def _validated_inputs(
+    first: RecordedPairPositionReference,
+    second: RecordedPairPositionReference,
+) -> SharedPairPositionInputs:
+    if _result_position_reference(first) == _result_position_reference(second):
+        raise SharedPairPositionError(
+            "one result position cannot occupy both exact input positions"
+        )
+    if (
+        first.source_material_result_occurrence_identity
+        != second.source_material_result_occurrence_identity
+        or first.locality_identity != second.locality_identity
+        or first.completeness_boundary_identity
+        != second.completeness_boundary_identity
+    ):
+        raise SharedPairPositionError(
+            "shared-position inputs require one source occurrence, Locality, and boundary"
+        )
+    return SharedPairPositionInputs(first=first, second=second)
+
+
+def _direct_coordinates_from_binding_material(
+    material: dict[str, Any],
+) -> tuple[bytes, int, int]:
+    exact_pair = material.get("exact_pair")
+    if (
+        type(exact_pair) is not list
+        or len(exact_pair) != 2
+        or any(
+            type(value) is not int or value < 0 or value > 255
+            for value in exact_pair
+        )
+    ):
+        raise SharedPairPositionError(
+            "shared-position binding has no exact inputs"
+        )
+    return (
+        bytes(exact_pair),
+        material.get("first_position"),
+        material.get("second_position"),
+    )
+
+
+def _result_position_from_binding_material(
+    material: dict[str, Any],
+) -> int:
+    reference = material.get("result_position_reference")
+    if (
+        type(reference) is not dict
+        or reference.get("recorded_occurrence_identity")
+        != material.get("recorded_occurrence_identity")
+    ):
+        raise SharedPairPositionError(
+            "shared-position binding has no exact result-position address"
+        )
+    if (
+        set(reference) == {"recorded_occurrence_identity", "result_position"}
+        and type(reference["result_position"]) is int
+        and reference["result_position"] >= 0
+    ):
+        return reference["result_position"]
+    raise SharedPairPositionError(
+        "shared-position binding has no exact result-position address"
+    )
+
+
+def _inputs_from_binding_material(
+    ledger: EventLedger,
+    *,
+    first: dict[str, Any],
+    second: dict[str, Any],
+    prior_coordinates: dict[str, Any] | None = None,
+) -> SharedPairPositionInputs:
+    result_identities = (
+        first.get("recorded_occurrence_identity"),
+        second.get("recorded_occurrence_identity"),
+    )
+    results = tuple(
+        ledger.get(identity) if type(identity) is str else None
+        for identity in result_identities
+    )
+    if all(
+        result is not None and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        for result in results
+    ):
+        materials = (first, second)
+        coordinates = tuple(
+            _direct_coordinates_from_binding_material(material)
+            for material in materials
+        )
+        result_positions = tuple(
+            _result_position_from_binding_material(material)
+            for material in materials
+        )
+        try:
+            if result_identities[0] == result_identities[1]:
+                first_reference, second_reference = (
+                    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
+                        ledger,
+                        result_identities[0],
+                        result_positions,
+                        exact_coordinates=coordinates,
+                    )
+                )
+            else:
+                first_reference, second_reference = tuple(
+                    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
+                        ledger,
+                        result_identity,
+                        (result_position,),
+                        exact_coordinates=(coordinate,),
+                    )[0]
+                    for result_identity, result_position, coordinate in zip(
+                        result_identities,
+                        result_positions,
+                        coordinates,
+                        strict=True,
+                    )
+                )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position binding has no exact inputs"
+            ) from error
+        return _validated_inputs(first_reference, second_reference)
+    return _inputs(
+        ledger,
+        first_result_occurrence_identity=result_identities[0],
+        first_result_position=_result_position_from_binding_material(first),
+        second_result_occurrence_identity=result_identities[1],
+        second_result_position=_result_position_from_binding_material(second),
+        prior_coordinates=prior_coordinates,
+    )
+
+
+def _require_current_coordinates(
+    ledger: EventLedger,
+    *,
+    inputs: SharedPairPositionInputs,
+    current_coordinates: dict[str, Any],
+    carried_coordinate: str,
+    required_occurrences: tuple[str, ...],
+) -> str:
+    if type(current_coordinates) is not dict:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires exact current coordinates"
+        )
+    carried = current_coordinates.get(carried_coordinate)
+    boundary = current_coordinates.get("through_event_occurrence_identity")
+    if (
+        current_coordinates.get("locality_identity") != inputs.first.locality_identity
+        or type(carried) is not dict
+        or any(identity not in carried for identity in required_occurrences)
+        or type(boundary) is not str
+        or not boundary
+    ):
+        raise SharedPairPositionError(
+            "current coordinates lack the exact shared-position inputs"
+        )
+    ordered = tuple(dict.fromkeys((*required_occurrences, boundary)))
+    try:
+        resolved = ledger.occurrences_in_append_order(
+            ordered,
+            locality_identity=inputs.first.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "through-occurrence boundary is not after exact shared-position inputs"
+        ) from error
+    if tuple(event.identity for event in resolved) != ordered:
+        raise SharedPairPositionError(
+            "through-occurrence boundary is not after exact shared-position inputs"
+        )
+    return boundary
+
+
+def _binding_reference(event: Event) -> dict[str, Any]:
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "book_clause_identity": event.material["book_clause_identity"],
+        "exact_act_identity": event.material["exact_act_identity"],
+        "subject_reference": deepcopy(event.material["subject_reference"]),
+    }
+
+
+def _binding_material(
+    *,
+    inputs: SharedPairPositionInputs,
+    through_event_occurrence_identity: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    return {
+        "exact_act_identity": identities["exact_act_identity"],
+        "subject_reference": {
+            "first_position_result": _reference_material(inputs.first),
+            "second_position_result": _reference_material(inputs.second),
+        },
+        "measurement_act_occurrence_identity": identities[
+            "measurement_act_occurrence_identity"
+        ],
+        "measurement_result_identity": identities[
+            "measurement_result_identity"
+        ],
+        "book_clause_identity": BOOK_CLAUSE,
+        "first_position_result": _reference_material(inputs.first),
+        "second_position_result": _reference_material(inputs.second),
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+def _applicability_binding_material(
+    *,
+    inputs: SharedPairPositionInputs,
+    through_event_occurrence_identity: str,
+    measurement_act_identity: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    first_subject = _reference_material(inputs.first)
+    second_subject = _reference_material(inputs.second)
+    return {
+        "exact_act_identity": identities["exact_act_identity"],
+        "subject_reference": {
+            "first_input": {
+                "subject": first_subject,
+                "addressed_act_identity": measurement_act_identity,
+            },
+            "second_input": {
+                "subject": second_subject,
+                "addressed_act_identity": measurement_act_identity,
+            },
+        },
+        "applicability_act_occurrence_identity": identities[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": identities[
+            "applicability_result_identity"
+        ],
+        "addressed_act_identity": measurement_act_identity,
+        "book_clause_identity": "01.Current.E.1",
+        "first_position_result": first_subject,
+        "second_position_result": second_subject,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+_IDENTITY_COORDINATES = (
+    "exact_act_identity",
+    "measurement_act_occurrence_identity",
+    "measurement_result_identity",
+)
+
+
+def _mint_measurement_identities(ledger: EventLedger) -> dict[str, str]:
+    return {
+        "exact_act_identity": ledger.mint_identity(
+            "shared_pair_position_measurement_act_identity"
+        ),
+        "measurement_act_occurrence_identity": ledger.mint_identity(
+            "shared_pair_position_measurement_act_occurrence_identity"
+        ),
+        "measurement_result_identity": ledger.mint_identity(
+            "shared_pair_position_measurement_result_identity"
+        ),
+    }
+
+
+def _mint_applicability_identities(ledger: EventLedger) -> dict[str, str]:
+    return {
+        "exact_act_identity": ledger.mint_identity(
+            "shared_pair_position_applicability_act_identity"
+        ),
+        "applicability_act_occurrence_identity": ledger.mint_identity(
+            "shared_pair_position_applicability_act_occurrence_identity"
+        ),
+        "applicability_result_identity": ledger.mint_identity(
+            "shared_pair_position_applicability_result_identity"
+        ),
+    }
+
+
+def _record_shared_position_binding(
+    ledger: EventLedger,
+    *,
+    inputs: SharedPairPositionInputs,
+    current_coordinates: dict[str, Any],
+    required_occurrences: tuple[str, ...],
+) -> Event:
+    boundary = _require_current_coordinates(
+        ledger,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+        carried_coordinate="measurement_occurrences",
+        required_occurrences=required_occurrences,
+    )
+    identities = _mint_measurement_identities(ledger)
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError(
+            "shared-position Measurement occurrence identities collapsed"
+        )
+    return ledger.append(
+        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            identities=identities,
+        ),
+        locality_identity=inputs.first.locality_identity,
+    )
+
+
+def _d2_result_inputs(
+    ledger: EventLedger,
+    *,
+    result_event_identity: str,
+    prior_coordinates: dict[str, Any],
+) -> tuple[Event, SharedPairPositionInputs]:
+    try:
+        result, _act, _source, references = (
+            _read_determination_result(
+                ledger,
+                result_event_identity,
+                prior_coordinates=prior_coordinates,
+            )
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "shared-position binding requires one exact D.2 determination result"
+        ) from error
+    if len(references) != 2:
+        raise SharedPairPositionError(
+            "shared-position binding requires exactly two ordered D.2 result-position references"
+        )
+    try:
+        inputs = _validated_inputs(references[0], references[1])
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "shared-position binding requires exactly two ordered D.2 result-position references"
+        ) from error
+    return result, inputs
+
+
+def _require_exact_d2_result_current_coordinates(
+    ledger: EventLedger,
+    *,
+    result: Event,
+    inputs: SharedPairPositionInputs,
+    current_coordinates: dict[str, Any],
+) -> str:
+    measurements = (
+        current_coordinates.get("measurement_occurrences")
+        if type(current_coordinates) is dict
+        else None
+    )
+    if (
+        type(measurements) is not dict
+        or measurements.get(result.identity)
+        != _determination_result_reference(result)
+    ):
+        raise SharedPairPositionError(
+            "current coordinates carry no exact D.2 determination result"
+        )
+    return _require_current_coordinates(
+        ledger,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+        carried_coordinate="measurement_occurrences",
+        required_occurrences=(result.identity,),
+    )
+
+
+def _d2_measurement_act_material(
+    *,
+    inputs: SharedPairPositionInputs,
+    determination_result: Event,
+    through_event_occurrence_identity: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    return {
+        "addressed_act_identity": identities["exact_act_identity"],
+        "act_occurrence_identity": identities[
+            "measurement_act_occurrence_identity"
+        ],
+        "measurement_result_identity": identities["measurement_result_identity"],
+        "act": MEASUREMENT_ACT,
+        "subject_reference": {
+            "first_position_result": _reference_material(inputs.first),
+            "second_position_result": _reference_material(inputs.second),
+        },
+        D2_RESULT_REFERENCE_COORDINATE: _determination_result_reference(
+            determination_result
+        ),
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+def record_shared_position_measurement_act_occurrence_from_addressed_byte_occurrence_reference_determination_result(
+    ledger: EventLedger,
+    *,
+    determination_result_event_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    """Measure the exact shared position already established by one D.2 result."""
+
+    result_identity = _identity(
+        determination_result_event_identity,
+        "shared-position Measurement requires one exact D.2 determination result",
+    )
+    result, inputs = _d2_result_inputs(
+        ledger,
+        result_event_identity=result_identity,
+        prior_coordinates=current_coordinates,
+    )
+    boundary = _require_exact_d2_result_current_coordinates(
+        ledger,
+        result=result,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+    )
+    if not inputs.has_one_position_coordinate_reference:
+        raise SharedPairPositionError(
+            "D.2 result establishes no exact shared-position subject"
+        )
+    identities = _mint_measurement_identities(ledger)
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError(
+            "shared-position Measurement occurrence identities collapsed"
+        )
+    result_material = deepcopy(result.material)
+    result_read, inputs_read = _d2_result_inputs(
+        ledger,
+        result_event_identity=result_identity,
+        prior_coordinates=current_coordinates,
+    )
+    boundary_event = ledger.get(boundary)
+    if (
+        result_read != result
+        or result.material != result_material
+        or inputs_read != inputs
+        or boundary_event is None
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+        or current_coordinates.get("measurement_occurrences", {}).get(
+            result.identity
+        )
+        != _determination_result_reference(result)
+    ):
+        raise SharedPairPositionError(
+            "D.2 determination result or current coordinates changed before Measurement"
+        )
+    return ledger.append(
+        SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
+        _d2_measurement_act_material(
+            inputs=inputs,
+            determination_result=result,
+            through_event_occurrence_identity=boundary,
+            identities=identities,
+        ),
+        locality_identity=result.locality_identity,
+    )
+
+
+def record_shared_position_subject_to_act_binding(
+    ledger: EventLedger,
+    *,
+    first_result_occurrence_identity: str,
+    first_result_position: int,
+    second_result_occurrence_identity: str,
+    second_result_position: int,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    """Bind recurrent yielded result positions only."""
+
+    for identity in (
+        first_result_occurrence_identity,
+        second_result_occurrence_identity,
+    ):
+        result = ledger.get(identity) if type(identity) is str else None
+        if result is not None and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+            raise SharedPairPositionError(
+                "direct pair-result positions require one D.2 determination result"
+            )
+    inputs = _inputs(
+        ledger,
+        first_result_occurrence_identity=first_result_occurrence_identity,
+        first_result_position=first_result_position,
+        second_result_occurrence_identity=second_result_occurrence_identity,
+        second_result_position=second_result_position,
+        prior_coordinates=current_coordinates,
+    )
+    required = tuple(
+        dict.fromkeys(
+            (
+                inputs.first.recorded_occurrence_identity,
+                inputs.second.recorded_occurrence_identity,
+            )
+        )
+    )
+    return _record_shared_position_binding(
+        ledger,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+        required_occurrences=required,
+    )
+
+
+def _read_binding(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, SharedPairPositionInputs]:
+    event = ledger.get(_identity(event_identity, "shared-position requires one binding"))
+    if (
+        event is None
+        or event.kind
+        not in {
+            SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError("shared-position binding is absent or corrupted")
+    first = event.material.get("first_position_result")
+    second = event.material.get("second_position_result")
+    if type(first) is not dict or type(second) is not dict:
+        raise SharedPairPositionError("shared-position binding has no exact inputs")
+    boundary = event.material.get("through_event_occurrence_identity")
+    inputs = _inputs_from_binding_material(
+        ledger,
+        first=first,
+        second=second,
+        prior_coordinates=prior_coordinates,
+    )
+    identity_coordinates = (
+        _IDENTITY_COORDINATES
+        if event.kind
+        == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        else (
+            "exact_act_identity",
+            "applicability_act_occurrence_identity",
+            "applicability_result_identity",
+        )
+    )
+    identities = {
+        coordinate: event.material.get(coordinate)
+        for coordinate in identity_coordinates
+    }
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+    ):
+        raise SharedPairPositionError("shared-position binding identities are not exact")
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    if (
+        boundary_event is None
+        or boundary_event.locality_identity != event.locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError(
+            "shared-position binding has no exact through-occurrence boundary"
+        )
+    if event.kind == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        expected = _binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            identities=identities,
+        )
+    else:
+        expected = _applicability_binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            measurement_act_identity=event.material.get(
+                "addressed_act_identity"
+            ),
+            identities=identities,
+        )
+    if event.locality_identity != inputs.first.locality_identity or event.material != expected:
+        raise SharedPairPositionError("shared-position binding coordinates are not exact")
+    ordered = tuple(
+        dict.fromkeys(
+            (
+                inputs.first.recorded_occurrence_identity,
+                inputs.second.recorded_occurrence_identity,
+                boundary,
+                event.identity,
+            )
+        )
+    )
+    try:
+        resolved = ledger.occurrences_in_append_order(
+            ordered,
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError("shared-position binding order is false") from error
+    if tuple(item.identity for item in resolved) != ordered:
+        raise SharedPairPositionError("shared-position binding order is false")
+    return event, inputs
+
+
+def get_shared_position_subject_to_act_binding(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    event, _inputs_reading = _read_binding(ledger, event_identity)
+    return deepcopy(event.material)
+
+
+def _applicability_act_material(
+    *,
+    binding: Event,
+    inputs: SharedPairPositionInputs,
+    through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    return {
+        "addressed_act_identity": binding.material["addressed_act_identity"],
+        "applicability_act_occurrence_identity": binding.material[
+            "applicability_act_occurrence_identity"
+        ],
+        "act": APPLICABILITY_ACT,
+        "subject_to_act_binding_reference": _binding_reference(binding),
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+def record_shared_position_applicability_act_occurrence(
+    ledger: EventLedger,
+    *,
+    binding_event_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    measurement_binding, inputs = _read_binding(
+        ledger,
+        binding_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    if (
+        measurement_binding.kind
+        != SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability addresses another Measurement binding"
+        )
+    boundary = _require_current_coordinates(
+        ledger,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+        carried_coordinate="subject_to_act_binding_occurrences",
+        required_occurrences=(measurement_binding.identity,),
+    )
+    identities = _mint_applicability_identities(ledger)
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError(
+            "shared-position Applicability occurrence identities collapsed"
+        )
+    applicability_binding = ledger.append(
+        SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _applicability_binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            measurement_act_identity=measurement_binding.material[
+                "exact_act_identity"
+            ],
+            identities=identities,
+        ),
+        locality_identity=measurement_binding.locality_identity,
+    )
+    return ledger.append(
+        SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+        _applicability_act_material(
+            binding=applicability_binding,
+            inputs=inputs,
+            through_event_occurrence_identity=applicability_binding.identity,
+        ),
+        locality_identity=measurement_binding.locality_identity,
+    )
+
+
+def _read_applicability_act(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    binding_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, Event, SharedPairPositionInputs]:
+    event = ledger.get(
+        _identity(event_identity, "shared-position Applicability requires Act occurrence")
+    )
+    if (
+        event is None
+        or event.kind != SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError("shared-position Applicability Act is corrupted")
+    binding_reference = event.material.get("subject_to_act_binding_reference")
+    if type(binding_reference) is not dict:
+        raise SharedPairPositionError("Applicability Act carries no binding")
+    binding_identity = binding_reference.get("recorded_occurrence_identity")
+    if binding_reading is None:
+        binding_reading = _read_binding(
+            ledger,
+            binding_identity,
+            prior_coordinates=prior_coordinates,
+        )
+    binding, inputs = binding_reading
+    boundary = event.material.get("through_event_occurrence_identity")
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    expected = _applicability_act_material(
+        binding=binding,
+        inputs=inputs,
+        through_event_occurrence_identity=boundary,
+    )
+    if (
+        binding_identity != binding.identity
+        or event.locality_identity != binding.locality_identity
+        or boundary_event is None
+        or boundary_event.locality_identity != event.locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or event.material != expected
+    ):
+        raise SharedPairPositionError("Applicability Act coordinates are not exact")
+    try:
+        ledger.occurrences_in_append_order(
+            tuple(dict.fromkeys((binding.identity, boundary, event.identity))),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError("Applicability Act order is false") from error
+    return event, binding, inputs
+
+
+def get_shared_position_applicability_act_occurrence(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    event, _binding, _inputs_reading = _read_applicability_act(
+        ledger, event_identity
+    )
+    return deepcopy(event.material)
+
+
+def _measurement_binding_addressed_by_applicability(
+    ledger: EventLedger,
+    applicability_binding: Event,
+    inputs: SharedPairPositionInputs,
+) -> Event:
+    addressed_act_identity = applicability_binding.material.get(
+        "addressed_act_identity"
+    )
+    matches = tuple(
+        event
+        for event in ledger.list_locality(applicability_binding.locality_identity)
+        if event.kind
+        == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        and event.material.get("exact_act_identity") == addressed_act_identity
+    )
+    if len(matches) != 1:
+        raise SharedPairPositionError(
+            "shared-position Applicability addresses no exact Measurement binding"
+        )
+    measurement_binding = matches[0]
+    identities = {
+        coordinate: measurement_binding.material.get(coordinate)
+        for coordinate in _IDENTITY_COORDINATES
+    }
+    boundary = measurement_binding.material.get("through_event_occurrence_identity")
+    expected = _binding_material(
+        inputs=inputs,
+        through_event_occurrence_identity=boundary,
+        identities=identities,
+    )
+    if (
+        ledger.integrity_of(measurement_binding.identity) == CORRUPTED
+        or measurement_binding.locality_identity
+        != applicability_binding.locality_identity
+        or any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or measurement_binding.material != expected
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability addresses other Measurement subjects"
+        )
+    return measurement_binding
+
+
+def _applicability_binding_for_inputs(
+    ledger: EventLedger,
+    event_identity: str,
+    inputs: SharedPairPositionInputs,
+) -> Event:
+    binding = ledger.get(event_identity)
+    if (
+        binding is None
+        or binding.kind
+        != SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or binding.locality_identity != inputs.first.locality_identity
+        or ledger.integrity_of(binding.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability binding is absent or corrupted"
+        )
+    identities = {
+        coordinate: binding.material.get(coordinate)
+        for coordinate in (
+            "exact_act_identity",
+            "applicability_act_occurrence_identity",
+            "applicability_result_identity",
+        )
+    }
+    expected = _applicability_binding_material(
+        inputs=inputs,
+        through_event_occurrence_identity=binding.material.get(
+            "through_event_occurrence_identity"
+        ),
+        measurement_act_identity=binding.material.get(
+            "addressed_act_identity"
+        ),
+        identities=identities,
+    )
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or binding.material != expected
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability binding coordinates are not exact"
+        )
+    return binding
+
+
+def _applicability_result_material(
+    *,
+    ledger: EventLedger,
+    act: Event,
+    binding: Event,
+    inputs: SharedPairPositionInputs,
+) -> dict[str, Any]:
+    measurement_binding = _measurement_binding_addressed_by_applicability(
+        ledger,
+        binding,
+        inputs,
+    )
+    applicable = inputs.has_one_position_coordinate_reference
+    applicability = "applicable" if applicable else "inapplicable"
+    return {
+        "result_identity": binding.material["applicability_result_identity"],
+        "dimensions": {
+            "identity": binding.material["applicability_result_identity"],
+            "content": {
+                "first_relation_second_position_coordinate_reference": (
+                    inputs.first_relation_second_position_coordinate_reference
+                ),
+                "second_relation_first_position_coordinate_reference": (
+                    inputs.second_relation_first_position_coordinate_reference
+                ),
+                "shared_position_coordinate_reference": (
+                    inputs.shared_position_coordinate_reference
+                ),
+            },
+        },
+        "exact_act": APPLICABILITY_ACT,
+        "addressed_act_identity": measurement_binding.material[
+            "exact_act_identity"
+        ],
+        "addressed_act_occurrence_identity": (
+            measurement_binding.material["measurement_act_occurrence_identity"]
+            if applicable
+            else None
+        ),
+        "applicability_act_identity": binding.material[
+            "exact_act_identity"
+        ],
+        "applicability_act_occurrence_identity": binding.material[
+            "applicability_act_occurrence_identity"
+        ],
+        "subject_to_act_binding_reference": _binding_reference(binding),
+        "act_occurrence_event_identity": act.identity,
+        "first_position_result": _reference_material(inputs.first),
+        "second_position_result": _reference_material(inputs.second),
+        "applicability": applicability,
+    }
+
+
+def _refuse_existing_result(
+    ledger: EventLedger,
+    *,
+    act: Event,
+    result_kind: str,
+) -> None:
+    act_occurrence_coordinate = (
+        "applicability_act_occurrence_identity"
+        if act.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT
+        else "act_occurrence_identity"
+    )
+    act_occurrence_identity = act.material[act_occurrence_coordinate]
+    for event in ledger.list_locality(act.locality_identity):
+        if event.kind != result_kind:
+            continue
+        if (
+            event.material.get("act_occurrence_event_identity") == act.identity
+            or event.material.get("act_occurrence_identity")
+            == act_occurrence_identity
+            or event.material.get("applicability_act_occurrence_identity")
+            == act_occurrence_identity
+            or event.material.get("dimensions", {}).get(
+                "act_occurrence_identity"
+            )
+            == act_occurrence_identity
+        ):
+            raise SharedPairPositionError(
+                "one shared-position Act cannot Yield a second result"
+            )
+
+
+def record_shared_position_applicability_result(
+    ledger: EventLedger,
+    *,
+    applicability_act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
+) -> Event:
+    act, binding, inputs = _read_applicability_act(
+        ledger,
+        applicability_act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    _refuse_existing_result(
+        ledger,
+        act=act,
+        result_kind=SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+    )
+    result = _applicability_result_material(
+        ledger=ledger,
+        act=act,
+        binding=binding,
+        inputs=inputs,
+    )
+    return ledger.append(
+        SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+        _recorded_applicability_result_material(result),
+        locality_identity=act.locality_identity,
+    )
+
+
+def _recorded_applicability_result_material(
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "result_identity": result["result_identity"],
+        "dimensions": deepcopy(result["dimensions"]),
+        "exact_act": result["exact_act"],
+        "addressed_act_identity": result["addressed_act_identity"],
+        "addressed_act_occurrence_identity": result[
+            "addressed_act_occurrence_identity"
+        ],
+        "applicability_act_identity": result["applicability_act_identity"],
+        "applicability_act_occurrence_identity": result[
+            "applicability_act_occurrence_identity"
+        ],
+        "subject_to_act_binding_reference": deepcopy(
+            result["subject_to_act_binding_reference"]
+        ),
+        "act_occurrence_event_identity": result[
+            "act_occurrence_event_identity"
+        ],
+        "first_position_result": deepcopy(result["first_position_result"]),
+        "second_position_result": deepcopy(result["second_position_result"]),
+        "applicability": result["applicability"],
+    }
+
+
+def _require_direct_result(
+    ledger: EventLedger,
+    *,
+    event: Event,
+    act: Event,
+    result_kind: str,
+) -> None:
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "Applicability result occurrence order is false"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            result_kind,
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
+    )
+    if (
+        tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise SharedPairPositionError(
+            "Act has no single exact result occurrence"
+        )
+
+
+def _read_applicability_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    binding_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, Event, Event, SharedPairPositionInputs, dict[str, Any]]:
+    event = ledger.get(_identity(event_identity, "Applicability requires one result"))
+    if (
+        event is None
+        or event.kind != SHARED_POSITION_APPLICABILITY_RESULT_KIND
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError("shared-position Applicability result is corrupted")
+    act_identity = event.material.get("act_occurrence_event_identity")
+    act, binding, inputs = _read_applicability_act(
+        ledger,
+        act_identity,
+        binding_reading=binding_reading,
+        prior_coordinates=prior_coordinates,
+    )
+    expected = _applicability_result_material(
+        ledger=ledger,
+        act=act,
+        binding=binding,
+        inputs=inputs,
+    )
+    if event.locality_identity != act.locality_identity or event.material != expected:
+        raise SharedPairPositionError("Applicability result coordinates are not exact")
+    _require_direct_result(
+        ledger,
+        event=event,
+        act=act,
+        result_kind=SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+    )
+    return event, act, binding, inputs, deepcopy(event.material)
+
+
+def get_recorded_shared_position_applicability(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    return deepcopy(_read_applicability_result(ledger, event_identity)[4])
+
+
+def _measurement_act_material(
+    *,
+    binding: Event,
+    inputs: SharedPairPositionInputs,
+    applicability: Event,
+    through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    return {
+        "addressed_act_identity": binding.material["exact_act_identity"],
+        "act_occurrence_identity": binding.material[
+            "measurement_act_occurrence_identity"
+        ],
+        "act": MEASUREMENT_ACT,
+        "subject_to_act_binding_reference": _binding_reference(binding),
+        "applicability_result_reference": {
+            "recorded_occurrence_identity": applicability.identity,
+            "result_identity": applicability.material["result_identity"],
+        },
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+    }
+
+
+def record_shared_position_measurement_act_occurrence(
+    ledger: EventLedger,
+    *,
+    applicability_result_event_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    applicability, _act, applicability_binding, inputs, applicability_material = (
+        _read_applicability_result(
+            ledger,
+            applicability_result_event_identity,
+            prior_coordinates=current_coordinates,
+        )
+    )
+    if applicability_material["applicability"] != "applicable":
+        raise SharedPairPositionError(
+            "inapplicable pair-position inputs cannot participate"
+        )
+    measurement_binding = _measurement_binding_addressed_by_applicability(
+        ledger,
+        applicability_binding,
+        inputs,
+    )
+    boundary = _require_current_coordinates(
+        ledger,
+        inputs=inputs,
+        current_coordinates=current_coordinates,
+        carried_coordinate="applicability_result_occurrences",
+        required_occurrences=(applicability.identity,),
+    )
+    return ledger.append(
+        SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
+        _measurement_act_material(
+            binding=measurement_binding,
+            inputs=inputs,
+            applicability=applicability,
+            through_event_occurrence_identity=boundary,
+        ),
+        locality_identity=measurement_binding.locality_identity,
+    )
+
+
+def _read_measurement_act(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    binding_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, Event | None, Event | None, SharedPairPositionInputs]:
+    event = ledger.get(_identity(event_identity, "shared-position requires Act occurrence"))
+    if (
+        event is None
+        or event.kind != SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError("shared-position Measurement Act is corrupted")
+    determination_reference = event.material.get(D2_RESULT_REFERENCE_COORDINATE)
+    if type(determination_reference) is dict:
+        determination_identity = determination_reference.get(
+            "recorded_occurrence_identity"
+        )
+        through_identity = event.material.get("through_event_occurrence_identity")
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates_through,
+        )
+
+        try:
+            d2_coordinates = read_operator_current_coordinates_through(
+                ledger,
+                locality_identity=event.locality_identity,
+                through_event_occurrence_identity=through_identity,
+            )
+            determination_result, inputs = _d2_result_inputs(
+                ledger,
+                result_event_identity=determination_identity,
+                prior_coordinates=d2_coordinates,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement Act carries no exact D.2 result"
+            ) from error
+        identities = {
+            "exact_act_identity": event.material.get("addressed_act_identity"),
+            "measurement_act_occurrence_identity": event.material.get(
+                "act_occurrence_identity"
+            ),
+            "measurement_result_identity": event.material.get(
+                "measurement_result_identity"
+            ),
+        }
+        expected = _d2_measurement_act_material(
+            inputs=inputs,
+            determination_result=determination_result,
+            through_event_occurrence_identity=through_identity,
+            identities=identities,
+        )
+        if (
+            determination_reference
+            != _determination_result_reference(determination_result)
+            or not inputs.has_one_position_coordinate_reference
+            or event.locality_identity != determination_result.locality_identity
+            or any(type(value) is not str or not value for value in identities.values())
+            or len(set(identities.values())) != len(identities)
+            or event.material != expected
+        ):
+            raise SharedPairPositionError(
+                "shared-position Measurement Act D.2 coordinates are not exact"
+            )
+        try:
+            ordered = ledger.occurrences_in_append_order(
+                tuple(
+                    dict.fromkeys(
+                        (determination_result.identity, through_identity, event.identity)
+                    )
+                ),
+                locality_identity=event.locality_identity,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement Act order is false"
+            ) from error
+        if ordered[-1].identity != event.identity:
+            raise SharedPairPositionError(
+                "shared-position Measurement Act order is false"
+            )
+        return event, None, None, inputs
+    binding_reference = event.material.get("subject_to_act_binding_reference")
+    applicability_reference = event.material.get("applicability_result_reference")
+    if type(binding_reference) is not dict or type(applicability_reference) is not dict:
+        raise SharedPairPositionError("Measurement Act carries no exact inputs")
+    if binding_reading is None:
+        binding_reading = _read_binding(
+            ledger,
+            binding_reference.get("recorded_occurrence_identity"),
+            prior_coordinates=prior_coordinates,
+        )
+    binding, inputs = binding_reading
+    if (
+        binding_reference.get("recorded_occurrence_identity")
+        != binding.identity
+    ):
+        raise SharedPairPositionError("Measurement Act carries no exact inputs")
+    applicability_identity = applicability_reference.get("recorded_occurrence_identity")
+    applicability_event = ledger.get(applicability_identity)
+    applicability_act_event = (
+        ledger.get(applicability_event.material.get("act_occurrence_event_identity"))
+        if applicability_event is not None
+        else None
+    )
+    applicability_binding_reference = (
+        applicability_act_event.material.get("subject_to_act_binding_reference")
+        if applicability_act_event is not None
+        else None
+    )
+    applicability_binding = _applicability_binding_for_inputs(
+        ledger,
+        applicability_binding_reference.get("recorded_occurrence_identity")
+        if type(applicability_binding_reference) is dict
+        else None,
+        inputs,
+    )
+    (
+        applicability,
+        _act,
+        applicability_binding,
+        applicability_inputs,
+        applicability_material,
+    ) = _read_applicability_result(
+        ledger,
+        applicability_identity,
+        binding_reading=(applicability_binding, inputs),
+        prior_coordinates=prior_coordinates,
+    )
+    boundary = event.material.get("through_event_occurrence_identity")
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    expected = _measurement_act_material(
+        binding=binding,
+        inputs=inputs,
+        applicability=applicability,
+        through_event_occurrence_identity=boundary,
+    )
+    if (
+        applicability_inputs != inputs
+        or _measurement_binding_addressed_by_applicability(
+            ledger,
+            applicability_binding,
+            applicability_inputs,
+        ).identity
+        != binding.identity
+        or applicability_material["applicability"] != "applicable"
+        or event.locality_identity != binding.locality_identity
+        or boundary_event is None
+        or boundary_event.locality_identity != event.locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or event.material != expected
+    ):
+        raise SharedPairPositionError("Measurement Act coordinates are not exact")
+    try:
+        ledger.occurrences_in_append_order(
+            tuple(dict.fromkeys((applicability.identity, boundary, event.identity))),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError("Measurement Act order is false") from error
+    return event, binding, applicability, inputs
+
+
+def get_shared_position_measurement_act_occurrence(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    event, _binding, _applicability, _inputs_reading = _read_measurement_act(
+        ledger, event_identity
+    )
+    return deepcopy(event.material)
+
+
+def _shared_position_result_position(
+    *, inputs: SharedPairPositionInputs
+) -> dict[str, Any]:
+    subject = {
+        "first_position_result_reference": _result_position_reference(inputs.first),
+        "second_position_result_reference": _result_position_reference(inputs.second),
+    }
+    content = {
+        "shared_position_coordinate_reference": (
+            inputs.shared_position_coordinate_reference
+        ),
+        "source_material_result_occurrence_identity": (
+            inputs.first.source_material_result_occurrence_identity
+        ),
+        "completeness_boundary_identity": (
+            inputs.first.completeness_boundary_identity
+        ),
+    }
+    return {
+        "result_position": 0,
+        "subject": subject,
+        "content": content,
+    }
+
+
+def _measurement_result_material(
+    *,
+    act: Event,
+    binding: Event | None,
+    applicability: Event | None,
+    inputs: SharedPairPositionInputs,
+) -> dict[str, Any]:
+    result_position = _shared_position_result_position(inputs=inputs)
+    if binding is None or applicability is None:
+        determination_reference = act.material.get(D2_RESULT_REFERENCE_COORDINATE)
+        if type(determination_reference) is not dict:
+            raise SharedPairPositionError(
+                "shared-position Measurement Act has no exact source coordinates"
+            )
+        return {
+            "result_identity": act.material["measurement_result_identity"],
+            "dimensions": {
+                "identity": act.material["measurement_result_identity"],
+                "content": "one exact shared position of byte-pair occurrences",
+            },
+            "exact_act": MEASUREMENT_ACT,
+            "addressed_act_identity": act.material["addressed_act_identity"],
+            "act_occurrence_identity": act.material["act_occurrence_identity"],
+            "act_occurrence_event_identity": act.identity,
+            D2_RESULT_REFERENCE_COORDINATE: deepcopy(determination_reference),
+            "source_localities": [inputs.first.locality_identity],
+            "completeness_boundary": {
+                "identity": inputs.first.completeness_boundary_identity,
+            },
+            "first_position_result": _reference_material(inputs.first),
+            "second_position_result": _reference_material(inputs.second),
+            "result_positions": [result_position],
+        }
+    return {
+        "result_identity": binding.material["measurement_result_identity"],
+        "dimensions": {
+            "identity": binding.material["measurement_result_identity"],
+            "content": "one exact shared position of byte-pair occurrences",
+        },
+        "exact_act": MEASUREMENT_ACT,
+        "addressed_act_identity": binding.material["exact_act_identity"],
+        "act_occurrence_identity": binding.material[
+            "measurement_act_occurrence_identity"
+        ],
+        "subject_to_act_binding_reference": _binding_reference(binding),
+        "act_occurrence_event_identity": act.identity,
+        "applicability_result_reference": {
+            "recorded_occurrence_identity": applicability.identity,
+            "result_identity": applicability.material["result_identity"],
+        },
+        "source_localities": [inputs.first.locality_identity],
+        "completeness_boundary": {
+            "identity": inputs.first.completeness_boundary_identity,
+        },
+        "first_position_result": _reference_material(inputs.first),
+        "second_position_result": _reference_material(inputs.second),
+        "result_positions": [result_position],
+    }
+
+
+def record_shared_position_measurement_result(
+    ledger: EventLedger,
+    *,
+    measurement_act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
+) -> Event:
+    act, binding, applicability, inputs = _read_measurement_act(
+        ledger,
+        measurement_act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    _refuse_existing_result(
+        ledger,
+        act=act,
+        result_kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    )
+    result = _measurement_result_material(
+        act=act,
+        binding=binding,
+        applicability=applicability,
+        inputs=inputs,
+    )
+    return ledger.append(
+        SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+        _recorded_measurement_result_material(result),
+        locality_identity=act.locality_identity,
+    )
+
+
+def _recorded_measurement_result_material(
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    recorded = {
+        "result_identity": result["result_identity"],
+        "dimensions": deepcopy(result["dimensions"]),
+        "exact_act": result["exact_act"],
+        "addressed_act_identity": result["addressed_act_identity"],
+        "act_occurrence_identity": result["act_occurrence_identity"],
+        "act_occurrence_event_identity": result[
+            "act_occurrence_event_identity"
+        ],
+        "source_localities": list(result["source_localities"]),
+        "completeness_boundary": deepcopy(result["completeness_boundary"]),
+        "first_position_result": deepcopy(result["first_position_result"]),
+        "second_position_result": deepcopy(result["second_position_result"]),
+        "result_positions": deepcopy(result["result_positions"]),
+    }
+    if "subject_to_act_binding_reference" in result:
+        recorded["subject_to_act_binding_reference"] = deepcopy(
+            result["subject_to_act_binding_reference"]
+        )
+        recorded["applicability_result_reference"] = deepcopy(
+            result["applicability_result_reference"]
+        )
+    if D2_RESULT_REFERENCE_COORDINATE in result:
+        recorded[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
+            result[D2_RESULT_REFERENCE_COORDINATE]
+        )
+    return recorded
+
+
+def _read_measurement_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    binding_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, dict[str, Any]]:
+    event = ledger.get(_identity(event_identity, "shared-position requires one result"))
+    if (
+        event is None
+        or event.kind != SHARED_POSITION_MEASUREMENT_RESULT_KIND
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError("shared-position Measurement result is corrupted")
+    act_identity = event.material.get("act_occurrence_event_identity")
+    act, binding, applicability, inputs = _read_measurement_act(
+        ledger,
+        act_identity,
+        binding_reading=binding_reading,
+        prior_coordinates=prior_coordinates,
+    )
+    expected = _measurement_result_material(
+        act=act,
+        binding=binding,
+        applicability=applicability,
+        inputs=inputs,
+    )
+    carried = dict(event.material)
+    if event.locality_identity != act.locality_identity or carried != expected:
+        raise SharedPairPositionError("Measurement result coordinates are not exact")
+    _require_direct_result(
+        ledger,
+        event=event,
+        act=act,
+        result_kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    )
+    return event, carried
+
+
+def get_recorded_shared_position_measurement(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    _event, carried = _read_measurement_result(
+        ledger,
+        event_identity,
+        prior_coordinates=prior_coordinates,
+    )
+    return deepcopy(carried)
+
+
+def shared_position_result_position_and_input_coordinates(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Read the shared-position result position and its exact inputs."""
+
+    reading = get_recorded_shared_position_measurement(
+        ledger, event_identity, prior_coordinates=prior_coordinates
+    )
+    result_positions = reading.get("result_positions")
+    result_position = (
+        result_positions[0]
+        if type(result_positions) is list and len(result_positions) == 1
+        else None
+    )
+    first = reading.get("first_position_result")
+    second = reading.get("second_position_result")
+    if (
+        type(result_position) is not dict
+        or result_position.get("result_position") != 0
+        or type(first) is not dict
+        or type(second) is not dict
+    ):
+        raise SharedPairPositionError(
+            "shared-position result has no exact result position and input coordinates"
+        )
+    return deepcopy(result_position), deepcopy(first), deepcopy(second)
+
+
+def source_position_coordinates_of_shared_position_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
+    """Read the three exact source positions addressed by one result position.
+
+    The first returned position addresses the first input position; the second
+    returned position addresses the second input position.
+    """
+
+    result_position, first, second = (
+        shared_position_result_position_and_input_coordinates(
+            ledger, event_identity, prior_coordinates=prior_coordinates
+        )
+    )
+    first_position = first.get("first_position_coordinate_reference")
+    first_shared = first.get("second_position_coordinate_reference")
+    second_shared = second.get("first_position_coordinate_reference")
+    last_position = second.get("second_position_coordinate_reference")
+    result_shared = result_position.get("content", {}).get(
+        "shared_position_coordinate_reference"
+    )
+    if (
+        any(
+            type(coordinate) is not dict
+            for coordinate in (
+                first_position,
+                first_shared,
+                second_shared,
+                last_position,
+                result_shared,
+            )
+        )
+        or first_shared != second_shared
+        or result_shared != first_shared
+    ):
+        raise SharedPairPositionError(
+            "shared-position result has no exact ordered source positions"
+        )
+    return deepcopy(result_position), tuple(
+        deepcopy(coordinate)
+        for coordinate in (first_position, first_shared, last_position)
+    )

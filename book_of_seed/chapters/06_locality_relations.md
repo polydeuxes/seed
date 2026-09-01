@@ -1,0 +1,47 @@
+# Locality
+
+### 06.Locality.A — Exact Locality relation
+
+The exact coordinates of a Locality relation are its first and second exact
+subjects, exact Act, and exact relation occurrence. The exact Act occurrence
+and exact relation occurrence are separate.
+
+### 06.Locality.B — Through-occurrence boundary in a destination Locality
+
+The exact coordinates of a preservation subject-to-Act binding are one exact
+addressed occurrence, its prior through-occurrence boundary, one exact
+preservation Act, and destination Locality.
+
+The prior through-occurrence boundary is an exact earlier boundary in the
+same Locality occurrence order.
+
+The recorded result occurrence is the exact Locality relation occurrence. Its
+exact coordinates are the prior boundary reference, destination Locality, and
+Act occurrence.
+
+### 06.Locality.C — Recorded boundary relation
+
+The exact coordinates of a Locality subject-to-Act binding are one exact
+recorded through-occurrence boundary reference, one exact preservation Act,
+and the destination Locality.
+The recorded result occurrence is the exact Locality relation occurrence. The
+exact coordinates of the recorded result occurrence are the recorded
+reference, destination Locality, and Act occurrence.
+
+### 06.Locality.D — Operator destination Locality
+
+The exact coordinates of a Locality subject-to-Act binding are one exact
+operator material occurrence, one exact Locality Act, destination Locality,
+and Locality relation from the operator Locality.
+
+The recorded result occurrence is the exact Locality relation occurrence. The
+exact coordinates of the recorded result occurrence are the operator
+occurrence, source Locality, destination Locality, and Act occurrence.
+
+The operator occurrence and relation result are exact source occurrence
+references of material supplied in the destination Locality.
+
+## References
+
+- [Source coordinates](04_source_coordinates.md)
+- [Movement](10_movement.md)

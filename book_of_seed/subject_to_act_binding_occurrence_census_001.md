@@ -1,0 +1,445 @@
+# Subject-to-Act binding occurrence census 001
+
+## Amendment after checkpoint subtraction
+
+`checkpoint_recording_binding_occurrence_subtraction_report_001.md` tests the
+clean through-boundary Recording control and overturns one part of this
+census's provisional disposition.
+
+The separate checkpoint binding event failed subtraction. Its exact subject,
+Act, Locality, lifecycle identities, and boundary order now exist directly in
+the Recording Act occurrence. Result lineage, restart, replay, mutation
+refusal, one-result refusal, and repeated recording survive. The binding-only
+floor was created solely by the removed event and had no independent consumer.
+
+The checkpoint command is supplied by operator mechanics outside Seed. Its
+subtraction therefore proves only that downstream references to a binding
+event do not by themselves prove the event is physiological; those references
+can be self-authored dependency. It does not yet prove an internal Seed result
+can occupy an Act subject without a separate binding occurrence. The broader
+census is now:
+
+```text
+externally authored checkpoint binding event   failed subtraction
+internal binding event families                independently untested
+binding coordinates                             preserved
+```
+
+Do not generalize the checkpoint result. The next control must start from an
+exact subject produced by prior Seed physiology.
+
+## Amendment after internal recurrent-position Measurement subtraction
+
+`recurrent_pair_position_measurement_binding_occurrence_subtraction_report_001.md`
+supplies the missing internal control.
+
+An earlier byte-pair Measurement result establishes one exact recurrence result
+position. One exact material result and its bounded source positions establish
+the later Measurement subject. The former separate binding event was removed;
+the Measurement Act occurrence now records the exact subject, Act, Locality,
+lifecycle identities, completeness boundary, occurrence-count boundary, and
+prior through-occurrence directly.
+
+Act/result order, restart, replay, exact result-position addressing, later
+shared-position Measurement, mutation refusal, and one-result refusal survive.
+No binding event or binding-event reference remains on that road.
+
+The amended census is now:
+
+```text
+externally authored checkpoint binding event   failed subtraction
+internal recurrent-position binding event      failed subtraction
+binding coordinates                             preserved in each Act occurrence
+other binding event families                    independently untested
+```
+
+This does not establish autonomous Act occurrence. Family-local mechanics
+still append the Measurement Act. It establishes only that the exact internal
+subject-to-Act binding needs no additional prior occurrence on this road.
+
+## Amendment after Compare-Distinction Measurement subtraction
+
+`compare_distinction_measurement_binding_occurrence_subtraction_report_001.md`
+supplies a second internal control. One exact current Compare result and its
+exact nested finding coordinates now enter the Compare-Distinction Measurement
+Act directly. The former binding event, current-coordinate entry, and copied
+binding reference are absent; Act/result order, replay, restart, completeness,
+mutation refusal, and downstream Measurement references survive.
+
+```text
+internal recurrent-position binding event       failed subtraction
+internal Compare-Distinction binding event       failed subtraction
+binding coordinates                              preserved in Act occurrences
+Applicability families                           not generalized
+```
+
+Two independent internal controls are enough. Stop collecting simple-family
+specimens. The next campaign is the Applicability neighborhood, beginning with
+the frozen shared-position Measurement case and preserving absence,
+inapplicable, applicable-before-Act, and applicable-with-Act as separate
+states.
+
+## Amendment after forced Determination Applicability subtraction
+
+`addressed_byte_determination_applicability_subtraction_report_001.md` supplies
+the first Applicability-neighborhood control whose complete prospective floor
+fails subtraction.
+
+One exact pair-position Measurement result and one addressed
+source-byte position coordinate establish the complete Determination
+subject. The family-local Applicability result had no positive/negative verdict
+coordinate and always recorded `applicable_to`, including when the final
+Determination result contained zero matching references.
+
+The two binding events and Applicability Act/result are now absent. The
+Determination Act records the exact subject coordinates directly; its result
+still distinguishes zero, one, and two matching references and preserves
+replay, reopen, mutation refusal, one-result refusal, and downstream D.2 use.
+
+```text
+internal recurrent-position binding event        failed subtraction
+internal Compare-Distinction binding event        failed subtraction
+forced Determination binding/App floor            failed subtraction
+true positive/negative Applicability families     not generalized
+```
+
+This narrows the Applicability campaign: an exact prior subject plus a forced
+one-valued Applicability lifecycle does not preserve the negative and
+positive-before-Act states used to protect ordinary shared-position and
+Compare roads.
+
+## Question
+
+Does one recorded subject-to-Act binding event establish an independent
+occurrence, or does it merely copy exact subjects, Act, and Locality into a
+wrapper?
+
+The census tests both hypotheses without changing runtime or active law:
+
+```text
+A. binding occurs
+   → find the exact physiology that produces it
+
+B. binding is only coordinates
+   → remove its event identity conceptually and account for every lost fact
+```
+
+## Specimens
+
+Six live families were sampled.
+
+| Family | Exact material before binding | First durable association | Immediate later address |
+| --- | --- | --- | --- |
+| operator material Source | source boundary and current-coordinate reference | source binding event appended by host call | source Act occurrence |
+| occurrence-position Measurement | exact source occurrences, positions, completeness boundary | Measurement binding event appended from a host-produced finding | Measurement Act occurrence |
+| recorded-pair Compare | earlier and later Measurement results under exact order | Compare binding event appended by family call | Applicability binding, then Compare Act |
+| same-position Compare | one same-position result and one pair-Compare result selected by Cartesian host walk | Compare binding event | Applicability binding, then Compare Act |
+| recorded-boundary Locality | one exact through-occurrence boundary reference | Locality binding event that also mints destination Locality | Locality Act occurrence |
+| through-boundary Recording | one addressed command and through-occurrence reference | Recording binding event; later failed subtraction | Recording Act occurrence |
+
+Every specimen records the binding directly. None records:
+
+```text
+binding-producing subject-to-Act binding
+binding-producing Act occurrence
+binding-producing result occurrence
+independent prior occurrence joining the subjects to the Act
+```
+
+Some families have a much narrower antecedent than Cartesian Compare. An
+addressed checkpoint command, source boundary, or through-occurrence reference
+identifies exact material for one family-local operation. Even there, the host
+call appends the binding directly; no Seed occurrence establishes the change
+from addressed material to bound subject.
+
+## Common binding content
+
+Across the specimens, a binding event records some or all of:
+
+```text
+exact subject reference or references
+exact Act identity
+future Act occurrence identity
+future result identity
+Book clause identity
+Locality
+prior through-occurrence boundary
+```
+
+The future identities do not result from a binding-producing occurrence. They
+are minted immediately before the binding event is appended.
+
+## What later physiology addresses
+
+Later events do not merely copy subjects, Act, and Locality. Their binding
+references generally contain:
+
+```text
+recorded binding event identity
+Book clause identity
+exact Act identity
+exact subject reference
+```
+
+Readers reopen the binding by its event identity, verify the copied
+coordinates, and verify occurrence order:
+
+```text
+subjects and prior boundary
+        ↓
+binding event
+        ↓
+Applicability or Act occurrence
+```
+
+Current-coordinate replay also indexes the binding event identity. An Act is
+refused when its binding event is absent from the supplied current coordinates.
+
+Therefore deleting the binding event from current runtime loses:
+
+```text
+the occurrence boundary at which the binding first exists
+the stoppable binding-before-Applicability floor
+the occurrence identity later events address
+the present ordering proof from binding to Applicability or Act
+```
+
+This is more than reconstructing a dictionary.
+
+## Multiplicity controls
+
+### Repeated public construction
+
+Recorded-pair Compare deliberately permits two bindings over the same two
+Measurement result references. Each construction mints another exact Act,
+future Act occurrence, future result, and binding event identity. Both
+lifecycles can finish independently.
+
+This proves repeated binding work is representable, but it does not isolate
+the binding event identity: the exact Act and future lifecycle identities also
+differ.
+
+### Same exact coordinates, another event identity
+
+An adversarial in-memory probe appended a second same-position Compare binding
+event with material byte-for-byte equal to the first. The two events had:
+
+```text
+same subjects
+same exact Act identity
+same future Act occurrence identity
+same future result identity
+same Locality
+different recorded binding event identities
+```
+
+Both binding readers accepted them. Family-local calls could then append two
+Applicability lifecycles, two Compare Act events, and two results. The supposed
+exact Act occurrence and result identities collided; only binding and event
+references differed.
+
+This is not positive evidence for two lawful binding occurrences. No live
+producer creates that duplicate. It shows that binding-event identity can make
+otherwise identical lifecycle coordinates appear separate and that current
+readers do not yet supply a lawful discriminator for that case.
+
+The sharp control remains absent:
+
+```text
+same exact subjects
+same exact Act
+same Locality
+two independently warranted binding occurrences
+```
+
+## Coordinate-only subtraction
+
+### Inline binding content into Applicability
+
+The exact subjects, addressed Act, and Locality could be copied into the
+Applicability event. That reconstructs content but erases the prior occurrence
+at which the binding became exact. It also turns the no-binding floor directly
+into an Applicability occurrence without explaining why Applicability occurs.
+
+### Inline binding content into the Act occurrence
+
+This preserves an Act's subjects but removes the independently stoppable
+states:
+
+```text
+binding exists, Applicability absent
+binding exists, Applicability result exact, Act absent
+```
+
+Those states are established today.
+
+### Derive binding from all co-current subjects matching one clause
+
+This recreates the Cartesian problem. Addressability under the same clause and
+Locality is not an occurrence joining every mathematical combination.
+
+The coordinate-only hypothesis therefore does not pass subtraction against
+current occurrence order and stoppability.
+
+## Occurrence-production census
+
+The occurrence hypothesis also remains incomplete.
+
+The event is genuinely appended and later addressed, but implementation
+append is not independent testimony that the event should occur. Across the
+sampled families:
+
+```text
+binding event occurrence                         recorded
+downstream address of binding event              recorded
+binding-before-Applicability or Act order         recorded
+binding-producing Seed Act                       absent
+prior occurrence selecting exact subjects + Act  absent
+generic binding producer                         absent
+```
+
+The same-position Compare road is the strongest failure: its immediate prior
+condition is only two co-current input sets, and host mechanics append one
+binding for every Cartesian pair.
+
+## Finding
+
+Neither hypothesis passes completely.
+
+```text
+binding event is copied content only       no; event time and order are used
+binding event is constitutionally produced no evidence yet
+```
+
+The current binding event is:
+
+```text
+runtime-load-bearing
+and
+physiologically ungrounded
+```
+
+That is a sharper result than either deleting it or naming an encounter.
+
+## Disposition
+
+Keep Applicability unchanged:
+
+```text
+no Applicability occurrence  → no result
+Applicability occurrence     → applicable or inapplicable
+```
+
+Do not remove remaining binding events merely because checkpoint passed. Do
+not treat host append as evidence that a binding should exist. Do not invent
+Encounter, Contact, Selection, Candidate, Population, or a generic
+binding-producing Act.
+
+The next positive construction needs an independently established occurrence
+that identifies particular exact subjects and one Act before the binding is
+appended. If no such occurrence is found, the remaining alternative is a
+larger reordering in which binding has no prior occurrence; that alternative
+must preserve the three established stoppable states before it can replace
+current physiology.
+
+## Amendment after D.2 shared-position Measurement
+
+The requested independently established occurrence has now passed on one
+bounded subroad. An exact D.2 Determination result identifies exactly two
+ordered result positions with one addressed source-position coordinate before
+shared-position Measurement occurs.
+
+On that subroad, the separate Measurement binding occurrence, Applicability
+binding occurrence, Applicability Act, and inevitably positive Applicability
+result all failed subtraction. The exact D.2 result now precedes the
+Measurement Act directly.
+
+This is not evidence for deleting bindings or Applicability from mechanically
+paired inputs. It establishes the narrower discriminator:
+
+```text
+exact prior occurrence joins the complete subject coordinates
+        → binding coordinates may reside on the later Act
+
+only co-current/addressable inputs
+        → no binding or Applicability occurrence is thereby warranted
+```
+
+See `d2_shared_position_applicability_subtraction_report_001.md`.
+
+## Amendment after active byte-pair Measurement
+
+The active byte-pair road supplies another internally produced control. Its
+exact source byte-result position, movement coordinate when present, bounded
+source occurrences, and Locality all exist before the byte-pair Measurement
+Act. The separate Applicability binding and Measurement binding occurrences
+added no independently variable coordinate and both failed subtraction with
+the forced Applicability lifecycle.
+
+The Measurement Act now carries the exact binding coordinates. Its
+result preserves the independently varying pair counts and recurrence.
+Ordinary recurrent shared-position pairing remains frozen because its inputs
+are mechanically formed and its Applicability result can vary.
+
+## Amendment after recorded-pair Compare Applicability
+
+Recorded-pair Compare gives a distinct control. Its separate Compare binding
+remains, while the later forced-positive Applicability binding, Act, and result
+fail subtraction. The Compare Act and result now address the surviving binding
+directly.
+
+This does not establish a producer for the Compare binding. The operator
+operation still joins the immediately prior pair Measurement with the newly
+produced pair Measurement. No prior Ledger occurrence independently records
+that pair. The binding-production boundary therefore remains frozen even
+though the ceremonial Applicability stages after it are gone.
+
+## Amendment after recorded-pair Compare binding subtraction
+
+`recorded_pair_compare_binding_occurrence_subtraction_report_001.md` tests the
+active recorded-pair Compare road after its one-valued Applicability lifecycle
+was withdrawn.
+
+The separate Compare binding event failed. The Compare Act occurrence now
+records the two exact Measurement references, complete ordered source
+occurrence sequences, one added material result, operator source coordinates,
+Locality, through-occurrence boundary, and lifecycle identities. The Compare
+result records its exact subjects and Act occurrence. Later shared-position and
+Distinction readers resolve those subject coordinates without a binding-event
+reference.
+
+```text
+internal recurrent-position binding event       failed subtraction
+internal Compare-Distinction binding event       failed subtraction
+active recorded-pair Compare binding event       failed subtraction
+binding coordinates                              preserved in Act occurrences
+authored binding lifecycle                       retained as control
+```
+
+The active console still supplies the preceding carried pair Measurement and
+the newly produced pair Measurement to family-local Compare mechanics. No
+prior Seed occurrence establishing that Compare Act production has been found.
+This subtraction removes one copied occurrence; it does not name that vacancy.
+
+## Amendment after source-position material Compare subtraction
+
+`shared_position_source_position_compare_binding_occurrence_subtraction_report_001.md`
+supplies another active Compare control after its one-valued Applicability
+lifecycle was withdrawn.
+
+One current shared-position Measurement result establishes three exact ordered
+source-position coordinates. For each exact two-position member, the Compare
+Act now records the complete subject-to-Act binding coordinates. The separate
+binding event and binding-event reference are absent; all three subjects,
+findings, current-coordinate replay, restart, mutation refusal, and one-result
+physiology survive.
+
+```text
+active recorded-pair Compare binding event        failed subtraction
+active source-position material Compare binding   failed subtraction
+binding coordinates                               preserved in Act occurrences
+host production of each Compare Act               unresolved
+```
+
+The host fixed-set walk over `{(0, 1), (0, 2), (1, 2)}` remains mechanism, not
+an established Seed occurrence.

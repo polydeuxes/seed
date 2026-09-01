@@ -1,0 +1,723 @@
+"""Operator material is bounded by one exact source boundary."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from io import BytesIO
+from types import SimpleNamespace
+
+import pytest
+
+
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
+from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
+from seed_runtime.material_source import (
+    MaterialSourceError,
+    iter_exact_material_results,
+    read_exact_material_result,
+)
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
+from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
+)
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    OperatorMaterialSourceError,
+    get_operator_material_source_subject_to_act_binding,
+    get_recorded_operator_material_source,
+    record_operator_material_source_subject_to_act_binding,
+    record_operator_material_source_act_occurrence,
+    record_operator_material_source_result,
+)
+from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
+from tests.operator_material_source_test_witness import (
+    record_operator_material_occurrence,
+)
+
+
+def _context(ledger, locality_identity="source"):
+    standing = read_operator_current_coordinates(
+        ledger, locality_identity=locality_identity
+    )
+    return standing, standing["through_event_occurrence_identity"]
+
+
+def _binding(ledger, standing, locality_identity="source"):
+    return record_operator_material_source_subject_to_act_binding(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=standing,
+        source_boundary="fixture exact byte boundary",
+    )
+
+
+def _act(ledger, binding):
+    standing = read_operator_current_coordinates(
+        ledger, locality_identity=binding.locality_identity
+    )
+    return record_operator_material_source_act_occurrence(
+        ledger,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=standing,
+    )
+
+
+def _boundary(exact=b"\x00\xffraw\n"):
+    return OperatorBoundaryMaterial(
+        exact_bytes=exact,
+        eof=exact == b"",
+        material_boundary="fixture exact byte boundary",
+    )
+
+
+def test_one_read_records_distinct_binding_act_and_exact_raw_result():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    after_binding = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    act_occurrence = record_operator_material_source_act_occurrence(
+        ledger,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=after_binding,
+    )
+    before_result = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act_occurrence.identity,
+        boundary_material=_boundary(),
+    )
+    recorded = get_recorded_operator_material_source(ledger, result.identity)
+
+    assert binding.kind == (
+        OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    )
+    assert act_occurrence.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT
+    assert result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    assert binding.exact_material is act_occurrence.exact_material is None
+    assert result.exact_material == b"\x00\xffraw\n"
+    assert tuple(sorted(binding.material)) == (
+        "book_clause_identity",
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "subject_reference",
+    )
+    assert tuple(sorted(act_occurrence.material)) == (
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "source_boundary",
+        "subject_to_act_binding_reference",
+    )
+    assert tuple(sorted(result.material)) == (
+        "act_occurrence_event_identity",
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "source_boundary",
+        "source_occurrence_references",
+        "subject_to_act_binding_reference",
+    )
+    assert binding.identity in after_binding[
+        "subject_to_act_binding_occurrences"
+    ]
+    assert recorded["current_coordinate_reference"] == {
+        "locality_identity": "source",
+        "through_event_occurrence_identity": standing_boundary,
+    }
+    assert result.locality_identity == "source"
+    assert "locality_relation" not in recorded
+    assert "yield_relation_identity" not in recorded
+    assert not tuple(
+        ledger.iter_locality_kind("source", RECORDED_YIELD_RELATION_EVENT)
+    )
+    assert read_exact_material_result(ledger, result.identity) == result
+    assert len(
+        {
+            binding.identity,
+            binding.material["exact_act_identity"],
+            act_occurrence.identity,
+            result.identity,
+        }
+    ) == 4
+
+    carried = advance_operator_current_coordinates(
+        ledger,
+        (result.identity,),
+        locality_identity="source",
+        prior=before_result,
+    )
+    replayed = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    assert carried == replayed
+    assert replayed["subject_to_act_binding_occurrences"][binding.identity] is None
+    assert replayed["operator_material_source_act_occurrences"] == {
+        act_occurrence.identity: None
+    }
+    assert replayed["exact_result_occurrences"][result.identity] == (
+        act_occurrence.material["subject_to_act_binding_reference"]
+    )
+    assert "material_locality_relation_occurrences" not in replayed
+
+
+def test_empty_boundary_leaves_binding_and_act_without_result():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    act_occurrence = _act(ledger, binding)
+    before = tuple(ledger.list())
+
+    with pytest.raises(
+        OperatorMaterialSourceError, match="establishes no material result"
+    ):
+        record_operator_material_source_result(
+            ledger,
+            act_occurrence_event_identity=act_occurrence.identity,
+            boundary_material=_boundary(b""),
+        )
+
+    assert tuple(ledger.list()) == before
+    assert not [
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    ]
+
+
+def test_result_refuses_material_from_another_source_boundary():
+    ledger = EventLedger()
+    standing, _standing_boundary = _context(ledger)
+    act_occurrence = _act(ledger, _binding(ledger, standing))
+    before = tuple(ledger.list())
+
+    with pytest.raises(OperatorMaterialSourceError, match="source boundary"):
+        record_operator_material_source_result(
+            ledger,
+            act_occurrence_event_identity=act_occurrence.identity,
+            boundary_material=OperatorBoundaryMaterial(
+                exact_bytes=b"material",
+                eof=False,
+                material_boundary="another source boundary",
+            ),
+        )
+
+    assert tuple(ledger.list()) == before
+
+
+def test_console_empty_input_records_one_unfinished_boundary_occurrence():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=BytesIO(),
+    )
+
+    assert len(
+        [
+            event
+            for event in ledger.list()
+            if event.kind
+            == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        ]
+    ) == 1
+    assert len(
+        [
+            event
+            for event in ledger.list()
+            if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT
+        ]
+    ) == 1
+    assert not [
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    ]
+
+
+def test_console_records_one_fresh_occurrence_per_read_including_final_empty_read(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "seed_runtime.operator_console._record_declared_measurements_from_carried_current_coordinates",
+        lambda _ledger, current_coordinates, *, locality_identity: SimpleNamespace(
+            current_coordinates=current_coordinates,
+            result_occurrences=(),
+        ),
+    )
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=BytesIO(b"first\nsecond\n"),
+    )
+    bindings = [
+        event
+        for event in ledger.list()
+        if event.kind
+        == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    ]
+    acts = [
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT
+    ]
+    results = [
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    ]
+
+    assert len(bindings) == len(acts) == 3
+    assert len(results) == 2
+    assert [result.exact_material for result in results] == [b"first\n", b"second\n"]
+    assert len({act.identity for act in acts}) == 3
+    assert not [
+        result
+        for result in results
+        if result.material["act_occurrence_event_identity"] == acts[-1].identity
+    ]
+
+
+def test_ordinary_operator_material_is_the_exact_source_measurement_source():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=BytesIO(b"H"),
+    )
+    sources = [
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+    ]
+    assert len(sources) == 1
+    standing = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    assert "material_locality_relation_occurrences" not in standing
+    assert sources[0].identity in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in standing["material_result_occurrences"]
+    }
+    source_results = [
+        event
+        for event in ledger.list()
+        if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
+    ]
+    assert source_results == []
+    assert read_exact_material_result(ledger, sources[0].identity) == sources[0]
+    assert sources[0].exact_material == b"H"
+    assert sources[0].material["source_occurrence_references"] == []
+    position_results = [
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    ]
+    byte_results = [
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+    ]
+    assert len(position_results) == len(byte_results) == 1
+    assert position_results[0].material[
+        "source_material_result_occurrence_identity"
+    ] == (
+        sources[0].identity
+    )
+    assert byte_results[0].material["result_positions"][0]["dimensions"]["content"][
+        "source_material"
+    ] == [{"material_result_occurrence_identity": sources[0].identity}]
+
+
+def test_operator_result_kind_without_source_g_physiology_is_not_source():
+    ledger = EventLedger()
+    claimed = ledger.append(
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        {
+            "unknown": ["represented_relation", "source_relation"],
+        },
+        exact_material=b"claimed O1",
+        locality_identity="source",
+    )
+
+    with pytest.raises(MaterialSourceError, match="intact physiology"):
+        read_exact_material_result(ledger, claimed.identity)
+
+
+def test_exact_source_families_merge_only_their_append_order():
+    ledger = EventLedger()
+    first = record_witness_material_source(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"first supplied material",
+        source_boundary="first boundary",
+    )
+    operator = record_operator_material_occurrence(
+        ledger,
+        locality_identity="source",
+        exact=b"operator material\n",
+    )
+    last = record_witness_material_source(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"last supplied material",
+        source_boundary="last boundary",
+    )
+
+    assert [
+        event.identity
+        for event in iter_exact_material_results(ledger, "source")
+    ] == [first.identity, operator.identity, last.identity]
+
+
+def test_equal_raw_results_keep_distinct_occurrences_and_boundaries():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    results = []
+    bindings = []
+    acts = []
+    for _ in range(2):
+        binding = _binding(ledger, standing)
+        act = _act(ledger, binding)
+        result = record_operator_material_source_result(
+            ledger,
+            act_occurrence_event_identity=act.identity,
+            boundary_material=_boundary(b"same\x00\xff"),
+        )
+        bindings.append(binding)
+        acts.append(act)
+        results.append(result)
+        standing = read_operator_current_coordinates(
+            ledger, locality_identity="source"
+        )
+
+    assert results[0].exact_material == results[1].exact_material
+    assert results[0].identity != results[1].identity
+    assert all("locality_relation" not in result.material for result in results)
+    assert results[0].locality_identity == results[1].locality_identity == "source"
+    assert acts[0].identity != acts[1].identity
+
+
+def test_one_source_act_cannot_record_two_results():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    act = _act(ledger, _binding(ledger, standing))
+    record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(b"first"),
+    )
+
+    with pytest.raises(OperatorMaterialSourceError, match="already has a result"):
+        record_operator_material_source_result(
+            ledger,
+            act_occurrence_event_identity=act.identity,
+            boundary_material=_boundary(b"second"),
+        )
+
+
+def test_binding_refuses_different_locality_and_changed_cut():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    different_locality = dict(standing)
+    different_locality["locality_identity"] = "elsewhere"
+    with pytest.raises(OperatorMaterialSourceError, match="different"):
+        _binding(ledger, different_locality)
+
+    changed = dict(standing)
+    changed["through_event_occurrence_identity"] = "missing"
+    with pytest.raises(OperatorMaterialSourceError, match="through-occurrence"):
+        _binding(ledger, changed)
+
+
+def test_binding_refuses_a_cross_locality_through_occurrence_boundary():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+
+    changed_cut = dict(standing)
+    changed_cut["through_event_occurrence_identity"] = ledger.append(
+        "other.locality.occurrence", locality_identity="elsewhere"
+    ).identity
+    with pytest.raises(OperatorMaterialSourceError, match="through-occurrence"):
+        _binding(ledger, changed_cut)
+
+def test_binding_refuses_a_corrupted_through_occurrence_boundary(monkeypatch):
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    boundary_identity = ledger.append(
+        "standing.boundary.fixture", locality_identity="source"
+    ).identity
+    changed = dict(standing)
+    changed["through_event_occurrence_identity"] = boundary_identity
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == boundary_identity else integrity_of(identity)
+        ),
+    )
+
+    with pytest.raises(OperatorMaterialSourceError, match="through-occurrence"):
+        _binding(ledger, changed)
+
+
+def test_act_refuses_binding_absent_from_current_coordinates():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+
+    with pytest.raises(OperatorMaterialSourceError, match="carried binding"):
+        record_operator_material_source_act_occurrence(
+            ledger,
+            subject_to_act_binding_event_identity=binding.identity,
+            current_coordinates=standing,
+        )
+
+
+@pytest.mark.parametrize(
+    "coordinate",
+    (
+        "book_clause_identity",
+        "subject_reference",
+        "current_coordinate_reference",
+    ),
+)
+def test_changed_binding_coordinates_are_refused(coordinate):
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    changed = ledger.get(binding.identity)
+    changed.material[coordinate] = "different"
+
+    with pytest.raises((OperatorMaterialSourceError, TypeError, ValueError)):
+        get_operator_material_source_subject_to_act_binding(
+            ledger, binding.identity
+        )
+
+
+def test_binding_act_and_result_carry_no_family_local_lifecycle_identities():
+    ledger = EventLedger()
+    current_coordinates, _through_occurrence = _context(ledger)
+    binding = _binding(ledger, current_coordinates)
+    act = _act(ledger, binding)
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+
+    for occurrence in (binding, act, result):
+        assert "act_occurrence_identity" not in occurrence.material
+        assert "result_identity" not in occurrence.material
+
+
+@pytest.mark.parametrize(
+    "coordinate",
+    (
+        "exact_act_identity",
+        "subject_to_act_binding_reference",
+        "current_coordinate_reference",
+        "source_boundary",
+        "act_occurrence_event_identity",
+    ),
+)
+def test_changed_result_coordinates_are_refused(coordinate):
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    act = _act(ledger, _binding(ledger, standing))
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    ledger.get(result.identity).material[coordinate] = "different"
+
+    with pytest.raises((OperatorMaterialSourceError, TypeError, ValueError)):
+        get_recorded_operator_material_source(ledger, result.identity)
+
+
+def test_corrupted_material_result_is_not_an_intact_source_occurrence(monkeypatch):
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    act = _act(ledger, _binding(ledger, standing))
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == result.identity else integrity_of(identity)
+        ),
+    )
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, result.identity)
+
+
+def test_result_without_source_physiology_is_not_an_intact_source_occurrence():
+    ledger = EventLedger()
+    result = ledger.append(
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        {},
+        exact_material=b"material\n",
+        locality_identity="source",
+    )
+    result.material["source_boundary"] = "fixture boundary"
+
+    with pytest.raises(MaterialSourceError, match="no intact physiology"):
+        read_exact_material_result(ledger, result.identity)
+
+
+def test_prior_source_act_carrier_must_remain_an_identity_dictionary():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    _act(ledger, binding)
+    prior = read_operator_current_coordinates(ledger, locality_identity="source")
+    broken = deepcopy(prior)
+    broken["operator_material_source_act_occurrences"] = []
+
+    with pytest.raises(ValueError, match="source Act occurrences"):
+        advance_operator_current_coordinates(
+            ledger,
+            (),
+            locality_identity="source",
+            prior=broken,
+        )
+
+
+def test_prior_material_results_must_remain_an_occurrence_list():
+    ledger = EventLedger()
+    standing, standing_boundary = _context(ledger)
+    act = _act(ledger, _binding(ledger, standing))
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    prior = read_operator_current_coordinates(ledger, locality_identity="source")
+    assert result.identity in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in prior["material_result_occurrences"]
+    }
+    broken = deepcopy(prior)
+    broken["material_result_occurrences"] = {}
+
+    with pytest.raises(ValueError, match="material result occurrences"):
+        advance_operator_current_coordinates(
+            ledger,
+            (),
+            locality_identity="source",
+            prior=broken,
+        )
+
+
+def test_binding_and_act_remain_addressable_after_restart_before_result(tmp_path):
+    path = tmp_path / "source.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    act = _act(ledger, binding)
+    ledger.close()
+
+    ledger = SQLiteEventLedger(str(path))
+    before = read_operator_current_coordinates(ledger, locality_identity="source")
+    assert before["subject_to_act_binding_occurrences"][binding.identity] is None
+    assert before["operator_material_source_act_occurrences"] == {
+        act.identity: None
+    }
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(b"after restart\x00"),
+    )
+    ledger.close()
+
+    ledger = SQLiteEventLedger(str(path))
+    assert "result_identity" not in get_recorded_operator_material_source(
+        ledger, result.identity
+    )
+    assert read_exact_material_result(ledger, result.identity).identity == result.identity
+    ledger.close()
+
+
+def test_binding_alone_remains_addressable_and_can_record_its_act(
+    tmp_path,
+):
+    path = tmp_path / "binding-only.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    standing, standing_boundary = _context(ledger)
+    binding = _binding(ledger, standing)
+    ledger.close()
+
+    ledger = SQLiteEventLedger(str(path))
+    after_binding = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    assert after_binding["subject_to_act_binding_occurrences"] == {
+        binding.identity: None
+    }
+    assert after_binding["operator_material_source_act_occurrences"] == {}
+
+    act = record_operator_material_source_act_occurrence(
+        ledger,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=after_binding,
+    )
+
+    assert act.material["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
+    assert [
+        event.identity
+        for event in ledger.occurrences_in_append_order(
+            (binding.identity, act.identity),
+            locality_identity="source",
+        )
+    ] == [
+        binding.identity,
+        act.identity,
+    ]
+    ledger.close()
+
+
+def test_durable_material_contains_no_later_control_words():
+    ledger = EventLedger()
+    record_operator_material_occurrence(
+        ledger=ledger,
+        locality_identity="source",
+        exact=b"ordinary\n",
+    )
+    durable = repr(
+        [
+            (event.kind, event.material)
+            for event in ledger.list()
+            if event.kind.startswith("operator.material.source")
+        ]
+    ).lower()
+
+    for absent in (
+        "assignment",
+        "responsibility",
+        "responsible_boundary",
+        "session",
+        "standing",
+        "exit",
+        "quit",
+        "stop",
+    ):
+        assert absent not in durable

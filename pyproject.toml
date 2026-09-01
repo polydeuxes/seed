@@ -1,7 +1,7 @@
 [project]
 name = "seed"
 version = "0.1.0"
-description = "Context-native tool-growing runtime prototype"
+description = "Occurrence-bound Assertion runtime"
 requires-python = ">=3.11"
 dependencies = ["pydantic>=2,<3"]
 
@@ -13,6 +13,11 @@ where = ["."]
 include = ["seed_runtime*"]
 
 [tool.pytest.ini_options]
-markers = ["experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior"]
+markers = [
+    "experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior",
+]
 pythonpath = ["."]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore::SyntaxWarning",
+]
