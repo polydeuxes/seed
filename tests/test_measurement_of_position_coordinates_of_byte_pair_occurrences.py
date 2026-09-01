@@ -172,9 +172,6 @@ def test_exact_unbound_material_results_are_read_through_frozen_b():
         first_source.bounded_locality_replay_append_boundary_identity
         == first_boundary.identity
     )
-    assert first_source.act_occurrence_identity == first.material[
-        "act_occurrence_identity"
-    ]
     assert first_source.source_boundary == "exact supplied material boundary"
     assert first_source.exact_material == b"ab"
     assert first_source.source_occurrence_references == ()

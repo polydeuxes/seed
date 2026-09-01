@@ -108,14 +108,12 @@ def test_one_read_records_distinct_binding_act_and_exact_raw_result():
     assert binding.exact_material is act_occurrence.exact_material is None
     assert result.exact_material == b"\x00\xffraw\n"
     assert tuple(sorted(binding.material)) == (
-        "act_occurrence_identity",
         "book_clause_identity",
         "current_coordinate_reference",
         "exact_act_identity",
         "subject_reference",
     )
     assert tuple(sorted(act_occurrence.material)) == (
-        "act_occurrence_identity",
         "current_coordinate_reference",
         "exact_act_identity",
         "source_boundary",
@@ -123,7 +121,6 @@ def test_one_read_records_distinct_binding_act_and_exact_raw_result():
     )
     assert tuple(sorted(result.material)) == (
         "act_occurrence_event_identity",
-        "act_occurrence_identity",
         "current_coordinate_reference",
         "exact_act_identity",
         "source_boundary",
@@ -148,11 +145,10 @@ def test_one_read_records_distinct_binding_act_and_exact_raw_result():
         {
             binding.identity,
             binding.material["exact_act_identity"],
-            binding.material["act_occurrence_identity"],
             act_occurrence.identity,
             result.identity,
         }
-    ) == 5
+    ) == 4
 
     carried = advance_operator_current_coordinates(
         ledger,
@@ -284,12 +280,7 @@ def test_console_records_one_fresh_occurrence_per_read_including_final_empty_rea
     assert len(bindings) == len(acts) == 3
     assert len(results) == 2
     assert [result.exact_material for result in results] == [b"first\n", b"second\n"]
-    assert len(
-        {
-            binding.material["act_occurrence_identity"]
-            for binding in bindings
-        }
-    ) == 3
+    assert len({act.identity for act in acts}) == 3
     assert not [
         result
         for result in results
@@ -414,9 +405,7 @@ def test_equal_raw_results_keep_distinct_occurrences_and_boundaries():
     assert results[0].identity != results[1].identity
     assert all("locality_relation" not in result.material for result in results)
     assert results[0].locality_identity == results[1].locality_identity == "source"
-    assert acts[0].material["act_occurrence_identity"] != acts[1].material[
-        "act_occurrence_identity"
-    ]
+    assert acts[0].identity != acts[1].identity
 
 
 def test_one_source_act_cannot_record_two_results():
@@ -501,8 +490,6 @@ def test_act_refuses_binding_absent_from_current_coordinates():
     (
         "book_clause_identity",
         "subject_reference",
-        "exact_act_identity",
-        "act_occurrence_identity",
         "current_coordinate_reference",
     ),
 )
@@ -511,12 +498,7 @@ def test_changed_binding_coordinates_are_refused(coordinate):
     standing, standing_boundary = _context(ledger)
     binding = _binding(ledger, standing)
     changed = ledger.get(binding.identity)
-    if coordinate == "exact_act_identity":
-        changed.material[coordinate] = changed.material["act_occurrence_identity"]
-    elif coordinate == "act_occurrence_identity":
-        changed.material[coordinate] = changed.material["exact_act_identity"]
-    else:
-        changed.material[coordinate] = "different"
+    changed.material[coordinate] = "different"
 
     with pytest.raises((OperatorMaterialSourceError, TypeError, ValueError)):
         get_operator_material_source_subject_to_act_binding(
@@ -524,7 +506,7 @@ def test_changed_binding_coordinates_are_refused(coordinate):
         )
 
 
-def test_binding_act_and_result_carry_no_family_local_result_identity():
+def test_binding_act_and_result_carry_no_family_local_lifecycle_identities():
     ledger = EventLedger()
     current_coordinates, _through_occurrence = _context(ledger)
     binding = _binding(ledger, current_coordinates)
@@ -535,16 +517,15 @@ def test_binding_act_and_result_carry_no_family_local_result_identity():
         boundary_material=_boundary(),
     )
 
-    assert "result_identity" not in binding.material
-    assert "result_identity" not in act.material
-    assert "result_identity" not in result.material
+    for occurrence in (binding, act, result):
+        assert "act_occurrence_identity" not in occurrence.material
+        assert "result_identity" not in occurrence.material
 
 
 @pytest.mark.parametrize(
     "coordinate",
     (
         "exact_act_identity",
-        "act_occurrence_identity",
         "subject_to_act_binding_reference",
         "current_coordinate_reference",
         "source_boundary",

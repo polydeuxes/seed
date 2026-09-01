@@ -71,7 +71,6 @@ class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
     source_completeness_boundary_identity: str
     bounded_locality_replay_through_event_occurrence_identity: str
     bounded_locality_replay_append_boundary_identity: str
-    act_occurrence_identity: str
     source_boundary: str
     exact_material: bytes
     source_occurrence_references: tuple[str, ...]
@@ -293,17 +292,8 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
             )
         source = read_exact_material_result(ledger, source_identity)
         material = source.material
-        exact_coordinates = {
-            key: material.get(key)
-            for key in (
-                "act_occurrence_identity",
-                "source_boundary",
-            )
-        }
-        if any(
-            type(value) is not str or not value
-            for value in exact_coordinates.values()
-        ):
+        source_boundary = material.get("source_boundary")
+        if type(source_boundary) is not str or not source_boundary:
             raise ValueError("exact material-result subject coordinates are malformed")
         sources.append(
             UnboundPositionCoordinateMeasurementMaterialResultReading(
@@ -318,10 +308,7 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
                 bounded_locality_replay_append_boundary_identity=(
                     replay_boundary.identity
                 ),
-                act_occurrence_identity=exact_coordinates[
-                    "act_occurrence_identity"
-                ],
-                source_boundary=exact_coordinates["source_boundary"],
+                source_boundary=source_boundary,
                 exact_material=exact_material_result_bytes(source),
                 source_occurrence_references=_exact_string_list(
                     material.get("source_occurrence_references"),
