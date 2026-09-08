@@ -1092,6 +1092,55 @@ def test_later_direct_occurrence_read_uses_d2_carried_exact_coordinates(
     ] == _position_coordinate_reference(first, "second")
 
 
+def test_d2_shared_measurement_uses_supplied_later_coordinates_without_prefix_replay(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    locality = "supplied-later-d2-coordinates"
+    _source, _direct_result, determination_result = _direct_d2(
+        ledger, locality=locality
+    )
+    measurement_act = record_shared_position_measurement_act_occurrence_from_addressed_byte_occurrence_reference_determination_result(
+        ledger,
+        determination_result_event_identity=determination_result.identity,
+        current_coordinates=_current_coordinates(ledger, locality),
+    )
+    record_witness_material_source(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"later",
+        source_boundary="later material boundary",
+    )
+    later_coordinates = _current_coordinates(ledger, locality)
+
+    def prefix_replay_is_not_needed(*_args, **_kwargs):
+        raise AssertionError("supplied exact coordinates were reread")
+
+    monkeypatch.setattr(
+        operator_current_coordinates_module,
+        "read_operator_current_coordinates_through",
+        prefix_replay_is_not_needed,
+    )
+    read_act, _binding, _applicability, inputs = (
+        shared_position_module._read_measurement_act(
+            ledger,
+            measurement_act.identity,
+            prior_coordinates=later_coordinates,
+        )
+    )
+
+    assert read_act == measurement_act
+    assert inputs.has_one_position_coordinate_reference
+
+    determination_result.material["determination_rule"] = "changed rule"
+    with pytest.raises(SharedPairPositionError):
+        shared_position_module._read_measurement_act(
+            ledger,
+            measurement_act.identity,
+            prior_coordinates=later_coordinates,
+        )
+
+
 def test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate():
     ledger, locality, _source, first, second = _fixture(current=b"ab--bc")
     binding = _shared_binding(ledger, locality, first, second)

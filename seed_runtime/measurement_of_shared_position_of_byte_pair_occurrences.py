@@ -1482,21 +1482,44 @@ def _read_measurement_act(
             "recorded_occurrence_identity"
         )
         through_identity = event.material.get("through_event_occurrence_identity")
-        from seed_runtime.operator_current_coordinates import (
-            read_operator_current_coordinates_through,
-        )
-
         try:
-            d2_coordinates = read_operator_current_coordinates_through(
-                ledger,
-                locality_identity=event.locality_identity,
-                through_event_occurrence_identity=through_identity,
-            )
+            if (
+                type(prior_coordinates) is dict
+                and prior_coordinates.get("locality_identity")
+                == event.locality_identity
+            ):
+                d2_coordinates = prior_coordinates
+            else:
+                from seed_runtime.operator_current_coordinates import (
+                    read_operator_current_coordinates_through,
+                )
+
+                d2_coordinates = read_operator_current_coordinates_through(
+                    ledger,
+                    locality_identity=event.locality_identity,
+                    through_event_occurrence_identity=through_identity,
+                )
             determination_result, inputs = _d2_result_inputs(
                 ledger,
                 result_event_identity=determination_identity,
                 prior_coordinates=d2_coordinates,
             )
+            if d2_coordinates is prior_coordinates:
+                supplied_boundary = prior_coordinates.get(
+                    "through_event_occurrence_identity"
+                )
+                if supplied_boundary not in {through_identity, event.identity}:
+                    supplied_order = ledger.occurrences_in_append_order(
+                        (event.identity, supplied_boundary),
+                        locality_identity=event.locality_identity,
+                    )
+                    if tuple(item.identity for item in supplied_order) != (
+                        event.identity,
+                        supplied_boundary,
+                    ):
+                        raise ValueError(
+                            "supplied coordinates do not reach the Measurement Act"
+                        )
         except (TypeError, ValueError) as error:
             raise SharedPairPositionError(
                 "shared-position Measurement Act carries no exact D.2 result"
