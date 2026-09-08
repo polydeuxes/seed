@@ -62,7 +62,6 @@ def test_operator_occurrence_has_a_fresh_destination_locality_relation():
     assert set(act.material) == {
         "act",
         "operator_material_occurrence_reference",
-        "operator_material_result_occurrence_identity",
         "operator_locality_identity",
         "operator_through_event_occurrence_identity",
     }
@@ -87,6 +86,7 @@ def test_operator_occurrence_has_a_fresh_destination_locality_relation():
         for occurrence in (act, result)
     )
     assert "destination_locality_identity" not in act.material
+    assert "operator_material_result_occurrence_identity" not in act.material
     assert all(
         occurrence.kind
         != "operator.destination_locality_subject_to_act_binding_recorded"
