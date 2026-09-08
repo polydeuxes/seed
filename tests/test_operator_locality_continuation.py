@@ -118,9 +118,9 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
             binding.identity,
             binding.material["exact_act_identity"],
             act_occurrence.material["continuation_act_identity"],
-            act_occurrence.material["act_occurrence_identity"],
         }
-    ) == 3
+    ) == 2
+    assert "act_occurrence_identity" not in act_occurrence.material
     assert after_act["event_count"] == 2
     assert after_act["locality_continuation_relation_occurrences"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {
@@ -149,7 +149,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert "locality_relation" not in recorded
     assert result.identity not in {
         recorded["continuation_act_identity"],
-        recorded["act_occurrence_identity"],
+        act_occurrence.identity,
         binding.identity,
         binding.material["exact_act_identity"],
     }
@@ -194,7 +194,7 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     first_identities = {
         first_act.locality_identity,
         first_binding.material["exact_act_identity"],
-        first_act.material["act_occurrence_identity"],
+        first_act.identity,
         first_result.identity,
     }
     ledger.close()
@@ -213,7 +213,7 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     second_identities = {
         second_act.locality_identity,
         second_binding.material["exact_act_identity"],
-        second_act.material["act_occurrence_identity"],
+        second_act.identity,
         second_result.identity,
     }
 
@@ -373,7 +373,6 @@ def test_one_continuation_act_occurrence_cannot_address_two_results():
     (
         "source_coordinate_reference",
         "destination_locality_identity",
-        "act_occurrence_identity",
         "subject_to_act_binding_reference",
     ),
 )
@@ -406,9 +405,8 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
 
     assert first_act.identity != second_act.identity
     assert first.locality_identity != second.locality_identity
-    assert first.material["act_occurrence_identity"] != second.material[
-        "act_occurrence_identity"
-    ]
+    assert "act_occurrence_identity" not in first.material
+    assert "act_occurrence_identity" not in second.material
     assert first.identity != second.identity
 
 

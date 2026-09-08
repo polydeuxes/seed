@@ -109,14 +109,12 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
 def _act_occurrence_material(
     *,
     continuation_act_identity: str,
-    act_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "continuation_act_identity": continuation_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
@@ -129,14 +127,12 @@ def _act_occurrence_material(
 def _result_material(
     *,
     continuation_act_identity: str,
-    act_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "continuation_act_identity": continuation_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "exact_act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
@@ -157,7 +153,6 @@ def _recorded_result_material(
         "continuation_act_identity": result_material[
             "continuation_act_identity"
         ],
-        "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
@@ -264,14 +259,10 @@ def record_locality_continuation_act_occurrence(
     source_reference = binding.material["subject_reference"]
     destination_locality_identity = binding.locality_identity
     continuation_act_identity = binding.material["exact_act_identity"]
-    act_occurrence_identity = ledger.mint_identity(
-        "locality_continuation_act_occurrence"
-    )
     return ledger.append(
         LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
-            act_occurrence_identity=act_occurrence_identity,
             subject_to_act_binding_reference=_binding_reference(binding),
             source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
@@ -317,7 +308,6 @@ def _validated_act_occurrence(
             "Locality continuation Act occurrence names another source boundary"
         )
     continuation_act_identity = material.get("continuation_act_identity")
-    act_occurrence_identity = material.get("act_occurrence_identity")
     binding_reference = material.get("subject_to_act_binding_reference")
     if type(binding_reference) is not dict:
         raise LocalityContinuationError(
@@ -329,17 +319,7 @@ def _validated_act_occurrence(
     if (
         type(continuation_act_identity) is not str
         or not continuation_act_identity
-        or type(act_occurrence_identity) is not str
-        or not act_occurrence_identity
-        or continuation_act_identity == act_occurrence_identity
-        or len(
-            {
-                binding.identity,
-                continuation_act_identity,
-                act_occurrence_identity,
-            }
-        )
-        != 3
+        or binding.identity == continuation_act_identity
         or binding_reference != _binding_reference(binding)
         or binding.locality_identity != act_occurrence.locality_identity
         or binding.material["subject_reference"] != expected_reference
@@ -347,8 +327,7 @@ def _validated_act_occurrence(
         != act_occurrence.locality_identity
         or material
         != _act_occurrence_material(
-            continuation_act_identity=continuation_act_identity,
-            act_occurrence_identity=act_occurrence_identity,
+                continuation_act_identity=continuation_act_identity,
             subject_to_act_binding_reference=binding_reference,
             source_coordinate_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
@@ -372,15 +351,12 @@ def record_locality_continuation_result(
     )
     material = act_occurrence.material
     locality_identity = act_occurrence.locality_identity
-    act_occurrence_identity = material["act_occurrence_identity"]
     for prior_result in ledger.iter_locality_kind(
         locality_identity, LOCALITY_CONTINUATION_RECORDED_KIND
     ):
         if (
             prior_result.material.get("act_occurrence_event_identity")
             == act_occurrence.identity
-            or prior_result.material.get("act_occurrence_identity")
-            == act_occurrence_identity
         ):
             raise LocalityContinuationError(
                 "one Locality continuation Act occurrence cannot address two results"
@@ -388,7 +364,6 @@ def record_locality_continuation_result(
 
     result_material = _result_material(
         continuation_act_identity=material["continuation_act_identity"],
-        act_occurrence_identity=act_occurrence_identity,
         subject_to_act_binding_reference=material[
             "subject_to_act_binding_reference"
         ],
@@ -433,7 +408,6 @@ def get_recorded_locality_continuation(
         continuation_act_identity=act_occurrence.material[
             "continuation_act_identity"
         ],
-        act_occurrence_identity=act_occurrence.material["act_occurrence_identity"],
         subject_to_act_binding_reference=act_occurrence.material[
             "subject_to_act_binding_reference"
         ],
