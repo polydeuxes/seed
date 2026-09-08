@@ -6,10 +6,8 @@ from seed_runtime.operator_current_coordinates import (
     read_operator_current_coordinates,
 )
 from seed_runtime.operator_material_source import (
-    _record_operator_material_source_act_occurrence_from_binding,
+    _record_operator_material_source_act_occurrence_from_current_coordinates,
     _record_operator_material_source_result,
-    _record_operator_material_source_subject_to_act_binding_from_current_coordinates,
-    record_operator_material_source_subject_to_act_binding,
     record_operator_material_source_act_occurrence,
     record_operator_material_source_result,
 )
@@ -28,18 +26,11 @@ def record_operator_material_occurrence(
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
-    binding = record_operator_material_source_subject_to_act_binding(
+    act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
         locality_identity=locality_identity,
         current_coordinates=current_coordinates,
         source_boundary=source_boundary,
-    )
-    act_occurrence = record_operator_material_source_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality_identity
-        ),
     )
     return record_operator_material_source_result(
         ledger,
@@ -65,8 +56,8 @@ def record_operator_material_occurrence_from_current_coordinates(
     prior_occurrence_identity = current_coordinates[
         "through_event_occurrence_identity"
     ]
-    binding = (
-        _record_operator_material_source_subject_to_act_binding_from_current_coordinates(
+    act_occurrence = (
+        _record_operator_material_source_act_occurrence_from_current_coordinates(
             ledger,
             locality_identity=locality_identity,
             current_coordinates=current_coordinates,
@@ -77,21 +68,8 @@ def record_operator_material_occurrence_from_current_coordinates(
         _advance_current_coordinates_with_operator_material_source_occurrence(
             ledger,
             current_coordinates,
-            binding,
-            prior_through_event_occurrence_identity=prior_occurrence_identity,
-        )
-    )
-    act_occurrence = _record_operator_material_source_act_occurrence_from_binding(
-        ledger,
-        subject_to_act_binding=binding,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = (
-        _advance_current_coordinates_with_operator_material_source_occurrence(
-            ledger,
-            current_coordinates,
             act_occurrence,
-            prior_through_event_occurrence_identity=binding.identity,
+            prior_through_event_occurrence_identity=prior_occurrence_identity,
         )
     )
     result = _record_operator_material_source_result(

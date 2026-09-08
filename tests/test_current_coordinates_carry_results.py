@@ -18,7 +18,6 @@ from seed_runtime.operator_material_source import (
     OperatorMaterialSourceError,
     record_operator_material_source_act_occurrence,
     record_operator_material_source_result,
-    record_operator_material_source_subject_to_act_binding,
 )
 from seed_runtime.witness_material_source import record_witness_material_source
 from tests.operator_material_source_test_witness import (
@@ -26,9 +25,9 @@ from tests.operator_material_source_test_witness import (
 )
 
 
-REQUIRED_BINDING_COORDINATES = {
-    "recorded_occurrence_identity",
-    "book_clause_identity",
+OPERATOR_SOURCE_BINDING_COORDINATES = {
+    "act_occurrence_event_identity",
+    "current_coordinate_reference",
     "exact_act_identity",
     "subject_reference",
 }
@@ -66,11 +65,11 @@ def test_current_result_carries_its_exact_subject_to_act_binding():
 
     carried = _current_result_binding(ledger, "probe", result.identity)
 
-    assert carried == act_occurrence.material[
-        "subject_to_act_binding_reference"
-    ]
-    assert set(carried) == REQUIRED_BINDING_COORDINATES
-    assert carried["book_clause_identity"] == "01.Source.G"
+    assert carried == {
+        "act_occurrence_event_identity": act_occurrence.identity,
+        **act_occurrence.material,
+    }
+    assert set(carried) == OPERATOR_SOURCE_BINDING_COORDINATES
     assert carried["subject_reference"] == {
         "source_boundary": "operator boundary",
     }
@@ -111,13 +110,15 @@ def test_result_binding_remains_exact_after_sqlite_reopen(tmp_path):
     assert after == before
 
 
-@pytest.mark.parametrize("coordinate", sorted(REQUIRED_BINDING_COORDINATES))
+@pytest.mark.parametrize(
+    "coordinate", ("current_coordinate_reference", "subject_reference")
+)
 def test_changed_result_binding_coordinate_is_refused(coordinate):
     ledger = EventLedger()
     result = _recorded(ledger)
 
     def change(material):
-        material["subject_to_act_binding_reference"][coordinate] = "changed"
+        material[coordinate] = "changed"
 
     _mutate_act_occurrence(ledger, result, change)
 
@@ -125,16 +126,17 @@ def test_changed_result_binding_coordinate_is_refused(coordinate):
         _current_result_binding(ledger, "probe", result.identity)
 
 
-def test_missing_result_binding_reference_adds_no_current_binding():
+def test_missing_result_subject_reference_is_refused():
     ledger = EventLedger()
     result = _recorded(ledger)
     _mutate_act_occurrence(
         ledger,
         result,
-        lambda material: material.pop("subject_to_act_binding_reference"),
+        lambda material: material.pop("subject_reference"),
     )
 
-    assert _subject_to_act_binding_of_exact_result(ledger, result) is None
+    with pytest.raises(ValueError, match="binding coordinates"):
+        _subject_to_act_binding_of_exact_result(ledger, result)
 
 
 def test_witness_result_carries_its_act_binding_coordinates():
@@ -170,7 +172,7 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
         ledger,
         locality_identity=locality,
     )
-    binding = record_operator_material_source_subject_to_act_binding(
+    act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
         locality_identity=locality,
         current_coordinates=current,
@@ -179,19 +181,8 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
     current = _advance_current_coordinates_with_operator_material_source_occurrence(
         ledger,
         current,
-        binding,
-        prior_through_event_occurrence_identity=None,
-    )
-    act_occurrence = record_operator_material_source_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=current,
-    )
-    current = _advance_current_coordinates_with_operator_material_source_occurrence(
-        ledger,
-        current,
         act_occurrence,
-        prior_through_event_occurrence_identity=binding.identity,
+        prior_through_event_occurrence_identity=None,
     )
     result = record_operator_material_source_result(
         ledger,
@@ -217,7 +208,10 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
         "exact_result_occurrences"
     ]
     assert carried["exact_result_occurrences"][result.identity] == (
-        act_occurrence.material["subject_to_act_binding_reference"]
+        {
+            "act_occurrence_event_identity": act_occurrence.identity,
+            **act_occurrence.material,
+        }
     )
 
 
@@ -228,7 +222,7 @@ def test_source_result_refusal_does_not_change_prior_current_coordinates():
         ledger,
         locality_identity=locality,
     )
-    binding = record_operator_material_source_subject_to_act_binding(
+    act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
         locality_identity=locality,
         current_coordinates=current_coordinates,
@@ -237,19 +231,8 @@ def test_source_result_refusal_does_not_change_prior_current_coordinates():
     current_coordinates = _advance_current_coordinates_with_operator_material_source_occurrence(
         ledger,
         current_coordinates,
-        binding,
-        prior_through_event_occurrence_identity=None,
-    )
-    act_occurrence = record_operator_material_source_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = _advance_current_coordinates_with_operator_material_source_occurrence(
-        ledger,
-        current_coordinates,
         act_occurrence,
-        prior_through_event_occurrence_identity=binding.identity,
+        prior_through_event_occurrence_identity=None,
     )
     result = record_operator_material_source_result(
         ledger,

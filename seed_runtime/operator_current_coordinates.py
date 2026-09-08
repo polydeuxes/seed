@@ -127,9 +127,7 @@ from seed_runtime.recorded_boundary_locality import (
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     get_operator_material_source_act_occurrence,
-    get_operator_material_source_subject_to_act_binding,
     get_recorded_operator_material_source,
 )
 from seed_runtime.operator_destination_locality import (
@@ -262,7 +260,6 @@ _RECORDED_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
 }
 _OPERATOR_MATERIAL_SOURCE_KINDS = {
-    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
@@ -495,7 +492,10 @@ def _subject_to_act_binding_of_exact_result(
     if act_occurrence is None:
         return None
     reference = act_occurrence.material.get("subject_to_act_binding_reference")
-    if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+    if event.kind in {
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+    }:
         expected_coordinates = {
             "exact_act_identity": act_occurrence.material.get(
                 "exact_act_identity"
@@ -504,14 +504,16 @@ def _subject_to_act_binding_of_exact_result(
                 act_occurrence.material.get("subject_reference")
             ),
         }
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
+            expected_coordinates["current_coordinate_reference"] = deepcopy(
+                act_occurrence.material.get("current_coordinate_reference")
+            )
         if (
             ledger.integrity_of(act_occurrence.identity) == CORRUPTED
             or act_occurrence.locality_identity != event.locality_identity
             or act_occurrence.material != expected_coordinates
         ):
-            raise ValueError(
-                "Witness source Act binding coordinates are not exact"
-            )
+            raise ValueError("source Act binding coordinates are not exact")
         return {
             "act_occurrence_event_identity": act_occurrence.identity,
             **expected_coordinates,
@@ -1205,15 +1207,6 @@ def advance_operator_current_coordinates(
         if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND:
             get_recorded_boundary_locality(ledger, event.identity)
             recorded_boundary_locality_relations[event.identity] = None
-            continue
-        if (
-            event.kind
-            == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_operator_material_source_subject_to_act_binding(
-                ledger, event.identity
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
             get_operator_material_source_act_occurrence(ledger, event.identity)
@@ -2375,36 +2368,24 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
         != prior_through_event_occurrence_identity
     ):
         raise ValueError("operator material source coordinates are not exact")
-    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     acts = current_coordinates.get("operator_material_source_act_occurrences")
     material_result_occurrences = current_coordinates.get("material_result_occurrences")
     exact_results = current_coordinates.get("exact_result_occurrences")
     event_count = current_coordinates.get("event_count")
     if (
-        type(bindings) is not dict
-        or type(acts) is not dict
+        type(acts) is not dict
         or type(material_result_occurrences) is not list
         or type(exact_results) is not dict
         or type(event_count) is not int
         or event_count < 0
     ):
         raise ValueError("operator material source coordinates are not exact")
-    if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+    if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         source = event.material.get("current_coordinate_reference")
         if (
             type(source) is not dict
             or source.get("through_event_occurrence_identity")
             != prior_through_event_occurrence_identity
-            or event.identity in bindings
-        ):
-            raise ValueError("operator material source binding is not exact")
-    elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
-        binding = event.material.get("subject_to_act_binding_reference")
-        if (
-            type(binding) is not dict
-            or binding.get("recorded_occurrence_identity")
-            != prior_through_event_occurrence_identity
-            or prior_through_event_occurrence_identity not in bindings
             or event.identity in acts
         ):
             raise ValueError("operator material source Act is not exact")
@@ -2427,9 +2408,7 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             "subject_reference": event.identity,
             "result_occurrence_identity": event.identity,
         }
-    if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
-        bindings[event.identity] = None
-    elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
+    if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         acts[event.identity] = None
     else:
         exact_results[event.identity] = exact_result

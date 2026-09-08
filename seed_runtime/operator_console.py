@@ -26,8 +26,7 @@ from seed_runtime.operator_material_boundary import (
     operator_material_source_boundary,
 )
 from seed_runtime.operator_material_source import (
-    _record_operator_material_source_subject_to_act_binding_from_current_coordinates,
-    _record_operator_material_source_act_occurrence_from_binding,
+    _record_operator_material_source_act_occurrence_from_current_coordinates,
     record_operator_material_source_result,
 )
 from seed_runtime.operator_command import (
@@ -430,8 +429,8 @@ def run_persistent_operator_console(
             "through_event_occurrence_identity"
         ]
         source_boundary = operator_material_source_boundary(input_stream)
-        source_binding = (
-            _record_operator_material_source_subject_to_act_binding_from_current_coordinates(
+        source_act_occurrence = (
+            _record_operator_material_source_act_occurrence_from_current_coordinates(
                 ledger,
                 locality_identity=locality_identity,
                 current_coordinates=current_coordinates,
@@ -442,25 +441,8 @@ def run_persistent_operator_console(
             _advance_current_coordinates_with_operator_material_source_occurrence(
                 ledger,
                 current_coordinates,
-                source_binding,
-                prior_through_event_occurrence_identity=source_prior_boundary,
-            )
-        )
-        source_act_occurrence = (
-            _record_operator_material_source_act_occurrence_from_binding(
-                ledger,
-                subject_to_act_binding=source_binding,
-                current_coordinates=current_coordinates,
-            )
-        )
-        current_coordinates = (
-            _advance_current_coordinates_with_operator_material_source_occurrence(
-                ledger,
-                current_coordinates,
                 source_act_occurrence,
-                prior_through_event_occurrence_identity=(
-                    source_binding.identity
-                ),
+                prior_through_event_occurrence_identity=source_prior_boundary,
             )
         )
         input_boundary = ledger.append_boundary()

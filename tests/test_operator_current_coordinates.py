@@ -419,7 +419,10 @@ def test_current_coordinates_carry_only_exact_yielded_result_identities():
         measurement.material["act_occurrence_event_identity"]
     )
     assert standing["exact_result_occurrences"] == {
-        source.identity: source_act.material["subject_to_act_binding_reference"],
+        source.identity: {
+            "act_occurrence_event_identity": source_act.identity,
+            **source_act.material,
+        },
         measurement.identity: measurement_act.material[
             "subject_to_act_binding_reference"
         ],
