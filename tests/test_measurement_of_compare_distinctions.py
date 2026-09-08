@@ -97,9 +97,12 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     assert result.identity in current_coordinates["measurement_occurrences"]
     act = ledger.get(result.material["act_occurrence_event_identity"])
     assert act is not None
+    assert act.identity != result.identity
     assert act.material["subject_reference"] == {
         "comparison_result_occurrence_identity": source.identity,
     }
+    assert "measurement_result_identity" not in act.material
+    assert "result_identity" not in result.material
     assert "subject_to_act_binding_reference" not in act.material
     assert "subject_to_act_binding_reference" not in result.material
     assert not tuple(

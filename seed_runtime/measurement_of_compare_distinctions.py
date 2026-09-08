@@ -193,7 +193,6 @@ def _act_material(
     through_event_occurrence_identity: str,
     exact_act_identity: str,
     act_occurrence_identity: str,
-    measurement_result_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -203,7 +202,6 @@ def _act_material(
         },
         "addressed_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "measurement_result_identity": measurement_result_identity,
         "book_clause_identity": BOOK_CLAUSE,
         "act": MEASUREMENT_ACT,
         "source_locality_identity": locality_identity,
@@ -269,9 +267,6 @@ def record_compare_distinction_measurement_act_occurrence(
         "act_occurrence_identity": ledger.mint_identity(
             "compare_distinction_measurement_occurrence"
         ),
-        "measurement_result_identity": ledger.mint_identity(
-            "compare_distinction_measurement_result"
-        ),
     }
     return ledger.append(
         COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
@@ -331,7 +326,6 @@ def _read_act(
         for coordinate in (
             "addressed_act_identity",
             "act_occurrence_identity",
-            "measurement_result_identity",
         )
     }
     prior_boundary_identity = prior_coordinates.get(
@@ -363,7 +357,7 @@ def _read_act(
             ordered = resolved
             break
     if (
-        len(set(identities.values())) != 3
+        len(set(identities.values())) != 2
         or prior_coordinates.get("locality_identity") != act.locality_identity
         or tuple(event.identity for event in ordered) != ordered_identities
         or act.material
@@ -373,7 +367,6 @@ def _read_act(
             through_event_occurrence_identity=through_identity,
             exact_act_identity=identities["addressed_act_identity"],
             act_occurrence_identity=identities["act_occurrence_identity"],
-            measurement_result_identity=identities["measurement_result_identity"],
         )
     ):
         raise ValueError("Compare Distinction Measurement Act is not exact")
@@ -388,7 +381,6 @@ def _result_material(
         "comparison_result_occurrence_identity"
     ]
     return {
-        "result_identity": act.material["measurement_result_identity"],
         "addressed_act_identity": act.material["addressed_act_identity"],
         "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": MEASUREMENT_ACT,
@@ -411,7 +403,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     result = _result_material(act, distinctions)
     return {
-        "result_identity": result["result_identity"],
         "addressed_act_identity": result["addressed_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],

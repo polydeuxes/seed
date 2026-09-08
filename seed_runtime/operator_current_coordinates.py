@@ -340,15 +340,18 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
 
     coordinates = {
         "recorded_occurrence_identity": event.identity,
-        "result_identity": event.material["result_identity"],
-        "act_occurrence_identity": event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
     }
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    if type(yield_relation_identity) is str:
-        coordinates["yield_relation_identity"] = yield_relation_identity
+    for coordinate in (
+        "result_identity",
+        "act_occurrence_identity",
+        "yield_relation_identity",
+    ):
+        identity = event.material.get(coordinate)
+        if type(identity) is str:
+            coordinates[coordinate] = identity
     return coordinates
 
 
