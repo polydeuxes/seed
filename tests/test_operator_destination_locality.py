@@ -77,7 +77,6 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
         "exact_act",
         "operator_destination_locality_act_identity",
         "act_occurrence_identity",
-        "result_identity",
         "operator_material_occurrence_reference",
         "operator_material_result_occurrence_identity",
         "operator_locality_identity",
@@ -92,6 +91,10 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     assert act.locality_identity == result.locality_identity
     assert act.locality_identity == binding.locality_identity
     assert act.locality_identity != "operator"
+    assert all(
+        "result_identity" not in occurrence.material
+        for occurrence in (binding, act, result)
+    )
     assert recorded["operator_material_occurrence_reference"] == command.identity
     assert recorded["operator_locality_identity"] == "operator"
     assert recorded["destination_locality_identity"] == result.locality_identity
@@ -159,8 +162,10 @@ def test_each_operator_occurrence_establishes_a_distinct_relation_result():
     second_recorded = get_recorded_operator_destination_locality(
         ledger, second.identity
     )
+    assert first.identity != second.identity
+    assert "result_identity" not in first_recorded
+    assert "result_identity" not in second_recorded
     coordinates = (
-        "result_identity",
         "operator_destination_locality_act_identity",
         "act_occurrence_identity",
         "destination_locality_identity",
@@ -251,7 +256,7 @@ def test_corrupted_binding_act_and_result_are_refused_independently():
         exact_coordinate = {
             "binding": "destination_locality_identity",
             "act": "act_occurrence_identity",
-            "result": "result_identity",
+            "result": "act_occurrence_event_identity",
         }[coordinate]
         event.material[exact_coordinate] = "changed coordinate"
         reader, identity = {
