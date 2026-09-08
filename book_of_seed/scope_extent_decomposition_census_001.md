@@ -82,7 +82,7 @@ receive Acts exhaustively. Its coordinates alone do not say which Act occurs.
 Conversely, naming an Act and Locality does not say which current coordinates
 are bounded by an addressed reading.
 
-Thus `scope` cannot be substituted for `extent`:
+Thus `scope` and `extent` have no context-free equivalence:
 
 ```text
 extent
@@ -116,6 +116,6 @@ scope                          Rosetta / implementation compression;
 Do not admit `Scope` or `Extent` to the Book. Do not create an extent
 occurrence, Scope relation, work object, or completion object.
 
-The focused control adds no runtime road. It only proves that the same four
-exact coordinates can be incomplete and exhaustive at different exact
-readings.
+The focused control adds no runtime road. It distinguishes non-exhaustive
+from exhaustive Applicability-Act coverage of the same four exact subject
+coordinates at different readings. The subject coordinates remain unchanged.

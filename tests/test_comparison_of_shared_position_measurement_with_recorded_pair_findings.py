@@ -905,7 +905,7 @@ def test_every_exact_cross_set_member_receives_one_applicability_act():
     assert all("subject_to_act_binding_reference" not in act.material for act in acts)
 
 
-def test_same_exact_cross_set_can_be_incomplete_then_exhaustive():
+def test_same_exact_cross_set_can_be_nonexhaustive_then_exhaustive():
     ledger, *_inputs_reading, current_coordinates = _two_inputs_with_coordinates()
     exact_inputs = comparison_module._active_subject_inputs_from_current_coordinates(
         ledger,
@@ -924,19 +924,19 @@ def test_same_exact_cross_set_can_be_incomplete_then_exhaustive():
         inputs=exact_inputs[0],
         current_coordinates=current_coordinates,
     )
-    incomplete_coordinates = _advance_since(
+    one_act_coordinates = _advance_since(
         ledger, current_coordinates, prior_count
     )
-    incomplete_inputs = (
+    one_act_inputs = (
         comparison_module._active_subject_inputs_from_current_coordinates(
             ledger,
             locality_identity=LOCALITY,
-            current_coordinates=incomplete_coordinates,
+            current_coordinates=one_act_coordinates,
         )
     )
     assert tuple(
         comparison_module._active_applicability_subject_key(inputs)
-        for inputs in incomplete_inputs
+        for inputs in one_act_inputs
     ) == exact_keys
     assert tuple(
         ledger.iter_locality_kind(
@@ -948,7 +948,7 @@ def test_same_exact_cross_set_can_be_incomplete_then_exhaustive():
     completed = record_shared_position_measurement_pair_finding_compare_applicability_act_occurrences_from_current_coordinates(
         ledger,
         locality_identity=LOCALITY,
-        current_coordinates=incomplete_coordinates,
+        current_coordinates=one_act_coordinates,
     )
     assert len(completed.applicability_act_occurrence_occurrences) == 3
     completed_inputs = (
@@ -962,14 +962,23 @@ def test_same_exact_cross_set_can_be_incomplete_then_exhaustive():
         comparison_module._active_applicability_subject_key(inputs)
         for inputs in completed_inputs
     ) == exact_keys
-    assert len(
-        tuple(
-            ledger.iter_locality_kind(
-                LOCALITY,
-                COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-            )
+    completed_acts = tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_SHARED_POSITION_MEASUREMENT_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         )
-    ) == len(exact_keys)
+    )
+    assert len(completed_acts) == len(exact_keys)
+    assert {
+        comparison_module._active_applicability_subject_key(
+            comparison_module._read_active_applicability_act(
+                ledger,
+                act.identity,
+                prior_coordinates=completed.current_coordinates,
+            )[1]
+        )
+        for act in completed_acts
+    } == set(exact_keys)
 
 
 def test_resumed_applicability_coverage_uses_the_later_exact_current_sets():
