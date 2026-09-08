@@ -122,12 +122,12 @@ def test_two_stage_relation_uses_one_reference_and_one_destination_locality():
     assert tuple(sorted(result.material)) == (
         "act_occurrence_event_identity",
         "destination_locality_identity",
-        "through_occurrence_boundary_reference",
     )
     assert destination != "source"
     assert recorded["through_occurrence_boundary_reference"] == {
         "recorded_occurrence_identity": reference_result.identity,
     }
+    assert "through_occurrence_boundary_reference" not in result.material
     assert recorded["destination_locality_identity"] == destination
     assert "locality_relation" not in recorded
     assert len(

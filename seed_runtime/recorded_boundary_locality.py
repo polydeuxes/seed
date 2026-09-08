@@ -153,9 +153,6 @@ def _recorded_result_material(
     *, act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "through_occurrence_boundary_reference": deepcopy(
-            result_material["through_occurrence_boundary_reference"]
-        ),
         "destination_locality_identity": result_material[
             "destination_locality_identity"
         ],
@@ -293,4 +290,9 @@ def get_recorded_boundary_locality(
         raise RecordedBoundaryLocalityError(
             "recorded boundary Locality result requires its Act occurrence"
         ) from error
-    return deepcopy(event.material)
+    return {
+        **deepcopy(event.material),
+        "through_occurrence_boundary_reference": deepcopy(
+            expected_result["through_occurrence_boundary_reference"]
+        ),
+    }
