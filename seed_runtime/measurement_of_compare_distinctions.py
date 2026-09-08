@@ -191,7 +191,6 @@ def _act_material(
     comparison_result_occurrence_identity: str,
     locality_identity: str,
     through_event_occurrence_identity: str,
-    exact_act_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -199,7 +198,6 @@ def _act_material(
                 comparison_result_occurrence_identity
             ),
         },
-        "addressed_act_identity": exact_act_identity,
         "book_clause_identity": BOOK_CLAUSE,
         "act": MEASUREMENT_ACT,
         "source_locality_identity": locality_identity,
@@ -258,9 +256,6 @@ def record_compare_distinction_measurement_act_occurrence(
         != ledger.append_boundary()
     ):
         raise ValueError("Measurement requires exact current coordinates")
-    exact_act_identity = ledger.mint_identity(
-        "compare_distinction_measurement_act"
-    )
     return ledger.append(
         COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
         _act_material(
@@ -269,7 +264,6 @@ def record_compare_distinction_measurement_act_occurrence(
             ),
             locality_identity=locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            exact_act_identity=exact_act_identity,
         ),
         locality_identity=locality_identity,
     )
@@ -311,10 +305,6 @@ def _read_act(
             comparison_result_occurrence_identity=source_identity,
         current_coordinates=prior_coordinates,
     )
-    exact_act_identity = _identity(
-        act.material.get("addressed_act_identity"),
-        "Compare Distinction Measurement Act is not exact",
-    )
     prior_boundary_identity = prior_coordinates.get(
         "through_event_occurrence_identity"
     )
@@ -351,7 +341,6 @@ def _read_act(
             comparison_result_occurrence_identity=source_identity,
             locality_identity=act.locality_identity,
             through_event_occurrence_identity=through_identity,
-            exact_act_identity=exact_act_identity,
         )
     ):
         raise ValueError("Compare Distinction Measurement Act is not exact")
@@ -366,7 +355,6 @@ def _result_material(
         "comparison_result_occurrence_identity"
     ]
     return {
-        "addressed_act_identity": act.material["addressed_act_identity"],
         "exact_act": MEASUREMENT_ACT,
         "subject_reference": deepcopy(act.material["subject_reference"]),
         "source_result_occurrence_identity": source_identity,
@@ -387,7 +375,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     result = _result_material(act, distinctions)
     return {
-        "addressed_act_identity": result["addressed_act_identity"],
         "exact_act": result["exact_act"],
         "subject_reference": deepcopy(result["subject_reference"]),
         "source_result_occurrence_identity": result[

@@ -102,6 +102,9 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
         "comparison_result_occurrence_identity": source.identity,
     }
     assert result.material["act_occurrence_event_identity"] == act.identity
+    assert act.material["act"] == compare_distinctions.MEASUREMENT_ACT
+    assert "addressed_act_identity" not in act.material
+    assert "addressed_act_identity" not in result.material
     assert "act_occurrence_identity" not in act.material
     assert "act_occurrence_identity" not in result.material
     assert "measurement_result_identity" not in act.material
@@ -129,6 +132,20 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
             act_occurrence_event_identity=result.material[
                 "act_occurrence_event_identity"
             ],
+        )
+
+
+def test_changed_measurement_act_is_refused():
+    ledger = EventLedger()
+    _source, result, current_coordinates = _record_measurement(ledger)
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    act.material["act"] = "Compare"
+
+    with pytest.raises(ValueError, match="Act is not exact"):
+        get_recorded_compare_distinction_measurement(
+            ledger,
+            result.identity,
+            prior_coordinates=current_coordinates,
         )
 
 
