@@ -91,7 +91,6 @@ def _result_material(
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "exact_act": LOCALITY_CONTINUATION_ACT,
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
     }
@@ -105,7 +104,6 @@ def _recorded_result_material(
     """Record every result coordinate at one literal durable address."""
 
     return {
-        "exact_act": result_material["exact_act"],
         "source_coordinate_reference": result_material[
             "source_coordinate_reference"
         ],

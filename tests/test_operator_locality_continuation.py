@@ -102,7 +102,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
         act_occurrence.identity,
     }
     assert "subject_to_act_binding_reference" not in recorded
-    assert recorded["exact_act"] == "Preservation"
+    assert "exact_act" not in result.material
     assert "applicability" not in recorded
     assert "priority" not in recorded
     advanced = advance_operator_current_coordinates(
