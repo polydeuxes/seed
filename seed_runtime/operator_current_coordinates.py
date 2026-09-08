@@ -127,10 +127,8 @@ from seed_runtime.operator_material_source import (
     get_recorded_operator_material_source,
 )
 from seed_runtime.operator_destination_locality import (
-    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
-    get_operator_destination_locality_subject_to_act_binding,
     get_operator_destination_locality_act_occurrence,
     get_recorded_operator_destination_locality,
 )
@@ -255,7 +253,6 @@ _OPERATOR_MATERIAL_SOURCE_KINDS = {
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
 _OPERATOR_DESTINATION_LOCALITY_KINDS = {
-    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
 }
@@ -1191,15 +1188,6 @@ def advance_operator_current_coordinates(
             continue
         if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
             get_recorded_operator_material_source(ledger, event.identity)
-        if (
-            event.kind
-            == OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_operator_destination_locality_subject_to_act_binding(
-                ledger, event.identity
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
-            continue
         if event.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT:
             get_operator_destination_locality_act_occurrence(ledger, event.identity)
             continue

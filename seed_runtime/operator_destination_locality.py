@@ -13,19 +13,12 @@ from seed_runtime.operator_material_source import (
 )
 
 
-OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
-    "operator.destination_locality_subject_to_act_binding_recorded"
-)
 OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT = (
     "operator.destination_locality_act_occurrence_recorded"
 )
 OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND = "operator.destination_locality_recorded"
-OPERATOR_DESTINATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
 OPERATOR_DESTINATION_LOCALITY_ACT = "Locality"
 EVENT_KIND_BOOK_CLAUSES = {
-    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
-        "06.Locality.D"
-    ),
     OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND: "06.Locality.A",
 }
@@ -64,15 +57,14 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     return event
 
 
-def _binding_material(
+def _act_material(
     *,
     command: Event,
     through_event_occurrence_identity: str,
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "book_clause_identity": OPERATOR_DESTINATION_LOCALITY_BOOK_CLAUSE,
-        "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
+        "act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "operator_material_occurrence_reference": command.identity,
         "operator_material_result_occurrence_identity": command.identity,
         "operator_locality_identity": command.locality_identity,
@@ -83,13 +75,13 @@ def _binding_material(
     }
 
 
-def record_operator_destination_locality_subject_to_act_binding(
+def record_operator_destination_locality_act_occurrence(
     ledger: EventLedger,
     *,
     operator_material_occurrence_reference: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Bind one destination Locality relation to its exact Act."""
+    """Record a Locality Act over exact current operator coordinates."""
 
     command = _command_event(ledger, operator_material_occurrence_reference)
     exact_results = (
@@ -111,141 +103,28 @@ def record_operator_destination_locality_subject_to_act_binding(
         or not boundary_identity
     ):
         raise OperatorDestinationLocalityError(
-            "destination Locality binding requires exact current operator material coordinates"
+            "destination Locality Act requires exact current operator material coordinates"
         )
-    for binding in ledger.list_events():
+    for act in ledger.list_events():
         if (
-            binding.kind
-            == OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-            and binding.material.get("operator_material_occurrence_reference")
+            act.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
+            and act.material.get("operator_material_occurrence_reference")
             == command.identity
         ):
             raise OperatorDestinationLocalityError(
-                "operator material occurrence already has a destination Locality binding"
+                "operator material occurrence already has a destination Locality Act"
             )
     destination_locality_identity = ledger.mint_identity(
         "operator_destination_locality"
     )
     return ledger.append(
-        OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        _binding_material(
+        OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
+        _act_material(
             command=command,
             through_event_occurrence_identity=boundary_identity,
             destination_locality_identity=destination_locality_identity,
         ),
         locality_identity=destination_locality_identity,
-    )
-
-
-def get_operator_destination_locality_subject_to_act_binding(
-    ledger: EventLedger, event_identity: str
-) -> Event:
-    event = ledger.get(
-        _identity(event_identity, "destination Locality requires one binding")
-    )
-    if (
-        event is None
-        or event.kind
-        != OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        raise OperatorDestinationLocalityError(
-            "destination Locality binding is absent or corrupted"
-        )
-    material = event.material
-    command = _command_event(
-        ledger, material.get("operator_material_occurrence_reference")
-    )
-    destination_locality_identity = material.get(
-        "destination_locality_identity"
-    )
-    if (
-        type(destination_locality_identity) is not str
-        or not destination_locality_identity
-    ):
-        raise OperatorDestinationLocalityError(
-            "destination Locality binding identities are not exact"
-        )
-    exact_binding_material = _binding_material(
-        command=command,
-        through_event_occurrence_identity=material.get(
-            "operator_through_event_occurrence_identity"
-        ),
-        destination_locality_identity=destination_locality_identity,
-    )
-    boundary = ledger.get(
-        material.get("operator_through_event_occurrence_identity")
-    )
-    if (
-        material != exact_binding_material
-        or event.locality_identity
-        != material.get("destination_locality_identity")
-        or boundary is None
-        or boundary.locality_identity != command.locality_identity
-        or ledger.integrity_of(boundary.identity) == CORRUPTED
-    ):
-        raise OperatorDestinationLocalityError("destination Locality binding is not exact")
-    ordered = (
-        (command.identity,)
-        if command.identity == boundary.identity
-        else (command.identity, boundary.identity)
-    )
-    try:
-        ledger.occurrences_in_append_order(
-            ordered, locality_identity=command.locality_identity
-        )
-    except (TypeError, ValueError) as error:
-        raise OperatorDestinationLocalityError(
-            "destination Locality binding does not follow current material coordinates"
-        ) from error
-    return event
-
-
-def _act_material(binding: Event) -> dict[str, Any]:
-    material = binding.material
-    return {
-        "act": OPERATOR_DESTINATION_LOCALITY_ACT,
-        "subject_to_act_binding_event_identity": binding.identity,
-        "operator_material_occurrence_reference": material[
-            "operator_material_occurrence_reference"
-        ],
-        "operator_locality_identity": material["operator_locality_identity"],
-        "destination_locality_identity": material[
-            "destination_locality_identity"
-        ],
-    }
-
-
-def record_operator_destination_locality_act_occurrence(
-    ledger: EventLedger,
-    *,
-    subject_to_act_binding_event_identity: str,
-    current_coordinates: dict[str, Any],
-) -> Event:
-    binding = get_operator_destination_locality_subject_to_act_binding(
-        ledger, subject_to_act_binding_event_identity
-    )
-    current_bindings = (
-        current_coordinates.get(
-            "subject_to_act_binding_occurrences"
-        )
-        if type(current_coordinates) is dict
-        else None
-    )
-    if (
-        type(current_bindings) is not dict
-        or current_bindings.get(binding.identity, object()) is not None
-        or current_coordinates.get("locality_identity")
-        != binding.locality_identity
-    ):
-        raise OperatorDestinationLocalityError(
-            "destination Locality Act requires its exact current binding"
-        )
-    return ledger.append(
-        OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
-        _act_material(binding),
-        locality_identity=binding.material["destination_locality_identity"],
     )
 
 
@@ -264,23 +143,51 @@ def get_operator_destination_locality_act_occurrence(
         raise OperatorDestinationLocalityError(
             "destination Locality Act occurrence is absent or corrupted"
         )
-    binding = get_operator_destination_locality_subject_to_act_binding(
-        ledger, event.material.get("subject_to_act_binding_event_identity")
+    material = event.material
+    command = _command_event(
+        ledger, material.get("operator_material_occurrence_reference")
+    )
+    destination_locality_identity = material.get(
+        "destination_locality_identity"
     )
     if (
-        event.material != _act_material(binding)
-        or event.locality_identity
-        != binding.material.get("destination_locality_identity")
+        type(destination_locality_identity) is not str
+        or not destination_locality_identity
     ):
-        raise OperatorDestinationLocalityError("destination Locality Act occurrence is not exact")
-    try:
-        ledger.occurrences_in_append_order(
-            (binding.identity, event.identity),
-            locality_identity=event.locality_identity,
-        )
-    except ValueError as error:
         raise OperatorDestinationLocalityError(
-            "destination Locality Act requires its prior binding"
+            "destination Locality Act coordinates are not exact"
+        )
+    exact_act_material = _act_material(
+        command=command,
+        through_event_occurrence_identity=material.get(
+            "operator_through_event_occurrence_identity"
+        ),
+        destination_locality_identity=destination_locality_identity,
+    )
+    boundary = ledger.get(
+        material.get("operator_through_event_occurrence_identity")
+    )
+    if (
+        material != exact_act_material
+        or event.locality_identity
+        != material.get("destination_locality_identity")
+        or boundary is None
+        or boundary.locality_identity != command.locality_identity
+        or ledger.integrity_of(boundary.identity) == CORRUPTED
+    ):
+        raise OperatorDestinationLocalityError(
+            "destination Locality Act occurrence is not exact"
+        )
+    ordered = (
+        (command.identity, event.identity)
+        if command.identity == boundary.identity
+        else (command.identity, boundary.identity, event.identity)
+    )
+    try:
+        ledger.occurrence_identities_in_append_order(ordered)
+    except (TypeError, ValueError) as error:
+        raise OperatorDestinationLocalityError(
+            "destination Locality Act does not follow current material coordinates"
         ) from error
     return event
 
@@ -289,9 +196,6 @@ def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
         "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
-        "subject_to_act_binding_event_identity": material[
-            "subject_to_act_binding_event_identity"
-        ],
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
         ],
@@ -319,9 +223,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     return {
         "exact_act": result["exact_act"],
-        "subject_to_act_binding_event_identity": result[
-            "subject_to_act_binding_event_identity"
-        ],
         "operator_material_occurrence_reference": result[
             "operator_material_occurrence_reference"
         ],

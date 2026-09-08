@@ -52,7 +52,6 @@ from seed_runtime.operator_locality_continuation import (
     record_locality_continuation_result,
 )
 from seed_runtime.operator_destination_locality import (
-    record_operator_destination_locality_subject_to_act_binding,
     record_operator_destination_locality_act_occurrence,
     record_operator_destination_locality_result,
 )
@@ -481,33 +480,16 @@ def run_persistent_operator_console(
                     )
                 )
                 command_material = source_material.exact_material
-                relation_binding = (
-                    record_operator_destination_locality_subject_to_act_binding(
-                        ledger,
-                        operator_material_occurrence_reference=(
-                            command_occurrence_reference
-                        ),
-                        current_coordinates=current_coordinates,
-                    )
-                )
-                destination_locality_identity = relation_binding.material[
-                    "destination_locality_identity"
-                ]
-                witness_current_coordinates = read_operator_current_coordinates(
-                    ledger, locality_identity=destination_locality_identity
-                )
                 relation_act = record_operator_destination_locality_act_occurrence(
                     ledger,
-                    subject_to_act_binding_event_identity=(
-                        relation_binding.identity
+                    operator_material_occurrence_reference=(
+                        command_occurrence_reference
                     ),
-                    current_coordinates=witness_current_coordinates,
+                    current_coordinates=current_coordinates,
                 )
-                witness_current_coordinates = _advance_over(
-                    ledger,
-                    witness_current_coordinates,
-                    (relation_act.identity,),
-                    locality_identity=destination_locality_identity,
+                destination_locality_identity = relation_act.locality_identity
+                witness_current_coordinates = read_operator_current_coordinates(
+                    ledger, locality_identity=destination_locality_identity
                 )
                 relation_result = record_operator_destination_locality_result(
                     ledger,

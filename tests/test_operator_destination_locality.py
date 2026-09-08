@@ -17,14 +17,11 @@ from seed_runtime.operator_current_coordinates import (
 from seed_runtime.operator_destination_locality import (
     OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
-    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OperatorDestinationLocalityError,
     get_operator_destination_locality_act_occurrence,
-    get_operator_destination_locality_subject_to_act_binding,
     get_recorded_operator_destination_locality,
     operator_destination_locality_occurrence_references,
     record_operator_destination_locality_act_occurrence,
-    record_operator_destination_locality_subject_to_act_binding,
     record_operator_destination_locality_result,
 )
 from seed_runtime.supplied_invocation_material import (
@@ -42,64 +39,58 @@ def _command(ledger, *, exact=b"!pytest\n", locality="operator"):
 
 
 def _relation(ledger, command):
-    binding = record_operator_destination_locality_subject_to_act_binding(
+    act = record_operator_destination_locality_act_occurrence(
         ledger,
         operator_material_occurrence_reference=command.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=command.locality_identity
         ),
     )
-    act = record_operator_destination_locality_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=binding.locality_identity
-        ),
-    )
     result = record_operator_destination_locality_result(
         ledger,
         act_occurrence_event_identity=act.identity,
     )
-    return binding, act, result
+    return act, result
 
 
-def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
+def test_operator_occurrence_has_a_fresh_destination_locality_relation():
     ledger = EventLedger()
     command = _command(ledger)
-    binding, act, result = _relation(ledger, command)
+    act, result = _relation(ledger, command)
     recorded = get_recorded_operator_destination_locality(ledger, result.identity)
 
-    assert binding.kind == (
-        OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    )
-    assert set(binding.material) == {
-        "book_clause_identity",
-        "exact_act",
+    assert set(act.material) == {
+        "act",
         "operator_material_occurrence_reference",
         "operator_material_result_occurrence_identity",
         "operator_locality_identity",
         "operator_through_event_occurrence_identity",
         "destination_locality_identity",
     }
-    assert binding.locality_identity == recorded[
-        "destination_locality_identity"
-    ]
     assert act.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     assert act.locality_identity == result.locality_identity
-    assert act.locality_identity == binding.locality_identity
     assert act.locality_identity != "operator"
     assert all(
         "result_identity" not in occurrence.material
-        for occurrence in (binding, act, result)
+        for occurrence in (act, result)
     )
     assert all(
         "act_occurrence_identity" not in occurrence.material
-        for occurrence in (binding, act, result)
+        for occurrence in (act, result)
     )
     assert all(
         "operator_destination_locality_act_identity" not in occurrence.material
-        for occurrence in (binding, act, result)
+        for occurrence in (act, result)
+    )
+    assert all(
+        "subject_to_act_binding_event_identity" not in occurrence.material
+        for occurrence in (act, result)
+    )
+    assert all(
+        occurrence.kind
+        != "operator.destination_locality_subject_to_act_binding_recorded"
+        for occurrence in ledger.list_events()
     )
     assert recorded["operator_material_occurrence_reference"] == command.identity
     assert recorded["operator_locality_identity"] == "operator"
@@ -113,10 +104,30 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     )
 
 
+def test_destination_locality_act_can_precede_its_result():
+    ledger = EventLedger()
+    command = _command(ledger)
+    act = record_operator_destination_locality_act_occurrence(
+        ledger,
+        operator_material_occurrence_reference=command.identity,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=command.locality_identity
+        ),
+    )
+
+    assert get_operator_destination_locality_act_occurrence(
+        ledger, act.identity
+    ) == act
+    assert not any(
+        event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
+        for event in ledger.list_events()
+    )
+
+
 def test_witness_material_occurs_only_in_the_related_locality():
     ledger = EventLedger()
     command = _command(ledger)
-    binding, _act, relation = _relation(ledger, command)
+    _act, relation = _relation(ledger, command)
     supplied = record_supplied_witness_material_source(
         ledger,
         operator_destination_locality_result_event_identity=relation.identity,
@@ -144,9 +155,6 @@ def test_witness_material_occurs_only_in_the_related_locality():
         for occurrence in operator_current_coordinates["material_result_occurrences"]
     ] == [command.identity]
     assert operator_current_coordinates["operator_destination_locality_relations"] == {}
-    assert binding.identity not in operator_current_coordinates[
-        "subject_to_act_binding_occurrences"
-    ]
     assert [
         occurrence["result_occurrence_identity"]
         for occurrence in destination_current_coordinates["material_result_occurrences"]
@@ -154,15 +162,13 @@ def test_witness_material_occurs_only_in_the_related_locality():
     assert destination_current_coordinates["operator_destination_locality_relations"] == {
         relation.identity: None
     }
-    assert destination_current_coordinates["subject_to_act_binding_occurrences"] == {
-        binding.identity: None
-    }
+    assert destination_current_coordinates["subject_to_act_binding_occurrences"] == {}
 
 
-def test_each_operator_occurrence_establishes_a_distinct_relation_result():
+def test_separate_operator_occurrences_have_separate_relation_results():
     ledger = EventLedger()
-    _first_binding, first_act, first = _relation(ledger, _command(ledger))
-    _second_binding, second_act, second = _relation(ledger, _command(ledger))
+    first_act, first = _relation(ledger, _command(ledger))
+    second_act, second = _relation(ledger, _command(ledger))
 
     first_recorded = get_recorded_operator_destination_locality(ledger, first.identity)
     second_recorded = get_recorded_operator_destination_locality(
@@ -180,12 +186,12 @@ def test_each_operator_occurrence_establishes_a_distinct_relation_result():
     )
 
 
-def test_one_operator_occurrence_cannot_establish_two_destination_localities():
+def test_one_operator_occurrence_cannot_have_two_destination_localities():
     ledger = EventLedger()
     command = _command(ledger)
     _relation(ledger, command)
     with pytest.raises(OperatorDestinationLocalityError, match="already has"):
-        record_operator_destination_locality_subject_to_act_binding(
+        record_operator_destination_locality_act_occurrence(
             ledger,
             operator_material_occurrence_reference=command.identity,
             current_coordinates=read_operator_current_coordinates(
@@ -194,7 +200,7 @@ def test_one_operator_occurrence_cannot_establish_two_destination_localities():
         )
 
 
-def test_binding_requires_exact_current_operator_material():
+def test_act_requires_exact_current_operator_material():
     ledger = EventLedger()
     command = _command(ledger)
     empty_coordinates = read_operator_current_coordinates(
@@ -204,7 +210,7 @@ def test_binding_requires_exact_current_operator_material():
         OperatorDestinationLocalityError,
         match="current operator material coordinates",
     ):
-        record_operator_destination_locality_subject_to_act_binding(
+        record_operator_destination_locality_act_occurrence(
             ledger,
             operator_material_occurrence_reference=command.identity,
             current_coordinates=empty_coordinates,
@@ -212,7 +218,7 @@ def test_binding_requires_exact_current_operator_material():
 
     not_command = _command(ledger, exact=b"pytest\n")
     with pytest.raises(OperatorDestinationLocalityError, match="material occurrence"):
-        record_operator_destination_locality_subject_to_act_binding(
+        record_operator_destination_locality_act_occurrence(
             ledger,
             operator_material_occurrence_reference=not_command.identity,
             current_coordinates=read_operator_current_coordinates(
@@ -221,21 +227,14 @@ def test_binding_requires_exact_current_operator_material():
         )
 
 
-def test_one_destination_locality_act_cannot_yield_twice():
+def test_one_destination_locality_act_addresses_one_result():
     ledger = EventLedger()
     command = _command(ledger)
-    binding = record_operator_destination_locality_subject_to_act_binding(
+    act = record_operator_destination_locality_act_occurrence(
         ledger,
         operator_material_occurrence_reference=command.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="operator"
-        ),
-    )
-    act = record_operator_destination_locality_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=binding.locality_identity
         ),
     )
     record_operator_destination_locality_result(
@@ -250,24 +249,17 @@ def test_one_destination_locality_act_cannot_yield_twice():
         )
 
 
-def test_corrupted_binding_act_and_result_are_refused_independently():
-    for coordinate in ("binding", "act", "result"):
+def test_corrupted_act_and_result_are_refused_independently():
+    for coordinate in ("act", "result"):
         ledger = EventLedger()
-        binding, act, result = _relation(ledger, _command(ledger))
-        event = {"binding": binding, "act": act, "result": result}[
-            coordinate
-        ]
+        act, result = _relation(ledger, _command(ledger))
+        event = {"act": act, "result": result}[coordinate]
         exact_coordinate = {
-            "binding": "destination_locality_identity",
             "act": "act",
             "result": "act_occurrence_event_identity",
         }[coordinate]
         event.material[exact_coordinate] = "changed coordinate"
         reader, identity = {
-            "binding": (
-                get_operator_destination_locality_subject_to_act_binding,
-                binding.identity,
-            ),
             "act": (get_operator_destination_locality_act_occurrence, act.identity),
             "result": (get_recorded_operator_destination_locality, result.identity),
         }[coordinate]
@@ -275,44 +267,55 @@ def test_corrupted_binding_act_and_result_are_refused_independently():
             reader(ledger, identity)
 
 
-def test_destination_locality_act_requires_binding_in_current_destination_coordinates():
+def test_destination_locality_act_requires_current_operator_coordinates():
     ledger = EventLedger()
     command = _command(ledger)
-    binding = record_operator_destination_locality_subject_to_act_binding(
+    current_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity="operator"
+    )
+    without_command = {
+        **current_coordinates,
+        "exact_result_occurrences": {},
+    }
+    with pytest.raises(
+        OperatorDestinationLocalityError,
+        match="current operator material coordinates",
+    ):
+        record_operator_destination_locality_act_occurrence(
+            ledger,
+            operator_material_occurrence_reference=command.identity,
+            current_coordinates=without_command,
+        )
+
+
+def test_destination_locality_act_refuses_a_boundary_after_the_act():
+    ledger = EventLedger()
+    command = _command(ledger)
+    act = record_operator_destination_locality_act_occurrence(
         ledger,
         operator_material_occurrence_reference=command.identity,
         current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity="operator"
+            ledger, locality_identity=command.locality_identity
         ),
     )
-    destination_coordinates_without_binding = {
-        **read_operator_current_coordinates(
-            ledger, locality_identity=binding.locality_identity
-        ),
-        "subject_to_act_binding_occurrences": {},
-    }
+    later = _command(ledger)
+    act.material["operator_through_event_occurrence_identity"] = later.identity
 
-    for current_coordinates in (
-        read_operator_current_coordinates(ledger, locality_identity="operator"),
-        destination_coordinates_without_binding,
+    with pytest.raises(
+        OperatorDestinationLocalityError,
+        match="does not follow current material coordinates",
     ):
-        with pytest.raises(OperatorDestinationLocalityError, match="current binding"):
-            record_operator_destination_locality_act_occurrence(
-                ledger,
-                subject_to_act_binding_event_identity=binding.identity,
-                current_coordinates=current_coordinates,
-            )
+        get_operator_destination_locality_act_occurrence(ledger, act.identity)
 
 
 def test_advanced_destination_coordinates_equal_full_replay():
     ledger = EventLedger()
     command = _command(ledger)
-    binding, act, relation = _relation(ledger, command)
+    act, relation = _relation(ledger, command)
     locality = relation.locality_identity
     advanced_coordinates = advance_operator_current_coordinates(
         ledger,
         (
-            binding.identity,
             act.identity,
             relation.identity,
         ),
@@ -327,7 +330,7 @@ def test_destination_locality_relation_reopens_with_exact_current_coordinates(tm
     database = tmp_path / "operator-destination-locality.db"
     ledger = SQLiteEventLedger(database)
     command = _command(ledger)
-    _binding, _act, relation = _relation(ledger, command)
+    _act, relation = _relation(ledger, command)
     locality = relation.locality_identity
     relation_identity = relation.identity
     ledger.close()
