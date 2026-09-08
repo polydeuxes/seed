@@ -22,7 +22,7 @@ parser returned
 
 - `book_of_seed/chapters/04_source_coordinates.md`
 - `book_of_seed/chapters/01_constitutional_standing.md`
-- `book_of_seed/chapters/09_recording_and_preservation.md`
+- `book_of_seed/chapters/09_recording.md`
 - `book_of_seed/chapters/11_representation_and_emission.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/material_ingest.py`

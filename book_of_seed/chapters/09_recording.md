@@ -1,4 +1,4 @@
-# Recording and Preservation
+# Recording
 
 ### 05.Recording.D — Through-occurrence boundary reference
 

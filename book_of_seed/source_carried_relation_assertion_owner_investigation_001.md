@@ -251,7 +251,7 @@ Assertion`. Source.F supplies neither the three relation-Assertion occupants
 nor an occurrence establishing that the source carried that Assertion.
 
 Active Recording.A similarly says that a recording occurrence preserves one
-exact Assertion (`book_of_seed/chapters/09_recording_and_preservation.md:10-13`).
+exact Assertion (`book_of_seed/chapters/09_recording.md:10-13`).
 It does not turn recorded bytes or W into the Assertion it preserves.
 
 ## 4. Smallest recovered topology

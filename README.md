@@ -1,8 +1,8 @@
 # Seed
 
-Seed is an append-only runtime for preserving bounded material, Assertions,
-occurrences, and exact coordinates current through one occurrence boundary
-without strengthening what the recorded coordinates establish.
+Seed is an append-only runtime whose Ledger records exact bounded material and
+occurrences. Its readers address exact coordinates current through a selected
+occurrence boundary without adding distinctions to those coordinates.
 
 ## Orientation
 

@@ -15,6 +15,8 @@ from seed_runtime.material_source import (
     read_exact_material_result,
 )
 from seed_runtime.witness_material_source import (
+    EVENT_KIND_BOOK_CLAUSES,
+    WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     WitnessMaterialSourceError,
     record_witness_material_source,
@@ -30,6 +32,13 @@ def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
     }
     fields.update(differences)
     return record_witness_material_source(ledger, **fields)
+
+
+def test_witness_act_and_result_address_their_exact_book_clauses():
+    assert EVENT_KIND_BOOK_CLAUSES == {
+        WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "01.Source.H",
+    }
 
 
 def test_source_result_preserves_each_exact_byte_value_without_interpretation():

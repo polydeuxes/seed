@@ -10,6 +10,7 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -471,10 +472,18 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         == relation.material["destination_locality_identity"]
     )
     assert len(witness_pair_measurements) == 3
-    assert all(
-        "input_applicability_event_identity" not in event.material
-        for event in witness_pair_measurements
-    )
+    for result in witness_pair_measurements:
+        assert "input_applicability_event_identity" not in result.material
+        act = ledger.get(result.material["act_occurrence_event_identity"])
+        assert act is not None
+        assert act.kind == BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT
+        assert tuple(
+            event.identity
+            for event in ledger.occurrences_in_append_order(
+                (act.identity, result.identity),
+                locality_identity=result.locality_identity,
+            )
+        ) == (act.identity, result.identity)
 
 
 def test_witness_material_is_durable_before_provider_resumes():

@@ -1,12 +1,12 @@
 #
 # A word absent from this file is refused.
-# One exact distinction is established before one word enters this file.
-# The word expresses that distinction; its admission establishes none.
+# An exact distinction precedes admission of a word into this file.
+# The word expresses that distinction; admission adds no distinction.
 # Distinction Witness -> exact Book coordinate -> admitted word.
 # Book admission -- every word used by active law.
 # Rosetta admission into active law.
 # Rosetta admission: ../rosetta/rosetta_admission.txt
-# This file alone governs Book proper. The Rosetta reference imports no
+# This file alone governs Book proper. The Rosetta reference imports no words.
 a
 accepted
 act

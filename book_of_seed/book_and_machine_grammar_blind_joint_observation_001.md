@@ -24,7 +24,7 @@ book_of_seed/chapters/05_provenance.md
 book_of_seed/chapters/06_locality_relations.md
 book_of_seed/chapters/07_measurement_and_candidates.md
 book_of_seed/chapters/08_compare.md
-book_of_seed/chapters/09_recording_and_preservation.md
+book_of_seed/chapters/09_recording.md
 book_of_seed/chapters/10_movement.md
 book_of_seed/chapters/11_representation_and_emission.md
 book_of_seed/chapters/12_stopping_and_completion.md

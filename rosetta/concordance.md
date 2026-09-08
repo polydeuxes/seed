@@ -10,6 +10,7 @@ Navigation entries do not establish constitutional identity or currentness.
 | movement | [Movement](../book_of_seed/chapters/10_movement.md) |
 | result boundary | [Acts and occurrences](../book_of_seed/chapters/03_acts_and_occurrences.md) |
 | Assertion source coordinates | [Source coordinates](../book_of_seed/chapters/04_source_coordinates.md) |
-| recording and preserved Assertions | [Recording and preservation](../book_of_seed/chapters/09_recording_and_preservation.md) |
+| recording | [Recording](../book_of_seed/chapters/09_recording.md) |
+| Preservation | [Locality](../book_of_seed/chapters/06_locality_relations.md) |
 | Locality relation | [Locality](../book_of_seed/chapters/06_locality_relations.md) |
 | emission | [Emission](../book_of_seed/chapters/11_emission.md) |

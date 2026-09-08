@@ -8,7 +8,8 @@ Locality.
 An Act occurrence is one occurrence of that exact Act. Its exact coordinates
 are the subject-to-Act binding and the exact coordinates of that binding.
 
-Yield is the exact relation from an Act occurrence to its exact result:
+The first subject of an exact Yield relation occurrence is an Act occurrence;
+the second subject is its exact result:
 
 ```
 Act occurrence --Yield--> result

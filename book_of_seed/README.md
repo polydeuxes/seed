@@ -31,8 +31,9 @@ coordinates.
 The exact coordinates of an Act occurrence are its exact Act,
 subject-to-Act binding, and Locality.
 
-Yield is an exact relation from one Act occurrence to its result. Locality is
-an exact relation with its exact subjects.
+The first subject of an exact Yield relation occurrence is an Act occurrence;
+the second subject is its exact result. Locality is an exact relation with its
+exact subjects.
 
 ```
 Act occurrence ── Yield ──> result
@@ -51,6 +52,6 @@ The exact Act occurrence coordinates are addressed by the result.
 - [Locality](chapters/06_locality_relations.md)
 - [Measurement](chapters/07_measurement.md)
 - [Compare](chapters/08_compare.md)
-- [Recording and preservation](chapters/09_recording_and_preservation.md)
+- [Recording](chapters/09_recording.md)
 - [Movement](chapters/10_movement.md)
 - [Emission](chapters/11_emission.md)
