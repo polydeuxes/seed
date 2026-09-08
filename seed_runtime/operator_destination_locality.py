@@ -188,7 +188,6 @@ def _result_material(ledger: EventLedger, act: Event) -> dict[str, Any]:
             "operator_material_occurrence_reference"
         ],
         "operator_locality_identity": command.locality_identity,
-        "destination_locality_identity": act.locality_identity,
     }
 
 
@@ -208,9 +207,6 @@ def _recorded_result_material(
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "destination_locality_identity": result[
-            "destination_locality_identity"
-        ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
     }
 
@@ -276,6 +272,7 @@ def get_recorded_operator_destination_locality(
             "operator_material_occurrence_reference"
         ],
         "operator_locality_identity": result["operator_locality_identity"],
+        "destination_locality_identity": event.locality_identity,
     }
 
 

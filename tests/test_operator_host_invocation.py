@@ -116,7 +116,7 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
             if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
         )
         events = ledger.list_locality(
-            relation.material["destination_locality_identity"]
+            relation.locality_identity
         )
         acquisition = next(
             event
@@ -418,7 +418,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         for event in acquisition_results[1:]
     ] == [[acquisition_results[0].identity, relation.identity]] * 3
     assert {event.locality_identity for event in acquisition_results[1:]} == {
-        relation.material["destination_locality_identity"]
+        relation.locality_identity
     }
     assert len({event.identity for event in acquisition_results}) == 4
     assert len(
@@ -446,7 +446,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         ledger, locality_identity="locality"
     )
     witness_standing = read_operator_current_coordinates(
-        ledger, locality_identity=relation.material["destination_locality_identity"]
+        ledger, locality_identity=relation.locality_identity
     )
     assert [
         occurrence["result_occurrence_identity"]
@@ -461,7 +461,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         for event in ledger.list()
         if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         and event.locality_identity
-        == relation.material["destination_locality_identity"]
+        == relation.locality_identity
     )
     assert len(witness_pair_measurements) == 3
     for result in witness_pair_measurements:
@@ -589,7 +589,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
         if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
     witness_events = ledger.list_locality(
-        relation.material["destination_locality_identity"]
+        relation.locality_identity
     )
     assert len(
         [
@@ -649,7 +649,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 2
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
     standing = read_operator_current_coordinates(
-        ledger, locality_identity=relation.material["destination_locality_identity"]
+        ledger, locality_identity=relation.locality_identity
     )
     assert [
         occurrence["result_occurrence_identity"]
