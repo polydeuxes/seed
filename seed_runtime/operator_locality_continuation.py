@@ -78,12 +78,10 @@ def _source_coordinate_reference(
 def _act_occurrence_material(
     *,
     source_coordinate_reference: dict[str, str | None],
-    destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "act": LOCALITY_CONTINUATION_ACT,
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
-        "destination_locality_identity": destination_locality_identity,
     }
 
 
@@ -146,7 +144,6 @@ def record_locality_continuation_act_occurrence(
         LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
             source_coordinate_reference=source_reference,
-            destination_locality_identity=destination_locality_identity,
         ),
         locality_identity=destination_locality_identity,
     )
@@ -189,12 +186,8 @@ def _validated_act_occurrence(
             "Locality continuation Act occurrence names another source boundary"
         )
     if (
-        material.get("destination_locality_identity")
-        != act_occurrence.locality_identity
-        or material
-        != _act_occurrence_material(
+        material != _act_occurrence_material(
             source_coordinate_reference=expected_reference,
-            destination_locality_identity=act_occurrence.locality_identity,
         )
     ):
         raise LocalityContinuationError(

@@ -73,6 +73,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
     assert "act_occurrence_identity" not in act_occurrence.material
     assert "continuation_act_identity" not in act_occurrence.material
     assert act_occurrence.material["act"] == "Preservation"
+    assert "destination_locality_identity" not in act_occurrence.material
     assert after_act["event_count"] == 1
     assert after_act["locality_continuation_relation_occurrences"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {}
