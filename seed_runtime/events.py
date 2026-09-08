@@ -593,6 +593,7 @@ class SQLiteEventLedger(EventLedger):
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
         self._batch_depth = 0
+        self._append_many_savepoint_number = 0
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA foreign_keys = ON")
@@ -771,12 +772,35 @@ class SQLiteEventLedger(EventLedger):
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [deepcopy(event) for event in events]
         self._validate_sqlite_batch(stored_events)
-        # One transaction writes this exact ordered append sequence.
-        with self._connection:
+        if not stored_events:
+            return stored_events
+
+        def write() -> None:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_identity(event, event_rowid)
                 self._advance_event_counter_without_commit(event.identity)
+
+        if not self._batch_depth:
+            # One transaction writes this exact ordered append sequence.
+            with self._connection:
+                write()
+            return stored_events
+
+        # A connection context would commit the enclosing batch. A savepoint
+        # keeps this call atomic while leaving durability to the outer scope.
+        if not self._connection.in_transaction:
+            self._connection.execute("BEGIN")
+        self._append_many_savepoint_number += 1
+        savepoint = f"seed_append_many_{self._append_many_savepoint_number}"
+        self._connection.execute(f"SAVEPOINT {savepoint}")
+        try:
+            write()
+        except BaseException:
+            self._connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+            self._connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+            raise
+        self._connection.execute(f"RELEASE SAVEPOINT {savepoint}")
         return stored_events
 
     def get(self, event_identity: str) -> Event | None:

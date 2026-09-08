@@ -1,8 +1,9 @@
 """Occurrence: exact order."""
 
+import pytest
+
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-
 
 
 def _events() -> list[Event]:
@@ -155,5 +156,65 @@ def test_sqlite_append_many_uses_one_transaction_for_many_events(tmp_path):
     reopened = SQLiteEventLedger(str(tmp_path / "events.db"))
     try:
         assert len(reopened.list()) == 3
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize(
+    "events",
+    ([], [Event(identity="evt_batch_1", kind="batch.first")]),
+    ids=("empty", "nonempty"),
+)
+def test_sqlite_append_many_does_not_commit_an_enclosing_batch(tmp_path, events):
+    path = tmp_path / "nested-batch.db"
+    ledger = SQLiteEventLedger(str(path))
+    with pytest.raises(RuntimeError, match="abort enclosing batch"):
+        with ledger.batched():
+            ledger.append("outer.pending")
+            ledger.append_many(events)
+            raise RuntimeError("abort enclosing batch")
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    try:
+        assert reopened.list() == []
+    finally:
+        reopened.close()
+
+
+def test_failed_append_many_rolls_back_only_its_savepoint_in_an_enclosing_batch(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "append-many-savepoint.db"
+    ledger = SQLiteEventLedger(str(path))
+    with ledger.batched():
+        first = ledger.append("outer.first")
+        insert = ledger._insert_without_commit
+        calls = 0
+
+        def fail_during_second_insert(event):
+            nonlocal calls
+            calls += 1
+            rowid = insert(event)
+            if calls == 2:
+                raise RuntimeError("batch insert failed")
+            return rowid
+
+        monkeypatch.setattr(
+            ledger, "_insert_without_commit", fail_during_second_insert
+        )
+        with pytest.raises(RuntimeError, match="batch insert failed"):
+            ledger.append_many(_events())
+        second = ledger.append("outer.second")
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    try:
+        recorded = reopened.list()
+        assert [event.identity for event in recorded] == [
+            first.identity,
+            second.identity,
+        ]
+        assert [event.kind for event in recorded] == ["outer.first", "outer.second"]
     finally:
         reopened.close()
