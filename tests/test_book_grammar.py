@@ -346,6 +346,16 @@ def test_sources_and_emission_preserve_exact_boundaries_without_loss_staging():
         "Locality",
     ]
 
+
+def test_emission_act_and_accepted_write_are_one_occurrence_and_result():
+    emission = _grammar()["book_coordinates"]["07.Emission.C"]
+
+    assert emission["one_occurrence"] == [
+        "emission_Act_occurrence",
+        "accepted_write",
+    ]
+    assert emission["separate_occurrence"] == "failure"
+
 def test_machine_grammar_contains_no_host_boolean():
     def contains_boolean(value: object) -> bool:
         if type(value) is bool:

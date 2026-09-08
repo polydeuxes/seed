@@ -4,7 +4,6 @@
 # The word expresses that distinction; admission adds no distinction.
 # Distinction Witness -> exact Book coordinate -> admitted word.
 # Book admission -- every word used by active law.
-# Rosetta admission into active law.
 # Rosetta admission: ../rosetta/rosetta_admission.txt
 # This file alone governs Book proper. The Rosetta reference imports no words.
 a
@@ -18,7 +17,6 @@ and
 applicability
 applicable
 are
-attempt
 b
 before
 binding
@@ -75,7 +73,6 @@ operator
 or
 order
 ordered
-own
 pair
 position
 preservation

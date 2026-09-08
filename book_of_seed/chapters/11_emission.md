@@ -14,14 +14,14 @@ write, the exact material accepted by the boundary and its reported count are
 exact coordinates of the result. That count is reported by the destination
 boundary.
 
-The emission Act occurrence, its attempt, and its accepted write are one
-occurrence and one result. A failure is a separate Act occurrence with its own
+The emission Act occurrence and its accepted write are one occurrence and one
+result. A failure is a separate Act occurrence with its
 result, and its reported count is a coordinate of that failure.
 
 ### 07.Emission.D — Material supplied in the destination Locality
 
 The exact coordinates of material supplied by the addressed boundary in that
-exact destination Locality are its own exact subject and source-boundary Act
+exact destination Locality are its exact subject and source-boundary Act
 coordinates.
 
 ## References

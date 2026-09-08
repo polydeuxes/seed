@@ -213,7 +213,6 @@
       ],
       "one_occurrence": [
         "emission_Act_occurrence",
-        "attempt",
         "accepted_write"
       ],
       "separate_occurrence": "failure"
