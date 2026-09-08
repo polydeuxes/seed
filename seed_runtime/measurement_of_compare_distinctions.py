@@ -355,7 +355,6 @@ def _result_material(
         "comparison_result_occurrence_identity"
     ]
     return {
-        "exact_act": MEASUREMENT_ACT,
         "subject_reference": deepcopy(act.material["subject_reference"]),
         "source_result_occurrence_identity": source_identity,
         "completeness_boundary": {
@@ -375,7 +374,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     result = _result_material(act, distinctions)
     return {
-        "exact_act": result["exact_act"],
         "subject_reference": deepcopy(result["subject_reference"]),
         "source_result_occurrence_identity": result[
             "source_result_occurrence_identity"
