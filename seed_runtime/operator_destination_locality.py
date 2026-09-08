@@ -208,9 +208,6 @@ def _recorded_result_material(
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "operator_material_occurrence_reference": result[
-            "operator_material_occurrence_reference"
-        ],
         "operator_locality_identity": result["operator_locality_identity"],
         "destination_locality_identity": result[
             "destination_locality_identity"
@@ -274,7 +271,12 @@ def get_recorded_operator_destination_locality(
         raise OperatorDestinationLocalityError(
             "destination Locality result requires its Act occurrence"
         ) from error
-    return deepcopy(event.material)
+    return {
+        **deepcopy(event.material),
+        "operator_material_occurrence_reference": result[
+            "operator_material_occurrence_reference"
+        ],
+    }
 
 
 def operator_destination_locality_occurrence_references(
