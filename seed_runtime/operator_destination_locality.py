@@ -241,7 +241,6 @@ def _refuse_second_result(ledger: EventLedger, act: Event) -> None:
 
 
 def _recorded_result_material(
-    result: dict[str, Any],
     *,
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
@@ -257,11 +256,9 @@ def record_operator_destination_locality_result(
         ledger, act_occurrence_event_identity
     )
     _refuse_second_result(ledger, act)
-    result = _result_material(ledger, act)
     return ledger.append(
         OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
-            result,
             act_occurrence_event_identity=act.identity,
         ),
         locality_identity=act.locality_identity,
@@ -288,7 +285,6 @@ def get_recorded_operator_destination_locality(
     )
     result = _result_material(ledger, act)
     exact_result_material = _recorded_result_material(
-        result,
         act_occurrence_event_identity=act.identity,
     )
     if (

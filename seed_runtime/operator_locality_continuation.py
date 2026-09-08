@@ -89,7 +89,6 @@ def _result_material(
 
 
 def _recorded_result_material(
-    result_material: dict[str, Any],
     *,
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
@@ -201,7 +200,6 @@ def record_locality_continuation_result(
     act_occurrence = _validated_act_occurrence(
         ledger, act_occurrence_event_identity
     )
-    material = act_occurrence.material
     locality_identity = act_occurrence.locality_identity
     for prior_result in ledger.iter_locality_kind(
         locality_identity, LOCALITY_CONTINUATION_RECORDED_KIND
@@ -214,13 +212,9 @@ def record_locality_continuation_result(
                 "one Locality continuation Act occurrence cannot address two results"
             )
 
-    result_material = _result_material(
-        source_coordinate_reference=material["source_coordinate_reference"],
-    )
     return ledger.append(
         LOCALITY_CONTINUATION_RECORDED_KIND,
         _recorded_result_material(
-            result_material,
             act_occurrence_event_identity=act_occurrence.identity,
         ),
         locality_identity=locality_identity,
@@ -257,7 +251,6 @@ def get_recorded_locality_continuation(
         ],
     )
     expected_event_material = _recorded_result_material(
-        expected,
         act_occurrence_event_identity=act_occurrence.identity,
     )
     if (
