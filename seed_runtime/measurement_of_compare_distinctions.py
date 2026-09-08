@@ -189,7 +189,6 @@ def _source_coordinates(
 def _act_material(
     *,
     comparison_result_occurrence_identity: str,
-    locality_identity: str,
     through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
@@ -200,7 +199,6 @@ def _act_material(
         },
         "book_clause_identity": BOOK_CLAUSE,
         "act": MEASUREMENT_ACT,
-        "source_locality_identity": locality_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
     }
 
@@ -262,7 +260,6 @@ def record_compare_distinction_measurement_act_occurrence(
             comparison_result_occurrence_identity=(
                 comparison_result_occurrence_identity
             ),
-            locality_identity=locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
         ),
         locality_identity=locality_identity,
@@ -339,7 +336,6 @@ def _read_act(
         or act.material
         != _act_material(
             comparison_result_occurrence_identity=source_identity,
-            locality_identity=act.locality_identity,
             through_event_occurrence_identity=through_identity,
         )
     ):
