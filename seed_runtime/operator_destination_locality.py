@@ -68,15 +68,11 @@ def _binding_material(
     *,
     command: Event,
     through_event_occurrence_identity: str,
-    operator_destination_locality_act_identity: str,
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "book_clause_identity": OPERATOR_DESTINATION_LOCALITY_BOOK_CLAUSE,
         "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
-        "operator_destination_locality_act_identity": (
-            operator_destination_locality_act_identity
-        ),
         "operator_material_occurrence_reference": command.identity,
         "operator_material_result_occurrence_identity": command.identity,
         "operator_locality_identity": command.locality_identity,
@@ -127,24 +123,17 @@ def record_operator_destination_locality_subject_to_act_binding(
             raise OperatorDestinationLocalityError(
                 "operator material occurrence already has a destination Locality binding"
             )
-    identities = {
-        "operator_destination_locality_act_identity": ledger.mint_identity(
-            "operator_destination_locality_act"
-        ),
-        "destination_locality_identity": ledger.mint_identity(
-            "operator_destination_locality"
-        ),
-    }
-    if len(set(identities.values())) != len(identities):
-        raise OperatorDestinationLocalityError("destination Locality identities are compressed")
+    destination_locality_identity = ledger.mint_identity(
+        "operator_destination_locality"
+    )
     return ledger.append(
         OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             command=command,
             through_event_occurrence_identity=boundary_identity,
-            **identities,
+            destination_locality_identity=destination_locality_identity,
         ),
-        locality_identity=identities["destination_locality_identity"],
+        locality_identity=destination_locality_identity,
     )
 
 
@@ -168,14 +157,12 @@ def get_operator_destination_locality_subject_to_act_binding(
     command = _command_event(
         ledger, material.get("operator_material_occurrence_reference")
     )
-    identity_coordinates = (
-        "operator_destination_locality_act_identity",
-        "destination_locality_identity",
+    destination_locality_identity = material.get(
+        "destination_locality_identity"
     )
-    identities = tuple(material.get(key) for key in identity_coordinates)
     if (
-        any(type(value) is not str or not value for value in identities)
-        or len(set(identities)) != len(identities)
+        type(destination_locality_identity) is not str
+        or not destination_locality_identity
     ):
         raise OperatorDestinationLocalityError(
             "destination Locality binding identities are not exact"
@@ -185,8 +172,7 @@ def get_operator_destination_locality_subject_to_act_binding(
         through_event_occurrence_identity=material.get(
             "operator_through_event_occurrence_identity"
         ),
-        operator_destination_locality_act_identity=identities[0],
-        destination_locality_identity=identities[1],
+        destination_locality_identity=destination_locality_identity,
     )
     boundary = ledger.get(
         material.get("operator_through_event_occurrence_identity")
@@ -219,9 +205,6 @@ def get_operator_destination_locality_subject_to_act_binding(
 def _act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "operator_destination_locality_act_identity": material[
-            "operator_destination_locality_act_identity"
-        ],
         "act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "subject_to_act_binding_event_identity": binding.identity,
         "operator_material_occurrence_reference": material[
@@ -305,9 +288,6 @@ def get_operator_destination_locality_act_occurrence(
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
-        "operator_destination_locality_act_identity": material[
-            "operator_destination_locality_act_identity"
-        ],
         "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "subject_to_act_binding_event_identity": material[
             "subject_to_act_binding_event_identity"
@@ -338,9 +318,6 @@ def _recorded_result_material(
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "operator_destination_locality_act_identity": result[
-            "operator_destination_locality_act_identity"
-        ],
         "exact_act": result["exact_act"],
         "subject_to_act_binding_event_identity": result[
             "subject_to_act_binding_event_identity"
