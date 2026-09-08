@@ -10,3 +10,10 @@ corpus/
 .coverage
 .coverage.*
 htmlcov/
+
+# Rendered material. The harnesses write it; the repository does not hold it.
+*.wav
+*.mp4
+*.srt
+*.onnx
+*.onnx.json

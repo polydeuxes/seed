@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_subject_to_act_binding,
+    record_byte_measurement_act_occurrence,
+    record_byte_measurement_result,
+)
+from seed_runtime.events import EventLedger
+from tests.operator_material_source_test_witness import (
+    record_operator_material_occurrence,
+)
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from compiled_format_invocation import exact_byte_material_references  # noqa: E402
+
+
+def measured_material(exact: bytes):
+    ledger = EventLedger()
+    record_operator_material_occurrence(
+        ledger,
+        locality_identity="one-byte-material",
+        exact=exact,
+        source_boundary="one-byte material test boundary",
+    )
+    assignment = record_byte_measurement_subject_to_act_binding(
+        ledger,
+        source_localities=("one-byte-material",),
+        recording_locality_identity="one-byte-measurement",
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity="one-byte-measurement"
+        ),
+    )
+    act_occurrence = record_byte_measurement_act_occurrence(
+        ledger,
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity="one-byte-measurement"
+        ),
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        act_occurrence_event_identity=act_occurrence.identity,
+    )
+    return ledger, exact_byte_material_references(ledger, measurement.identity)
+
+
+def measured_one_byte_material():
+    return measured_material(bytes(range(256)))

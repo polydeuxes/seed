@@ -1,0 +1,192 @@
+"""Exact occurrence boundary and failure results."""
+
+from __future__ import annotations
+
+import sqlite3
+
+import pytest
+
+from seed_runtime.events import (
+    InvalidLedgerBoundary,
+    LedgerIntegrityError,
+    SQLiteEventLedger,
+    VERIFIED,
+)
+
+
+def _build(path, count=50):
+    ledger = SQLiteEventLedger(str(path))
+    identities = [
+        ledger.append("k", {"i": i}, locality_identity="s1").identity for i in range(count)
+    ]
+    return ledger, identities
+
+
+def _lose(path, *, occurrences=0, identities=0):
+    """Drop the tail of either table, as an unflushed write would."""
+
+    connection = sqlite3.connect(str(path))
+    for trigger in ("events_refuse_delete", "prefix_identities_refuse_delete"):
+        connection.execute(f"DROP TRIGGER IF EXISTS {trigger}")
+    if occurrences:
+        connection.execute(
+            "DELETE FROM events WHERE rowid IN"
+            " (SELECT rowid FROM events ORDER BY rowid DESC LIMIT ?)",
+            (occurrences,),
+        )
+    if identities:
+        connection.execute(
+            "DELETE FROM event_prefix_identities WHERE position IN"
+            " (SELECT position FROM event_prefix_identities"
+            " ORDER BY position DESC LIMIT ?)",
+            (identities,),
+        )
+    connection.commit()
+    connection.close()
+
+
+def test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact(tmp_path):
+    """A shorter history is still a sound one."""
+
+    path = tmp_path / "e.sqlite"
+    ledger, identities = _build(path)
+    del ledger
+
+    _lose(path, occurrences=10, identities=10)
+
+    ledger = SQLiteEventLedger(str(path))
+    assert len(ledger.list()) == 40
+    for event_identity in identities[:40]:
+        assert ledger.integrity_of(event_identity) == VERIFIED
+
+
+def test_occurrences_lost_without_their_prefix_identities_refuse_to_open(tmp_path):
+    """A chain longer than its occurrences is torn, not short."""
+
+    path = tmp_path / "e.sqlite"
+    ledger, _ = _build(path)
+    del ledger
+
+    _lose(path, occurrences=10)
+
+    with pytest.raises(LedgerIntegrityError):
+        SQLiteEventLedger(str(path))
+
+
+def test_prefix_identities_lost_without_their_occurrences_refuse_to_open(tmp_path):
+    """And the tear in the other direction."""
+
+    path = tmp_path / "e.sqlite"
+    ledger, _ = _build(path)
+    del ledger
+
+    _lose(path, identities=10)
+
+    with pytest.raises(LedgerIntegrityError):
+        SQLiteEventLedger(str(path))
+
+
+def test_a_retained_boundary_detects_a_tip_that_was_lost(tmp_path):
+    """The witness is what makes a silent shortening speak.
+
+    Truncating both tables together leaves a store that is internally
+    consistent and cannot tell, alone, that it is shorter than it was. A
+    holder of a boundary recorded before the loss can.
+    """
+
+    path = tmp_path / "e.sqlite"
+    ledger, _ = _build(path)
+    boundary = ledger.append_boundary()
+    del ledger
+
+    _lose(path, occurrences=10, identities=10)
+
+    ledger = SQLiteEventLedger(str(path))
+    with pytest.raises(InvalidLedgerBoundary):
+        ledger.list(through=boundary)
+
+
+def test_only_the_prefix_that_vanished_is_refused(tmp_path):
+    """A ledger that refused every boundary would report loss that never happened.
+
+    The refusal above has to be specific to the prefix the store no longer
+    holds, so a boundary the preserved store can account for must resolve.
+    """
+
+    path = tmp_path / "e.sqlite"
+    ledger, _ = _build(path)
+    del ledger
+
+    _lose(path, occurrences=10, identities=10)
+
+    ledger = SQLiteEventLedger(str(path))
+    preserved = ledger.append_boundary()
+    assert len(ledger.list(through=preserved)) == 40
+
+    ledger.append("k", {"i": "after"}, locality_identity="s1")
+    assert len(ledger.list()) == 41
+    assert len(ledger.list(through=preserved)) == 40
+
+
+def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
+    """The failure a deferred commit can produce is the survivable one.
+
+    Occurrences appended inside one scope are written before any of them is
+    committed, so losing the scope loses all of them and leaves a chain
+    accounting for exactly the ones it kept. That is the first case above, not
+    either tear.
+    """
+
+    path = tmp_path / "e.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    kept = ledger.append("k", {"i": "committed"}, locality_identity="s1")
+
+    with pytest.raises(RuntimeError):
+        with ledger.batched():
+            for index in range(5):
+                ledger.append("k", {"i": index}, locality_identity="s1")
+            raise RuntimeError("crash mid-batch")
+    del ledger
+
+    ledger = SQLiteEventLedger(str(path))
+    preserved = ledger.list()
+    assert [event.identity for event in preserved] == [kept.identity]
+    assert ledger.integrity_of(kept.identity) == VERIFIED
+
+    ledger.append("k", {"i": "after"}, locality_identity="s1")
+    assert len(ledger.list()) == 2
+
+
+def test_a_batch_that_closes_commits_every_occurrence_in_it(tmp_path):
+    """Deferring is not discarding."""
+
+    path = tmp_path / "e.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    with ledger.batched():
+        identities = [
+            ledger.append("k", {"i": index}, locality_identity="s1").identity
+            for index in range(5)
+        ]
+    del ledger
+
+    ledger = SQLiteEventLedger(str(path))
+    assert [event.identity for event in ledger.list()] == identities
+    for event_identity in identities:
+        assert ledger.integrity_of(event_identity) == VERIFIED
+
+
+def test_a_flush_inside_a_batch_makes_what_preceded_it_durable(tmp_path):
+    """What an act calls when it must not proceed until an occurrence is durable."""
+
+    path = tmp_path / "e.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    with pytest.raises(RuntimeError):
+        with ledger.batched():
+            before = ledger.append("k", {"i": "before"}, locality_identity="s1")
+            ledger.flush()
+            ledger.append("k", {"i": "after"}, locality_identity="s1")
+            raise RuntimeError("crash after the flush")
+    del ledger
+
+    ledger = SQLiteEventLedger(str(path))
+    assert [event.identity for event in ledger.list()] == [before.identity]

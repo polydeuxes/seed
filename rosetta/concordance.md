@@ -1,0 +1,16 @@
+# Concordance
+
+Navigation entries do not establish constitutional identity or currentness.
+
+| Coordinate | Chapter |
+|---|---|
+| supplied source coordinates | [Source coordinates](../book_of_seed/chapters/04_source_coordinates.md) |
+| Assertion Standing | [Current coordinates](../book_of_seed/chapters/01_current_coordinates.md) |
+| Act and occurrence | [Acts and occurrences](../book_of_seed/chapters/03_acts_and_occurrences.md) |
+| movement | [Movement](../book_of_seed/chapters/10_movement.md) |
+| result boundary | [Acts and occurrences](../book_of_seed/chapters/03_acts_and_occurrences.md) |
+| Assertion source coordinates | [Source coordinates](../book_of_seed/chapters/04_source_coordinates.md) |
+| recording | [Recording](../book_of_seed/chapters/09_recording.md) |
+| Preservation | [Locality](../book_of_seed/chapters/06_locality_relations.md) |
+| Locality relation | [Locality](../book_of_seed/chapters/06_locality_relations.md) |
+| emission | [Emission](../book_of_seed/chapters/11_emission.md) |

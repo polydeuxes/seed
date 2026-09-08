@@ -1,0 +1,806 @@
+"""Exact later results have source-position coordinates."""
+
+from __future__ import annotations
+
+from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    record_byte_pair_occurrence_position_measurement_act_occurrence,
+    record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
+    record_byte_pair_occurrence_position_measurement_result,
+)
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
+from seed_runtime.source_position_recurrence import (
+    get_recorded_recurrent_result_material_measurement,
+    get_recorded_corresponding_coordinate_material_measurement,
+    get_recorded_source_position_compare,
+    get_recorded_source_position_measurement,
+    get_recorded_source_position_recurrence,
+    iter_recurrent_coordinate_material_findings,
+    record_corresponding_coordinate_material_measurements,
+    record_recurrent_result_material_measurements,
+    record_source_position_measurements,
+)
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
+import seed_runtime.source_position_recurrence as source_position_recurrence
+from tests.operator_material_source_test_witness import (
+    record_operator_material_occurrence,
+)
+
+
+def _direct_result(ledger, *, locality, exact):
+    source = record_operator_material_occurrence(
+        ledger,
+        locality_identity=locality,
+        exact=exact,
+        source_boundary="exact source-position material boundary",
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity=locality
+    )
+    binding = (
+        record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+            ledger,
+            source_material_result_occurrence_identity=source.identity,
+            current_coordinates=current_coordinates,
+        )
+    )
+    act = record_byte_pair_occurrence_position_measurement_act_occurrence(
+        ledger,
+        binding_event_identity=binding.identity,
+        binding_current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=locality
+        ),
+    )
+    return record_byte_pair_occurrence_position_measurement_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+    )
+
+
+def _target_surface():
+    return ["difference", "same-content", "difference"]
+
+
+def _target_finding(ledger, recurrence_result):
+    recurrence = get_recorded_source_position_recurrence(
+        ledger, recurrence_result.identity
+    )
+    matching = tuple(
+        finding
+        for finding in recurrence["findings"]
+        if finding["subject"]["complete_compare_findings"] == _target_surface()
+    )
+    assert len(matching) == 1
+    return matching[0]
+
+
+def _measurement_for_finding(ledger, measurements, finding):
+    matching = tuple(
+        get_recorded_corresponding_coordinate_material_measurement(
+            ledger, measurement.result_occurrence.identity
+        )
+        for measurement in measurements
+        if measurement.recurrence_finding_position == finding["finding_position"]
+    )
+    assert len(matching) == 1
+    return matching[0]
+
+
+def _step_at(recording, coordinate_count):
+    matching = tuple(
+        step for step in recording.steps if step.coordinate_count == coordinate_count
+    )
+    assert len(matching) == 1
+    return matching[0]
+
+
+def _finding_source_positions(finding):
+    return tuple(
+        carried["source_position_coordinate"]["position"]
+        for carried in finding["source_coordinate_references"]
+    )
+
+
+def _record_material_measurements(ledger, *, locality, exact):
+    direct = _direct_result(ledger, locality=locality, exact=exact)
+    source_position_measurements = record_source_position_measurements(
+        ledger, direct_result_event_identity=direct.identity
+    )
+    current_coordinates = source_position_measurements.current_coordinates
+    coordinate_measurements_by_recurrence = []
+    material_measurements_by_recurrence = []
+    for step in source_position_measurements.steps:
+        recurrence_result = step.recurrence_result_occurrence
+        coordinate_measurements = (
+            record_corresponding_coordinate_material_measurements(
+                ledger,
+                recurrence_result_event_identity=recurrence_result.identity,
+                current_coordinates=current_coordinates,
+            )
+        )
+        coordinate_measurements_by_recurrence.append(coordinate_measurements)
+        material_measurements = record_recurrent_result_material_measurements(
+            ledger,
+            recurrence_result_event_identity=recurrence_result.identity,
+            current_coordinates=coordinate_measurements.current_coordinates,
+        )
+        material_measurements_by_recurrence.append(material_measurements)
+        current_coordinates = material_measurements.current_coordinates
+    return (
+        source_position_measurements,
+        tuple(coordinate_measurements_by_recurrence),
+        tuple(material_measurements_by_recurrence),
+        current_coordinates,
+    )
+
+
+def _material_for_finding(ledger, material_measurements_by_recurrence, finding):
+    matching = tuple(
+        measurement
+        for measurements in material_measurements_by_recurrence
+        for measurement in measurements.measurements
+        if measurement.recurrence_finding_position == finding["finding_position"]
+    )
+    assert len(matching) == 1
+    event = matching[0].result_occurrence
+    return event, get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+
+
+def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-positive",
+        exact=b"a+aa+a",
+    )
+
+    recording = record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+
+    assert tuple(step.coordinate_count for step in recording.steps[:2]) == (2, 3)
+    assert recording.exhausted is True
+    assert all(step.new_event_count > 0 for step in recording.steps)
+    assert direct.identity in recording.current_coordinates["measurement_occurrences"]
+    direct_act = ledger.get(direct.material["act_occurrence_event_identity"])
+    assert recording.current_coordinates["exact_result_occurrences"][direct.identity] == (
+        direct_act.material["subject_to_act_binding_reference"]
+    )
+
+    final_recurrence = get_recorded_source_position_recurrence(
+        ledger, recording.steps[-1].recurrence_result_occurrence.identity
+    )
+    recurrent_final_groups = tuple(
+        finding
+        for finding in final_recurrence["findings"]
+        if "recurrence" in finding
+    )
+    assert recurrent_final_groups == ()
+
+    exact_acts = {
+        source_position_recurrence.COMPARE_APPLICABILITY_ACT,
+        source_position_recurrence.COMPARE_ACT,
+        source_position_recurrence.SOURCE_POSITION_MEASUREMENT_ACT,
+        source_position_recurrence.RECURRENCE_MEASUREMENT_ACT,
+    }
+    produced_results = tuple(
+        event
+        for event in ledger.list_locality("source-position-positive")
+        if type(event.material.get("act_occurrence_event_identity")) is str
+        and (act := ledger.get(event.material["act_occurrence_event_identity"]))
+        is not None
+        and act.material.get("act") in exact_acts
+    )
+    assert produced_results
+    assert all("yield_relation_identity" not in result.material for result in produced_results)
+    assert not any(
+        event.kind == RECORDED_YIELD_RELATION_EVENT
+        for event in ledger.list_locality("source-position-positive")
+    )
+    for result in produced_results:
+        act = ledger.get(result.material["act_occurrence_event_identity"])
+        reference = act.material["subject_to_act_binding_reference"]
+        binding = ledger.get(reference["recorded_occurrence_identity"])
+        assert (
+            recording.current_coordinates["subject_to_act_binding_occurrences"].get(
+                binding.identity, object()
+            )
+            is None
+        )
+        if act.material["act"] == source_position_recurrence.COMPARE_APPLICABILITY_ACT:
+            assert (
+                recording.current_coordinates["applicability_result_occurrences"].get(
+                    result.identity, object()
+                )
+                is None
+            )
+        elif act.material["act"] == source_position_recurrence.COMPARE_ACT:
+            assert (
+                recording.current_coordinates["comparison_result_occurrences"].get(
+                    result.identity, object()
+                )
+                is None
+            )
+        else:
+            assert result.identity in recording.current_coordinates[
+                "measurement_occurrences"
+            ]
+        assert binding.material["subject_reference"] == act.material["coordinates"]["subject"]
+        assert binding.material["result_identity"] == result.material[
+            "result_identity"
+        ]
+
+    by_length_and_start = {}
+    for step in recording.steps:
+        for event in step.source_position_result_occurrences:
+            reading = get_recorded_source_position_measurement(ledger, event.identity)
+            start = reading["source_position_coordinates"][0]["position"]
+            by_length_and_start[step.coordinate_count, start] = reading
+
+    length_two = by_length_and_start[2, 0]
+    length_three = by_length_and_start[3, 0]
+    assert length_three["compare_result_references"][:1] == length_two[
+        "compare_result_references"
+    ]
+    assert len(length_three["new_compare_result_references"]) == 2
+
+    target_recurrence = _step_at(recording, 3).recurrence_result_occurrence
+    target_recurrence_reading = get_recorded_source_position_recurrence(
+        ledger, target_recurrence.identity
+    )
+    assert tuple(
+        finding["finding_position"]
+        for finding in target_recurrence_reading["findings"]
+    ) == tuple(range(len(target_recurrence_reading["findings"])))
+    finding = _target_finding(ledger, target_recurrence)
+    assert finding["recurrence"] == {}
+    assert finding["count"] == 2
+    assert tuple(
+        get_recorded_source_position_measurement(
+            ledger, reference["recorded_occurrence_reference"]
+        )["source_position_coordinates"][0]["position"]
+        for reference in finding["source_result_references"]
+    ) == (0, 3)
+
+    # This call from one result to the later Measurement is the
+    # remaining hand-written call. It supplies the complete recurrence
+    # result; the later Measurement chooses no finding, source position, or
+    # value from it.
+    coordinate_measurements = record_corresponding_coordinate_material_measurements(
+        ledger,
+        recurrence_result_event_identity=target_recurrence.identity,
+        current_coordinates=recording.current_coordinates,
+    )
+    measurements = coordinate_measurements.measurements
+    target_measurement = _measurement_for_finding(ledger, measurements, finding)
+    assert tuple(
+        finding["finding_position"] for finding in target_measurement["findings"]
+    ) == tuple(range(len(target_measurement["findings"])))
+    assert all(
+        measurement.result_occurrence.identity
+        in coordinate_measurements.current_coordinates["measurement_occurrences"]
+        for measurement in measurements
+    )
+    assert all(
+        ledger.get(
+            ledger.get(
+                measurement.result_occurrence.material[
+                    "act_occurrence_event_identity"
+                ]
+            ).material["subject_to_act_binding_reference"][
+                "recorded_occurrence_identity"
+            ]
+        ).identity
+        in coordinate_measurements.current_coordinates[
+            "subject_to_act_binding_occurrences"
+        ]
+        for measurement in measurements
+    )
+    recurrent = {
+        (
+            _finding_source_positions(finding),
+            bytes(finding["subject"]["exact_material"]),
+        ): finding
+        for finding in target_measurement["findings"]
+        if "recurrence" in finding
+    }
+
+    assert recurrent[(1, 4), b"+"]["count"] == 2
+    assert recurrent[(1, 4), b"+"]["recurrence"] == {}
+    assert tuple(
+        (_finding_source_positions(finding), finding["count"])
+        for finding in iter_recurrent_coordinate_material_findings(
+            ledger, measurements
+        )
+        if finding["finding_position"] in {
+            recurrent[(1, 4), b"+"]["finding_position"],
+        }
+    ) == (((1, 4), 2),)
+
+
+def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-applicability-address",
+        exact=b"ab",
+    )
+    record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    compare_result = next(
+        event
+        for event in ledger.list_locality("source-position-applicability-address")
+        if event.kind == source_position_recurrence.COMPARE_RESULT_KIND
+    )
+    compare_reading = get_recorded_source_position_compare(
+        ledger, compare_result.identity
+    )
+    compare_act = ledger.get(
+        compare_result.material["act_occurrence_event_identity"]
+    )
+    compare_binding_reference = compare_act.material[
+        "subject_to_act_binding_reference"
+    ]
+    compare_binding = ledger.get(
+        compare_binding_reference["recorded_occurrence_identity"]
+    )
+    applicability_result = ledger.get(
+        compare_reading["applicability_result_reference"][
+            "recorded_occurrence_reference"
+        ]
+    )
+    applicability_act = ledger.get(
+        applicability_result.material["act_occurrence_event_identity"]
+    )
+    applicability_binding = ledger.get(
+        applicability_act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    applicability_subject = applicability_binding.material["subject_reference"]
+
+    assert applicability_subject == {
+        **compare_binding.material["subject_reference"],
+        "addressed_act_identity": compare_binding.material["exact_act_identity"],
+        "compare_subject_to_act_binding_reference": compare_binding_reference,
+    }
+    assert tuple(
+        event.identity
+        for event in ledger.occurrences_in_append_order(
+            (
+                compare_binding.identity,
+                applicability_binding.identity,
+                applicability_act.identity,
+                applicability_result.identity,
+                compare_act.identity,
+                compare_result.identity,
+            ),
+            locality_identity="source-position-applicability-address",
+        )
+    ) == (
+        compare_binding.identity,
+        applicability_binding.identity,
+        applicability_act.identity,
+        applicability_result.identity,
+        compare_act.identity,
+        compare_result.identity,
+    )
+    assert "yield_relation_identity" not in compare_result.material
+    assert not any(
+        event.kind == RECORDED_YIELD_RELATION_EVENT
+        for event in ledger.list_locality("source-position-applicability-address")
+    )
+
+
+def test_same_compare_surface_does_not_create_common_material():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-control",
+        exact=b"a+aa-a",
+    )
+    recording = record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    target_recurrence = _step_at(recording, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, target_recurrence)
+    assert "recurrence" in finding
+    assert finding["count"] == 2
+
+    coordinate_measurements = record_corresponding_coordinate_material_measurements(
+        ledger,
+        recurrence_result_event_identity=target_recurrence.identity,
+        current_coordinates=recording.current_coordinates,
+    )
+    measurements = coordinate_measurements.measurements
+    target_measurement = _measurement_for_finding(ledger, measurements, finding)
+    varying_findings = tuple(
+        finding
+        for finding in target_measurement["findings"]
+        if _finding_source_positions(finding) in {(1,), (4,)}
+    )
+
+    assert {
+        (_finding_source_positions(finding), bytes(finding["subject"]["exact_material"]))
+        for finding in varying_findings
+    } == {
+        ((1,), b"+"),
+        ((4,), b"-"),
+    }
+    assert all(finding["count"] == 1 for finding in varying_findings)
+    assert all("recurrence" not in finding for finding in varying_findings)
+
+
+def test_changed_source_position_coordinate_is_refused():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-integrity",
+        exact=b"aba",
+    )
+    recording = record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    result = ledger.get(recording.steps[0].source_position_result_occurrences[0].identity)
+    act = ledger.get(result.material["act_occurrence_event_identity"])
+    binding = ledger.get(
+        act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    exact_result_identity = binding.material["result_identity"]
+    binding.material["result_identity"] = "changed-result-identity"
+    try:
+        get_recorded_source_position_measurement(ledger, result.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed subject-to-Act binding ownership was accepted")
+    binding.material["result_identity"] = exact_result_identity
+
+    result.material["coordinates"]["source_position_coordinates"][0][
+        "exact_material"
+    ] = [ord("x")]
+
+    try:
+        get_recorded_source_position_measurement(ledger, result.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed source-position coordinate was accepted")
+
+
+def test_unrelated_supplied_material_does_not_change_exact_coordinates():
+    readings = []
+    for locality, exact, start in (
+        ("source-position-isolated", b"aba", 0),
+        ("source-position-with-unrelated-material", b"xabay", 1),
+    ):
+        ledger = EventLedger()
+        direct = _direct_result(ledger, locality=locality, exact=exact)
+        recording = record_source_position_measurements(
+            ledger,
+            direct_result_event_identity=direct.identity,
+        )
+        matching = []
+        for event in _step_at(recording, 3).source_position_result_occurrences:
+            reading = get_recorded_source_position_measurement(ledger, event.identity)
+            if reading["source_position_coordinates"][0]["position"] == start:
+                matching.append(reading)
+        assert len(matching) == 1
+        readings.append(matching[0])
+
+    assert tuple(
+        bytes(coordinate["exact_material"])
+        for coordinate in readings[0]["source_position_coordinates"]
+    ) == (b"a", b"b", b"a")
+    assert readings[0]["complete_compare_findings"] == readings[1][
+        "complete_compare_findings"
+    ]
+
+
+def test_sqlite_restart_recovers_source_position_readers(tmp_path):
+    database = tmp_path / "source-position.sqlite"
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-restart",
+        exact=b"aba",
+    )
+    recording = record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    coordinate_measurements = record_corresponding_coordinate_material_measurements(
+        ledger,
+        recurrence_result_event_identity=(
+            recording.steps[0].recurrence_result_occurrence.identity
+        ),
+        current_coordinates=recording.current_coordinates,
+    )
+    measurements = coordinate_measurements.measurements
+    source_position_identity = recording.steps[-1].source_position_result_occurrences[0].identity
+    recurrence_identity = recording.steps[0].recurrence_result_occurrence.identity
+    measurement_identities = tuple(
+        measurement.result_occurrence.identity for measurement in measurements
+    )
+    expected_source_positions = get_recorded_source_position_measurement(
+        ledger, source_position_identity
+    )
+    expected_recurrence = get_recorded_source_position_recurrence(
+        ledger, recurrence_identity
+    )
+    expected_measurements = tuple(
+        get_recorded_corresponding_coordinate_material_measurement(
+            ledger, identity
+        )
+        for identity in measurement_identities
+    )
+    durable = SQLiteEventLedger(str(database))
+    durable.append_many(ledger.list())
+    durable.close()
+
+    sqlite_ledger = SQLiteEventLedger(str(database))
+    try:
+        assert get_recorded_source_position_measurement(
+            sqlite_ledger, source_position_identity
+        ) == expected_source_positions
+        assert (
+            get_recorded_source_position_recurrence(
+                sqlite_ledger, recurrence_identity
+            )
+            == expected_recurrence
+        )
+        assert tuple(
+            get_recorded_corresponding_coordinate_material_measurement(
+                sqlite_ledger, identity
+            )
+            for identity in measurement_identities
+        ) == expected_measurements
+    finally:
+        sqlite_ledger.close()
+
+
+def test_recurrent_results_establish_one_exact_reusable_material_without_selection():
+    ledger = EventLedger()
+    source_position_measurements, _coordinate_measurements, material_measurements, current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="recurrent-result-material-positive",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+
+    event, reading = _material_for_finding(ledger, material_measurements, finding)
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    assert act.material["act"] == (
+        source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT
+    )
+    assert event.exact_material == b"a+a"
+    assert bytes(reading["exact_material"]) == b"a+a"
+    assert tuple(
+        bytes(finding["subject"]["exact_material"])
+        for finding in reading["coordinate_material_findings"]
+    ) == (b"a", b"+", b"a")
+    assert all(
+        tuple(sorted(finding["subject"]))
+        == ("exact_material", "recurrence_finding_position")
+        for finding in reading["coordinate_material_findings"]
+    )
+    assert reading["subject"]["source_result_references"] == finding[
+        "source_result_references"
+    ]
+    assert tuple(sorted(event.material["coordinates"])) == (
+        "completeness_boundary_reference",
+        "coordinate_material_findings",
+        "exact_material",
+        "locality",
+        "subject",
+    )
+
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    ownership = act.material["subject_to_act_binding_reference"]
+    binding = ledger.get(ownership["recorded_occurrence_identity"])
+    assert current_coordinates["measurement_occurrences"][event.identity][
+        "result_identity"
+    ] == event.material["result_identity"]
+    assert binding.material["subject_reference"] == reading["subject"]
+    assert binding.material["result_identity"] == reading[
+        "result_identity"
+    ]
+
+
+def test_exact_reusable_material_result_is_not_a_source_result_position():
+    ledger = EventLedger()
+    measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="candidate exact-material refusal",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+    exact_material_result, _reading = _material_for_finding(
+        ledger, material_measurements, finding
+    )
+
+    assert exact_material_result.exact_material == b"a+a"
+    assert exact_material_result.material.get("result_positions") is None
+
+
+def test_varying_coordinate_material_has_no_common_exact_material():
+    ledger = EventLedger()
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="recurrent-result-material-control",
+            exact=b"a+aa-a",
+        )
+    )
+    recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+
+    assert all(
+        measurement.recurrence_finding_position != finding["finding_position"]
+        for measurements in material_measurements
+        for measurement in measurements.measurements
+    )
+    assert all(
+        measurement.result_occurrence.exact_material not in {b"a+a", b"a-a"}
+        for measurements in material_measurements
+        for measurement in measurements.measurements
+    )
+
+
+def test_recurrent_result_material_refuses_changed_source_material_order_and_owner():
+    ledger = EventLedger()
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="recurrent-result-material-integrity",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+    event, _reading = _material_for_finding(ledger, material_measurements, finding)
+
+    source_results = event.material["coordinates"]["subject"][
+        "source_result_references"
+    ]
+    event.material["coordinates"]["subject"]["source_result_references"] = list(
+        reversed(source_results)
+    )
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed source result references were accepted")
+    event.material["coordinates"]["subject"]["source_result_references"] = (
+        source_results
+    )
+
+    material = event.material["coordinates"]["coordinate_material_findings"][1][
+        "subject"
+    ]["exact_material"]
+    event.material["coordinates"]["coordinate_material_findings"][1]["subject"][
+        "exact_material"
+    ] = [ord("-")]
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed coordinate material was accepted")
+    event.material["coordinates"]["coordinate_material_findings"][1]["subject"][
+        "exact_material"
+    ] = material
+
+    findings = event.material["coordinates"]["coordinate_material_findings"]
+    event.material["coordinates"]["coordinate_material_findings"] = list(
+        reversed(findings)
+    )
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed coordinate sequence was accepted")
+    event.material["coordinates"]["coordinate_material_findings"] = findings
+
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    binding = ledger.get(
+        act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    result_identity = binding.material["result_identity"]
+    binding.material["result_identity"] = "changed-result-identity"
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed subject-to-Act binding ownership was accepted")
+    binding.material["result_identity"] = result_identity
+
+def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_path):
+    database = tmp_path / "recurrent-result-material.sqlite"
+    ledger = EventLedger()
+    source_position_measurements, _coordinate_measurements, material_measurements, current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="recurrent-result-material-restart",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+    event, expected = _material_for_finding(ledger, material_measurements, finding)
+    expected_ownership = ledger.get(
+        event.material["act_occurrence_event_identity"]
+    ).material["subject_to_act_binding_reference"]
+    event_identity = event.identity
+    durable = SQLiteEventLedger(str(database))
+    durable.append_many(ledger.list())
+    durable.close()
+
+    ledger = SQLiteEventLedger(str(database))
+    try:
+        recorded = get_recorded_recurrent_result_material_measurement(
+            ledger, event_identity
+        )
+        assert recorded == expected
+        event = ledger.get(event_identity)
+        assert event.exact_material == b"a+a"
+        act = ledger.get(event.material["act_occurrence_event_identity"])
+        assert act.material["subject_to_act_binding_reference"] == (
+            expected_ownership
+        )
+        binding = ledger.get(
+            expected_ownership["recorded_occurrence_identity"]
+        )
+        assert binding.material["subject_reference"] == recorded["subject"]
+        assert binding.material["result_identity"] == (
+            recorded["result_identity"]
+        )
+    finally:
+        ledger.close()
+
+
+def test_unreferenced_source_coordinate_does_not_choose_material():
+    ledger = EventLedger()
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
+        _record_material_measurements(
+            ledger,
+            locality="recurrent-result-material-unreferenced-coordinate",
+            exact=b"xa+aa+a",
+        )
+    )
+    recurrence = _step_at(source_position_measurements, 3).recurrence_result_occurrence
+    finding = _target_finding(ledger, recurrence)
+    event, reading = _material_for_finding(
+        ledger, material_measurements, finding
+    )
+
+    assert event.exact_material == b"a+a"
+    assert tuple(
+        bytes(finding["subject"]["exact_material"])
+        for finding in reading["coordinate_material_findings"]
+    ) == (b"a", b"+", b"a")
+    assert tuple(
+        coordinate["position"]
+        for reference in reading["subject"]["source_result_references"]
+        for coordinate in get_recorded_source_position_measurement(
+            ledger, reference["recorded_occurrence_reference"]
+        )["source_position_coordinates"]
+    ) == (1, 2, 3, 4, 5, 6)

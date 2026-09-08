@@ -1,49 +1,49 @@
 # Rosetta of Seed
 
-**Nothing in this directory carries constitutional Authority.** It holds
-translation testimony: ordinary English about Seed's grammar, and mappings from
+This directory holds translation testimony: ordinary English about Seed's grammar, and mappings from
 words people have used to whatever current grammar corresponds to them. A
-mapping recorded here establishes no standing, no kind, and no equivalence.
+mapping recorded here establishes no currentness, no classification, and no
+equivalence.
 
 This is not part of the Book of Seed and is not stored inside it. English
-placed inside `book_of_seed/` acquires ambiguous authority, since a reader
+placed inside `book_of_seed/` acquires ambiguous status, since a reader
 cannot tell whether a sentence is grammar or explanation. Keeping explanation
 outside removes the ambiguity in both directions: the Book can be grammar-only,
 and this can be plainly readable.
 
 ## Purpose
 
-The Book sheds vocabulary. Terms are retired when they name nothing, when they
+The Book sheds words. Terms leave when they name nothing, when they
 compress several distinctions into one word, or when they are ordinary English
 that acquired constitutional-looking capitalisation.
 
 Retiring a word from the Book does not delete what it meant or why it went.
-That knowledge cannot live in the Book: a maintained list of dead vocabulary
-keeps dead vocabulary present in the grammar. It lives here.
+That knowledge cannot live in the Book: a maintained list of dead words
+keeps dead words present in the grammar. It lives here.
 
 ## Scope
 
 ```text
-the two roots               Examination and Presentation: the inward and
-                            outward directions across Seed's boundary,
-                            named in ordinary English
+Book coordinates            ordinary-English traversal of the exact coordinates
+                            carried by the Book and instantiated by runtime occurrences;
+                            Examination and Presentation are directional views
 
-retired vocabulary          words the Book no longer uses, and what
+translation words           words the Book does not use, and what
                             current grammar covers what they covered
 
 external / ordinary words   English that was never constitutional but
                             reads as though it might be
 
-implementation vocabulary   runtime and repository names that are not
+implementation words        runtime and repository names that are not
                             constitutional grammar
 
 
-mechanical                  names for how something is done on this machine
-                            in this language, whose mechanical role warrants
+implementation              names for how something is done on this machine
+                            in this language, whose exact behavior supports
                             no constitutional clause, recorded so they stop
                             being audited as though it might
 
-worked explanation          ordinary-language answers to questions like
+worked explanation          ordinary prose returned for material like
                             "what does Standing mean"
 ```
 
@@ -61,11 +61,16 @@ This directory is not a landfill for everything ever removed, and not a
 banned-word registry. Banning is a curation decision; translation is the work
 done here.
 
-## Constitutional authority
+External acquisition is not Rosetta. Observed external material, occurrences,
+Assertions, and relations remain on their own bounded road; they do not enter
+this directory merely because Seed observed them. Implementation references in
+Rosetta are representative translation witnesses, not an implementation index.
 
-`01.External` governs the boundary this directory sits on: external vocabulary
-may be translated, attributed, and compared **without thereby becoming
-constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
+## Constitutional boundary
+
+`01.Source` governs the boundary this directory sits on: ordinary words
+may retain source coordinates and be compared **without thereby becoming
+constitutional grammar**. That chapter carries the applicable source rule. It is
 not itself a Rosetta, and this directory is not a chapter.
 
 A Rosetta representation produced under bounded translation does not become
@@ -75,20 +80,28 @@ constitutional because Seed produced it.
 
 ```text
 book_of_seed/       constitutional grammar only
-concordance.md      navigation across live grammar, with aliases
-rosetta/            external and retired vocabulary, translation
+rosetta/concordance.md navigation across live grammar, with aliases
+rosetta/            translation words and exact mappings
 reports + git       historical testimony, preserved as written
 ```
 
 The concordance maps live terms and states that aliases "do not grant
-constitutional equivalence or standing." This directory maps retired ones,
+constitutional equivalence or standing." This directory maps those words,
 where the mapping is frequently not an alias relationship: `State` corresponds
 to four current terms and to no single one of them.
 
 ## Files
 
-- [The two roots](roots.md)
-- [Retired vocabulary](retired-vocabulary.md)
+- [Standing and Responsibility](standing_and_responsibility.md)
+- [Concordance](concordance.md)
+- [Rosetta admission](rosetta_admission.txt)
+- [Book admission](../book_of_seed/book_admission.txt)
 
-The roots are the spine. Every other entry either hangs beneath one of them or
-is a word that named nothing and is recorded only so its removal stays legible.
+Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
+and points here without importing Rosetta admission into active law. In
+particular, Rosetta admits the `warrant` word family while Book proper names
+the exact source and occurrence coordinates.
+
+The Book supplies its exact coordinates. Rosetta words address the exact
+coordinates they translate, or record a word that named nothing so its removal
+stays legible.

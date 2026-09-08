@@ -1,18 +1,20 @@
+"""Recording: exact occurrence order."""
+
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.execution_status import RecordingExecutionStatusConsumer
+
 
 
 def _events() -> list[Event]:
     return [
         Event(
-            id="evt_batch_1", kind="batch.first", workspace_id="ws", payload={"n": 1}
+            identity="evt_batch_1", kind="batch.first", material={"n": 1}
         ),
         Event(
-            id="evt_batch_2", kind="batch.second", workspace_id="ws", payload={"n": 2}
+            identity="evt_batch_2", kind="batch.second", material={"n": 2}
         ),
         Event(
-            id="evt_batch_3", kind="batch.third", workspace_id="ws", payload={"n": 3}
+            identity="evt_batch_3", kind="batch.third", material={"n": 3}
         ),
     ]
 
@@ -20,18 +22,102 @@ def _events() -> list[Event]:
 def test_append_many_preserves_event_ordering():
     ledger = EventLedger()
 
-    stored = ledger.append_many(_events())
+    recorded = ledger.append_many(_events())
 
-    assert [event.kind for event in stored] == [
+    assert [event.kind for event in recorded] == [
         "batch.first",
         "batch.second",
         "batch.third",
     ]
-    assert [event.kind for event in ledger.list_events("ws")] == [
+    assert [event.kind for event in ledger.list_events()] == [
         "batch.first",
         "batch.second",
         "batch.third",
     ]
+
+
+def test_append_many_advances_the_process_local_event_identity_number():
+    ledger = EventLedger()
+    ledger.append_many(
+        [Event(identity="evt_000003", kind="supplied.occurrence")]
+    )
+
+    assert ledger.append("later.occurrence").identity == "evt_000004"
+
+
+def test_ledgers_share_minted_and_appended_event_identity_domain(tmp_path):
+    memory = EventLedger()
+    assert (
+        memory.mint_identity("evt"),
+        memory.append("later.occurrence").identity,
+    ) == ("evt_000001", "evt_000002")
+
+    database = str(tmp_path / "shared-event-identity-domain.db")
+    durable = SQLiteEventLedger(database)
+    try:
+        assert (
+            durable.mint_identity("evt"),
+            durable.append("later.occurrence").identity,
+        ) == ("evt_000001", "evt_000002")
+    finally:
+        durable.close()
+
+    reopened = SQLiteEventLedger(database)
+    try:
+        assert reopened.allocate_event_identity() == "evt_000003"
+    finally:
+        reopened.close()
+
+
+def test_an_allocated_identity_can_be_carried_by_its_prebuilt_occurrence():
+    ledger = EventLedger()
+
+    identity = ledger.allocate_event_identity()
+    recorded = ledger.append_many(
+        [
+            Event(
+                identity=identity,
+                kind="self.addressed",
+                material={"occurrence_identity": identity},
+            )
+        ]
+    )[0]
+
+    assert recorded.material == {"occurrence_identity": recorded.identity}
+
+
+def test_sqlite_allocated_identity_advances_after_its_occurrence_is_durable(tmp_path):
+    database = str(tmp_path / "self-addressed.db")
+    ledger = SQLiteEventLedger(database)
+    first_identity = ledger.allocate_event_identity()
+    first = ledger.append_many(
+        [
+            Event(
+                identity=first_identity,
+                kind="self.addressed",
+                material={"occurrence_identity": first_identity},
+            )
+        ]
+    )[0]
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    try:
+        second_identity = reopened.allocate_event_identity()
+        second = reopened.append_many(
+            [
+                Event(
+                    identity=second_identity,
+                    kind="self.addressed",
+                    material={"occurrence_identity": second_identity},
+                )
+            ]
+        )[0]
+        assert first.material == {"occurrence_identity": first.identity}
+        assert second.material == {"occurrence_identity": second.identity}
+        assert second.identity != first.identity
+    finally:
+        reopened.close()
 
 
 def test_sqlite_append_many_persists_same_events_as_repeated_append(tmp_path):
@@ -40,16 +126,14 @@ def test_sqlite_append_many_persists_same_events_as_repeated_append(tmp_path):
     try:
         batch.append_many(_events())
         for event in _events():
-            repeated.append(
-                event.kind, event.workspace_id, event.payload, actor=event.actor
-            )
+            repeated.append(event.kind, event.material)
 
         assert [
-            (event.kind, event.workspace_id, event.payload)
-            for event in batch.list_events("ws")
+            (event.kind, event.material)
+            for event in batch.list_events()
         ] == [
-            (event.kind, event.workspace_id, event.payload)
-            for event in repeated.list_events("ws")
+            (event.kind, event.material)
+            for event in repeated.list_events()
         ]
     finally:
         batch.close()
@@ -73,27 +157,3 @@ def test_sqlite_append_many_uses_one_transaction_for_many_events(tmp_path):
         assert len(reopened.list()) == 3
     finally:
         reopened.close()
-
-
-def test_append_many_progress_is_bounded_and_transient():
-    ledger = EventLedger()
-    events = [
-        Event(id=f"evt_write_{index}", kind="batch.progress", workspace_id="ws")
-        for index in range(1001)
-    ]
-    consumer = RecordingExecutionStatusConsumer()
-
-    ledger.append_many(events, status_consumer=consumer)
-
-    progress = [
-        status
-        for status in consumer.statuses
-        if status.phase == "event_persistence"
-        and status.current is not None
-        and status.total is not None
-    ]
-    assert [status.current for status in progress] == [0, 1, 501, 1001]
-    assert progress[-1].completed is True
-    assert [event.id for event in ledger.list_events("ws")] == [
-        event.id for event in events
-    ]

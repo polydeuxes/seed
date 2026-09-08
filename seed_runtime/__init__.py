@@ -1,4 +1,4 @@
-"""Current Seed runtime physiology."""
+"""Current Seed runtime."""
 
 from seed_runtime.event import Event
 

@@ -1,0 +1,240 @@
+{
+  "book_coordinates": {
+    "01.Current.G": {
+      "subject": "this_Seed",
+      "when": "no_exact_coordinate_for_this_Seed",
+      "current_coordinates": []
+    },
+    "01.Source.A": {
+      "subject": "supplied_material_source_coordinates",
+      "exact_Act": "exact_Act",
+      "result": "exact_source_coordinates"
+    },
+    "01.Source.D": {
+      "subject": "declared_Measurement",
+      "exact_Act": "Measurement",
+      "coordinates": [
+        "exact_material_result",
+        "Locality"
+      ],
+      "result": "declared_Measurement_result"
+    },
+    "01.Source.D.1": {
+      "subject": "count_finding",
+      "exact_Act": "count_exact_occurrence_references",
+      "result": "count_finding"
+    },
+    "01.Source.D.2": {
+      "subject": "addressed_byte_occurrence_reference",
+      "subjects": "exhaustive_bounded_source_byte_position_references",
+      "exact_Act": "Measurement",
+      "result": "addressed_byte_occurrence_reference_result",
+      "current_coordinates": "exact_byte_pair_position_Measurement_result"
+    },
+    "01.Source.G": {
+      "subject": "operator_material_boundary",
+      "exact_Act": "exact_Act",
+      "Locality": "06.Locality.A.Locality",
+      "result": "exact_operator_material_result"
+    },
+    "01.Source.H": {
+      "subject": "supplied_material",
+      "exact_Act": "exact_Act",
+      "result": "exact_material_result",
+      "coordinates": [
+        "source_boundary",
+        "source_occurrence_references",
+        "Locality"
+      ]
+    },
+    "01.Source.I": {
+      "subject": "operator_supplied_and_Witness_supplied_material",
+      "coordinates": [
+        "separate_source_to_Act_coordinates",
+        "separate_occurrence"
+      ]
+    },
+    "01.Current.A": {
+      "subject": "exact_subject",
+      "through_boundary": "exact_occurrence_boundary",
+      "current_coordinates": "exact_coordinates_in_one_Locality_through_boundary"
+    },
+    "01.Current.A.1": {
+      "subject": "exact_subject_bound_to_exact_Act",
+      "Act_occurrence": "exact_Act_occurrence",
+      "result": "exact_result",
+      "occurrence_order": "result_occurrence_is_boundary_or_before_boundary_in_same_Locality_occurrence_order",
+      "coordinates": [
+        "exact_result",
+        "same_Locality"
+      ]
+    },
+    "01.Current.D": {
+      "subject": "exact_relation",
+      "subjects": "exact_subjects",
+      "relation_occurrence": "exact_relation_occurrence"
+    },
+    "01.Current.D.1": {
+      "subject": "exact_addressed_result_content",
+      "coordinates": [
+        "recorded_result_occurrence",
+        "result_position",
+        "source_occurrence_references",
+        "Locality"
+      ]
+    },
+    "01.Current.D.2": {
+      "subject": "exact_addressed_result_content",
+      "current_coordinates": "exact_subject_through_exact_occurrence_boundary",
+      "subject_to_Act_binding": "one_exact_Act"
+    },
+    "01.Current.E.1": {
+      "subject": "subject_to_Act_binding",
+      "Applicability": {
+        "exact_Act": "Applicability",
+        "Act_occurrence": {
+          "subject": "subject_to_Act_binding",
+          "addressed_Act": "exact_Act",
+          "Locality": "06.Locality.A.Locality"
+        },
+        "result": {
+          "Act_occurrence": "Applicability_Act_occurrence",
+          "Applicability": [
+            "applicable",
+            "inapplicable"
+          ]
+        }
+      }
+    },
+    "02.Acts.A": {
+      "subject": "exact_subject",
+      "exact_Act": "exact_Act",
+      "Locality": "06.Locality.A.Locality",
+      "Yield": {
+        "first_subject": "exact_Act_occurrence",
+        "relation": "yield",
+        "second_subject": "exact_result",
+        "relation_occurrence": "relation_occurrence",
+        "Locality": "Locality"
+      },
+      "result": "exact_result"
+    },
+    "03.Movement.A": {
+      "subject": "exact_movement",
+      "exact_Act": "movement",
+      "coordinates": [
+        "exact_subject",
+        "source_coordinates",
+        "destination_coordinates",
+        "Locality"
+      ],
+      "source_to_destination_coordinates": {
+        "first": "source_coordinates",
+        "second": "destination_coordinates"
+      },
+      "result": "exact_movement_result"
+    },
+    "04.Compare": {
+      "subject": "exact_Compare_subjects",
+      "exact_Act": "Compare",
+      "result": "exact_Compare_result",
+      "Applicability": "Applicability_result"
+    },
+    "04.Compare.A": {
+      "subject": "recorded_pair_findings",
+      "exact_Act": "Compare",
+      "current_coordinates": [
+        "earlier_byte_pair_position_Measurement_result",
+        "later_byte_pair_position_Measurement_result"
+      ],
+      "occurrence_order": [
+        "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
+        "later_ordered_source_occurrence_references_are_earlier_ordered_source_occurrence_references_and_one_added_exact_occurrence"
+      ],
+      "result": "recorded_pair_finding_Compare_result",
+      "Applicability": "Applicability_result"
+    },
+    "04.Compare.B": {
+      "subject": "same_position_Measurement_result_and_pair_findings",
+      "exact_Act": "Compare",
+      "current_coordinates": [
+        "same_position_Measurement_result_position",
+        "recorded_pair_finding_Compare_result"
+      ],
+      "result": "same_position_Measurement_Compare_result",
+      "Applicability": "Applicability_result"
+    },
+    "05.Recording.D": {
+      "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
+      "exact_Act": "recording",
+      "current_coordinates": "exact_addressed_occurrence",
+      "result": "one_reference",
+      "coordinates": [
+        "addressed_occurrence",
+        "through_occurrence_boundary_reference",
+        "Act_occurrence",
+        "Locality"
+      ]
+    },
+    "06.Locality.A": {
+      "subject": "Locality_relation",
+      "exact_Act": "exact_Act",
+      "Locality": {
+        "first_subject": "exact_subject",
+        "relation": "locality",
+        "second_subject": "exact_subject",
+        "relation_occurrence": "relation_occurrence",
+        "exact_Act": "exact_Act"
+      },
+      "result": "Locality_relation"
+    },
+    "06.Locality.B": {
+      "subject": "through_occurrence_boundary_in_destination_Locality",
+      "prior_through_boundary": "exact_earlier_boundary_in_same_Locality_occurrence_order",
+      "exact_Act": "preservation",
+      "Locality": "06.Locality.A.Locality",
+      "result": "through_occurrence_boundary_in_destination_Locality"
+    },
+    "06.Locality.C": {
+      "subject": "recorded_through_occurrence_boundary_reference",
+      "exact_Act": "preservation",
+      "Locality": "06.Locality.A.Locality",
+      "result": "recorded_boundary_Locality_relation"
+    },
+    "06.Locality.D": {
+      "subject": "operator_destination_Locality",
+      "exact_Act": "Locality",
+      "Locality": "06.Locality.A.Locality",
+      "result": "operator_destination_Locality"
+    },
+    "07.Emission.A": {
+      "subject": "exact_source_material_result",
+      "exact_Act": "emission",
+      "coordinates": [
+        "exact_destination_boundary",
+        "Locality"
+      ]
+    },
+    "07.Emission.C": {
+      "subject": "exact_material_boundary_write",
+      "Yield": "02.Acts.A.Yield",
+      "result": "exact_destination_boundary_result",
+      "coordinates": [
+        "accepted_material",
+        "reported_count"
+      ],
+      "one_occurrence": [
+        "emission_Act_occurrence",
+        "attempt",
+        "accepted_write"
+      ],
+      "separate_occurrence": "failure"
+    },
+    "07.Emission.D": {
+      "subject": "material_supplied_by_the_addressed_boundary",
+      "coordinates": [
+        "exact_subject_and_source_boundary_Act_coordinates"
+      ]
+    }
+  }
+}
