@@ -1,6 +1,6 @@
 """Measure where one recurrent byte-pair subject occurs.
 
-This declared Measurement has two distinct occurrence references:
+This Measurement has two distinct occurrence references:
 
 * the recurrence result position in an earlier byte-pair Measurement; and
 * one later exact material result in the addressed Locality.
@@ -35,7 +35,7 @@ RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITIO
     "act_occurrence_recorded"
 )
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "declared Measurement of byte-pair occurrence position"
+    "Measurement of byte-pair occurrence position"
 )
 RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = frozenset(
     {

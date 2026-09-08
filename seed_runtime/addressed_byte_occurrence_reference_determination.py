@@ -24,7 +24,7 @@ DETERMINATION_RESULT_KIND = (
 )
 BOOK_CLAUSE = "01.Source.D.2"
 DETERMINATION_ACT = (
-    "declared Measurement of exact pair-occurrence result-position "
+    "Measurement of exact pair-occurrence result-position "
     "references with one addressed source-byte position-coordinate reference"
 )
 EVENT_KIND_BOOK_CLAUSES = {

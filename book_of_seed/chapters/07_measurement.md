@@ -1,8 +1,8 @@
 # Measurement
 
-### 01.Source.D — Declared Measurement
+### 01.Source.D — Measurement
 
-The exact subject and every coordinate of a declared Measurement
+The exact subject and every coordinate of a Measurement
 subject-to-Act binding are exact and current through an exact occurrence
 boundary.
 
@@ -21,7 +21,7 @@ within its completeness boundary.
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
 The exact source-byte position references in the supplied-material
-result are exact subjects bound to one exact declared Measurement Act. The
+result are exact subjects bound to an exact Measurement Act. The
 exact byte-pair position Measurement result is current through the exact
 occurrence boundary.
 The bounded subjects are exhaustive.

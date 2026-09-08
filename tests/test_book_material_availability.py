@@ -1,4 +1,4 @@
-"""This Book material is the exact subject of declared Measurement."""
+"""This Book material is the exact subject of Measurement."""
 
 from __future__ import annotations
 

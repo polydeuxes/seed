@@ -138,13 +138,16 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
     assert "The bounded subjects are exhaustive." in chapter
 
 
-def test_declared_measurement_does_not_infer_yield_from_its_result():
+def test_measurement_binding_and_result_do_not_infer_yield():
     measurement = _grammar()["book_coordinates"]["01.Source.D"]
     current_result = _grammar()["book_coordinates"]["01.Current.A.1"]
+    assert measurement["subject"] == "exact_Measurement_subject_to_Act_binding"
+    assert measurement["exact_Act"] == "Measurement"
     assert measurement["coordinates"] == [
         "exact_material_result",
         "Locality",
     ]
+    assert measurement["result"] == "Measurement_result"
     assert "Yield" not in measurement
     assert "Yield" not in current_result
     acts = (

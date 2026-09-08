@@ -399,7 +399,7 @@ def _pair_input_applicability_from_exact_source(
         "input_result_position_reference": reference,
         "input_movement_event_identity": movement_identity,
         "addressed_act_identity": binding.material["addressed_act_identity"],
-        "addressed_act": "declared byte-position-pair Measurement",
+        "addressed_act": "byte-position-pair Measurement",
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),
@@ -429,7 +429,7 @@ def _pair_input_applicability_from_exact_source(
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
-        "addressed_act": "declared byte-position-pair Measurement",
+        "addressed_act": "byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "input_coordinates": input_coordinates,
@@ -2434,7 +2434,7 @@ def _byte_measurement_act_occurrence_material(
         "act_occurrence_identity": binding.material[
             "act_occurrence_identity"
         ],
-        "act": "declared exact-byte Measurement",
+        "act": "exact-byte Measurement",
         "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(binding)
         ),
@@ -2619,7 +2619,7 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source material, byte count, and same content"
                 ),
         },
-        "exact_act": "declared exact-byte Measurement",
+        "exact_act": "exact-byte Measurement",
         "addressed_act_identity": act_occurrence.material[
             "addressed_act_identity"
         ],
@@ -2761,7 +2761,7 @@ def _result_positions_of_recorded_byte_measurement(
         )
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared exact-byte Measurement"
+        or material.get("exact_act") != "exact-byte Measurement"
         or not isinstance(material.get("addressed_act_identity"), str)
         or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)
@@ -2781,7 +2781,7 @@ def _result_positions_of_recorded_byte_measurement(
     expected_act_occurrence = {
         "addressed_act_identity": material["addressed_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "act": "declared exact-byte Measurement",
+        "act": "exact-byte Measurement",
         "subject_to_act_binding_reference": material[
             "subject_to_act_binding_reference"
         ],
@@ -3892,7 +3892,7 @@ def _pair_measurement_act_material(
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
-        "act": "declared byte-position-pair Measurement",
+        "act": "byte-position-pair Measurement",
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),
@@ -4114,7 +4114,7 @@ def _pair_measurement_result_material(
             "identity": "byte-position-pair-count-measurement-occurrence",
             "content": "byte-position-pair count and same content",
         },
-        "exact_act": "declared byte-position-pair Measurement",
+        "exact_act": "byte-position-pair Measurement",
         "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
@@ -4329,7 +4329,7 @@ def _pair_measurement_act_material_without_applicability(
             "measurement_act_occurrence_identity"
         ],
         "measurement_result_identity": identities["measurement_result_identity"],
-        "act": "declared byte-position-pair Measurement",
+        "act": "byte-position-pair Measurement",
         "subject_reference": _byte_result_position_reference(source),
         "source_result_position_reference": _byte_result_position_reference(source),
         "source_movement_event_identity": _byte_result_position_movement_identity(
@@ -4513,7 +4513,7 @@ def _pair_measurement_result_material_without_applicability(
             "identity": "byte-position-pair-count-measurement-occurrence",
             "content": "byte-position-pair count and same content",
         },
-        "exact_act": "declared byte-position-pair Measurement",
+        "exact_act": "byte-position-pair Measurement",
         "addressed_act_identity": act_occurrence.material[
             "addressed_act_identity"
         ],
@@ -4786,7 +4786,7 @@ def _validated_recorded_byte_position_pair_measurement(
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared byte-position-pair Measurement"
+        or material.get("exact_act") != "byte-position-pair Measurement"
         or not isinstance(material.get("addressed_act_identity"), str)
         or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)

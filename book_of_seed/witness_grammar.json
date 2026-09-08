@@ -11,13 +11,13 @@
       "result": "exact_source_coordinates"
     },
     "01.Source.D": {
-      "subject": "declared_Measurement",
+      "subject": "exact_Measurement_subject_to_Act_binding",
       "exact_Act": "Measurement",
       "coordinates": [
         "exact_material_result",
         "Locality"
       ],
-      "result": "declared_Measurement_result"
+      "result": "Measurement_result"
     },
     "01.Source.D.1": {
       "subject": "count_finding",
