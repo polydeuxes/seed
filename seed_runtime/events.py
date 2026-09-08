@@ -432,17 +432,23 @@ class EventLedger:
             )
         return EventLedgerBoundary(self._prefix_identities_by_position[position])
 
-    def append_boundary_contains_occurrence(
-        self,
-        event_identity: str,
-        *,
-        through: EventLedgerBoundary,
-    ) -> bool:
-        """Report whether one append prefix contains an exact occurrence."""
+    def occurrence_identities_in_append_order(
+        self, event_identities: Iterable[str]
+    ) -> tuple[str, ...]:
+        """Validate exact occurrence identities in their supplied append order."""
 
-        through_position = self._position_through(through)
-        position = self._by_identity_position.get(event_identity)
-        return position is not None and position <= through_position
+        identities = tuple(event_identities)
+        if len(set(identities)) != len(identities):
+            raise ValueError("one occurrence was supplied more than once")
+        prior_position = 0
+        for event_identity in identities:
+            position = self._by_identity_position.get(event_identity)
+            if position is None:
+                raise ValueError("the supplied occurrence is absent")
+            if position <= prior_position:
+                raise ValueError("the supplied occurrences are not in append order")
+            prior_position = position
+        return identities
 
     def _position_through(self, through: EventLedgerBoundary | None) -> int:
         if through is None:
@@ -925,24 +931,27 @@ class SQLiteEventLedger(EventLedger):
             )
         return EventLedgerBoundary(row["identity"])
 
-    def append_boundary_contains_occurrence(
-        self,
-        event_identity: str,
-        *,
-        through: EventLedgerBoundary,
-    ) -> bool:
-        """Report whether one durable append prefix contains an occurrence."""
+    def occurrence_identities_in_append_order(
+        self, event_identities: Iterable[str]
+    ) -> tuple[str, ...]:
+        """Validate durable occurrence identities without reading their material."""
 
-        through_rowid = self._rowid_through(through)
-        row = self._connection.execute(
-            "SELECT rowid FROM events WHERE identity = ?",
-            (event_identity,),
-        ).fetchone()
-        return (
-            row is not None
-            and through_rowid is not None
-            and int(row["rowid"]) <= through_rowid
-        )
+        identities = tuple(event_identities)
+        if len(set(identities)) != len(identities):
+            raise ValueError("one occurrence was supplied more than once")
+        prior_rowid = 0
+        for event_identity in identities:
+            row = self._connection.execute(
+                "SELECT rowid FROM events WHERE identity = ?",
+                (event_identity,),
+            ).fetchone()
+            if row is None:
+                raise ValueError("the supplied occurrence is absent")
+            rowid = int(row["rowid"])
+            if rowid <= prior_rowid:
+                raise ValueError("the supplied occurrences are not in append order")
+            prior_rowid = rowid
+        return identities
 
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:

@@ -216,13 +216,14 @@ def get_recorded_boundary_locality_act_occurrence(
             "recorded boundary relation Act occurrence is not exact"
         )
     subject_identity = expected_reference["recorded_occurrence_identity"]
-    through_act = ledger.append_boundary_through_occurrence(event.identity)
-    if not ledger.append_boundary_contains_occurrence(
-        subject_identity, through=through_act
-    ):
+    try:
+        ledger.occurrence_identities_in_append_order(
+            (subject_identity, event.identity)
+        )
+    except ValueError as error:
         raise RecordedBoundaryLocalityError(
             "recorded boundary relation Act requires its prior subject"
-        )
+        ) from error
     return event
 
 

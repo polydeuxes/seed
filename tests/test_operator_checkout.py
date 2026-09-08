@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+import sqlite3
 
 import pytest
 
@@ -181,17 +182,42 @@ def test_act_reader_refuses_changed_subject_coordinates():
         )
 
 
-def test_act_order_reads_only_its_exact_occurrence_identities(tmp_path):
-    ledger = _UnreadableUnrelatedSQLiteLedger(str(tmp_path / "order.sqlite"))
-    unrelated = ledger.append(
-        "unrelated",
-        {"material": "unreadable"},
-        locality_identity="unrelated",
-    )
+@pytest.mark.parametrize("unrelated_position", ("before", "after"))
+@pytest.mark.parametrize("prefix_state", ("warm", "forgotten", "external"))
+def test_act_order_reads_only_its_exact_occurrence_identities(
+    tmp_path, unrelated_position, prefix_state
+):
+    path = str(tmp_path / f"order-{unrelated_position}-{prefix_state}.sqlite")
+    ledger = _UnreadableUnrelatedSQLiteLedger(path)
+    unrelated = None
+    if unrelated_position == "before":
+        unrelated = ledger.append(
+            "unrelated",
+            {"material": "unreadable"},
+            locality_identity="unrelated",
+        )
     _reference_result, source_coordinates = (
         _coordinates_with_through_occurrence_reference(ledger)
     )
     act = _act(ledger, source_coordinates)
+    if unrelated_position == "after":
+        unrelated = ledger.append(
+            "unrelated",
+            {"material": "unreadable"},
+            locality_identity="unrelated",
+        )
+    if prefix_state == "forgotten":
+        del ledger._validated_prefix_data_version
+    elif prefix_state == "external":
+        connection = sqlite3.connect(path)
+        connection.execute(
+            "INSERT INTO identity_reservations (prefix, max_number) "
+            "VALUES ('external-order-control', 1)"
+        )
+        connection.commit()
+        connection.close()
+
+    assert unrelated is not None
     ledger.unreadable_identity = unrelated.identity
 
     assert get_recorded_boundary_locality_act_occurrence(
