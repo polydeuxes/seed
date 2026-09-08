@@ -117,7 +117,6 @@ def test_two_stage_relation_uses_one_reference_and_one_destination_locality():
     assert result.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     assert tuple(sorted(act.material)) == (
         "act",
-        "destination_locality_identity",
         "subject_reference",
         "through_occurrence_boundary_reference",
     )
@@ -216,7 +215,6 @@ def test_act_refuses_a_subject_outside_its_append_boundary():
             "through_occurrence_boundary_reference": {
                 "recorded_occurrence_identity": future_q_identity,
             },
-            "destination_locality_identity": "destination",
         },
         locality_identity="destination",
     )

@@ -131,7 +131,6 @@ def _resolve_one_carried_reference(
 def _act_material(
     *,
     through_occurrence_boundary_reference: dict[str, str],
-    destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "act": RECORDED_BOUNDARY_LOCALITY_ACT,
@@ -139,7 +138,6 @@ def _act_material(
         "through_occurrence_boundary_reference": deepcopy(
             through_occurrence_boundary_reference
         ),
-        "destination_locality_identity": destination_locality_identity,
     }
 
 
@@ -191,7 +189,6 @@ def record_recorded_boundary_locality_act_occurrence(
         RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
         _act_material(
             through_occurrence_boundary_reference=carried_reference,
-            destination_locality_identity=destination,
         ),
         locality_identity=destination,
     )
@@ -225,7 +222,6 @@ def get_recorded_boundary_locality_act_occurrence(
     )
     expected = _act_material(
         through_occurrence_boundary_reference=expected_reference,
-        destination_locality_identity=event.locality_identity,
     )
     if material != expected:
         raise RecordedBoundaryLocalityError(
