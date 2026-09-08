@@ -61,12 +61,6 @@ def _source_coordinate_reference(
         raise LocalityContinuationError(
             "Locality continuation requires one intact source boundary"
         )
-    occurrences = ledger.list_locality(source_locality_identity)
-    positions = {event.identity: position for position, event in enumerate(occurrences)}
-    if positions.get(source_through_event_occurrence_identity) is None:
-        raise LocalityContinuationError(
-            "the source occurrence boundary is absent from its source Locality"
-        )
     return {
         "source_locality_identity": source_locality_identity,
         "source_through_event_occurrence_identity": (

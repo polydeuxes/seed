@@ -244,6 +244,41 @@ def test_corrupted_source_occurrence_is_refused(monkeypatch):
         _act(ledger, boundary)
 
 
+@pytest.mark.parametrize("sqlite", (False, True))
+def test_source_boundary_read_does_not_list_its_locality(
+    tmp_path, monkeypatch, sqlite
+):
+    ledger = (
+        SQLiteEventLedger(tmp_path / "source-read.sqlite")
+        if sqlite
+        else EventLedger()
+    )
+    _source, boundary = _source_boundary(ledger)
+    ledger.append(
+        "unrelated.source.occurrence",
+        {"coordinate": "unrelated"},
+        locality_identity="source",
+    )
+
+    def refuse_broad_read(*_args, **_kwargs):
+        raise AssertionError("unrelated source material was read")
+
+    monkeypatch.setattr(ledger, "list_locality", refuse_broad_read)
+    act = _act(ledger, boundary)
+    result = record_locality_continuation_result(
+        ledger, act_occurrence_event_identity=act.identity
+    )
+
+    assert get_recorded_locality_continuation(
+        ledger, result.identity
+    )["source_coordinate_reference"] == {
+        "source_locality_identity": "source",
+        "source_through_event_occurrence_identity": boundary,
+    }
+    if isinstance(ledger, SQLiteEventLedger):
+        ledger.close()
+
+
 def test_continuation_carries_only_its_direct_source_coordinates():
     ledger = EventLedger()
     _source, first_boundary = _source_boundary(ledger, "a")
