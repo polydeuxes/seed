@@ -104,9 +104,6 @@ def _recorded_result_material(
     """Record every result coordinate at one literal durable address."""
 
     return {
-        "source_coordinate_reference": result_material[
-            "source_coordinate_reference"
-        ],
         "destination_locality_identity": result_material[
             "destination_locality_identity"
         ],
@@ -292,4 +289,9 @@ def get_recorded_locality_continuation(
         raise LocalityContinuationError(
             "the Locality continuation result requires its Act occurrence"
         ) from error
-    return deepcopy(event.material)
+    return {
+        **deepcopy(event.material),
+        "source_coordinate_reference": deepcopy(
+            expected["source_coordinate_reference"]
+        ),
+    }

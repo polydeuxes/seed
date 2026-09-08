@@ -103,6 +103,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
     }
     assert "subject_to_act_binding_reference" not in recorded
     assert "exact_act" not in result.material
+    assert "source_coordinate_reference" not in result.material
     assert "applicability" not in recorded
     assert "priority" not in recorded
     advanced = advance_operator_current_coordinates(
@@ -297,7 +298,6 @@ def test_one_continuation_act_occurrence_cannot_address_two_results():
 @pytest.mark.parametrize(
     "coordinate",
     (
-        "source_coordinate_reference",
         "destination_locality_identity",
     ),
 )
