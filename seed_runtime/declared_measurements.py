@@ -35,6 +35,7 @@ from seed_runtime.comparison_of_shared_position_measurement_with_recorded_pair_f
 from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
     CompareDistinctionMeasurementSubject,
+    get_recorded_compare_distinction_measurement,
     record_compare_distinction_measurement_act_occurrence,
     record_compare_distinction_measurement_result,
 )
@@ -387,7 +388,12 @@ def _discover_compare_distinction_measurements(
             or ledger.integrity_of(result.identity) == CORRUPTED
         ):
             continue
-        measured.add(result.material.get("source_result_occurrence_identity"))
+        reading = get_recorded_compare_distinction_measurement(
+            ledger,
+            result.identity,
+            prior_coordinates=current_coordinates,
+        )
+        measured.add(reading["source_result_occurrence_identity"])
     return tuple(
         CompareDistinctionMeasurementSubject(occurrence_identity)
         for occurrence_identity in comparisons

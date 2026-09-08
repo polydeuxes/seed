@@ -103,6 +103,10 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     }
     assert result.material["act_occurrence_event_identity"] == act.identity
     assert act.material["act"] == compare_distinctions.MEASUREMENT_ACT
+    assert "source_result_occurrence_identity" not in result.material
+    assert result.material["completeness_boundary"] == {
+        "distinction_count": len(expected),
+    }
     assert "exact_act" not in result.material
     assert "subject_reference" not in result.material
     assert "addressed_act_identity" not in act.material
@@ -185,10 +189,14 @@ def test_material_slice_measures_its_current_compare_result_before_eof():
 
     assert len(compare_results) == 1
     assert len(measurements) == 1
-    assert measurements[0].material["source_result_occurrence_identity"] == (
+    measurement = get_recorded_compare_distinction_measurement(
+        ledger,
+        measurements[0].identity,
+    )
+    assert measurement["source_result_occurrence_identity"] == (
         compare_results[0].identity
     )
-    assert len(measurements[0].material["findings"]) == sum(
+    assert len(measurement["findings"]) == sum(
         len(finding["comparison_finding_references"])
         for finding in compare_results[0].material["finding"]["relation_findings"]
     )
@@ -215,10 +223,23 @@ def test_material_slice_measures_every_current_compare_result():
         if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
     )
 
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    measurement_readings = tuple(
+        get_recorded_compare_distinction_measurement(
+            ledger,
+            measurement.identity,
+            prior_coordinates=current_coordinates,
+        )
+        for measurement in measurements
+    )
+
     assert len(compare_results) == 3
     assert tuple(
-        measurement.material["source_result_occurrence_identity"]
-        for measurement in measurements
+        measurement["source_result_occurrence_identity"]
+        for measurement in measurement_readings
     ) == tuple(result.identity for result in compare_results)
 
 
@@ -299,10 +320,20 @@ def test_exact_measurement_reference_addresses_the_two_results():
     assert len(references) == 1
     earlier = ledger.get(references[0].earlier_result_occurrence_identity)
     later = ledger.get(references[0].later_result_occurrence_identity)
-    earlier_source = ledger.get(
-        earlier.material["source_result_occurrence_identity"]
+    earlier_reading = get_recorded_compare_distinction_measurement(
+        ledger,
+        earlier.identity,
+        prior_coordinates=current_coordinates,
     )
-    later_source = ledger.get(later.material["source_result_occurrence_identity"])
+    later_reading = get_recorded_compare_distinction_measurement(
+        ledger,
+        later.identity,
+        prior_coordinates=current_coordinates,
+    )
+    earlier_source = ledger.get(
+        earlier_reading["source_result_occurrence_identity"]
+    )
+    later_source = ledger.get(later_reading["source_result_occurrence_identity"])
     earlier_pair_reference = earlier_source.material["finding"]["subject"][
         "recorded_pair_comparison_result_reference"
     ]

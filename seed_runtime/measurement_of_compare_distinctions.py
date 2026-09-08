@@ -373,10 +373,11 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     result = _result_material(act, distinctions)
     return {
-        "source_result_occurrence_identity": result[
-            "source_result_occurrence_identity"
-        ],
-        "completeness_boundary": deepcopy(result["completeness_boundary"]),
+        "completeness_boundary": {
+            "distinction_count": result["completeness_boundary"][
+                "distinction_count"
+            ],
+        },
         "findings": deepcopy(result["findings"]),
         "source_locality_identity": result["source_locality_identity"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
@@ -466,7 +467,10 @@ def get_recorded_compare_distinction_measurement(
         or results[0].identity != result.identity
     ):
         raise ValueError("Compare Distinction Measurement result is not exact")
-    return deepcopy(result.material)
+    return {
+        **_result_material(act, distinctions),
+        "act_occurrence_event_identity": act.identity,
+    }
 
 
 def _producing_pair_measurement_subject(
