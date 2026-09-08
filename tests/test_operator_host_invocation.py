@@ -471,10 +471,10 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         == relation.material["destination_locality_identity"]
     )
     assert len(witness_pair_measurements) == 3
-    assert {
-        event.material["input_applicability_event_identity"]
+    assert all(
+        "input_applicability_event_identity" not in event.material
         for event in witness_pair_measurements
-    } == set(witness_standing["applicability_result_occurrences"])
+    )
 
 
 def test_witness_material_is_durable_before_provider_resumes():

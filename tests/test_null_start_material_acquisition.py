@@ -111,7 +111,8 @@ def test_material_result_occurrences_are_exactly_addressable(ledger):
     occurrences = exact_null_start_occurrences(ledger.list())
 
     assert "operator.material.source_recorded" in occurrences
-    assert "act_occurrence_identity" in occurrences
+    assert "act_occurrence_event_identity" in occurrences
+    assert "act_occurrence_identity" not in occurrences
     assert "yield_relation_identity" not in occurrences
 
 
