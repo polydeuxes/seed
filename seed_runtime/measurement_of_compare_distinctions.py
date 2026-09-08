@@ -368,11 +368,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     result = _result_material(act, distinctions)
     return {
-        "completeness_boundary": {
-            "distinction_count": result["completeness_boundary"][
-                "distinction_count"
-            ],
-        },
         "findings": deepcopy(result["findings"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
     }

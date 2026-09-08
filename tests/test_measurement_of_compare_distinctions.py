@@ -107,9 +107,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     assert "source_locality_identity" not in act.material
     assert "source_result_occurrence_identity" not in result.material
     assert "source_locality_identity" not in result.material
-    assert result.material["completeness_boundary"] == {
-        "distinction_count": len(expected),
-    }
+    assert "completeness_boundary" not in result.material
     assert "exact_act" not in result.material
     assert "subject_reference" not in result.material
     assert "addressed_act_identity" not in act.material
