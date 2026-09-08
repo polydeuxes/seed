@@ -149,13 +149,9 @@ def _result_material(act: Event) -> dict[str, Any]:
 
 
 def _recorded_result_material(
-    result_material: dict[str, Any],
     *, act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "destination_locality_identity": result_material[
-            "destination_locality_identity"
-        ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
     }
 
@@ -248,7 +244,6 @@ def record_recorded_boundary_locality_result(
     return ledger.append(
         RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
-            result_material,
             act_occurrence_event_identity=act.identity,
         ),
         locality_identity=act.locality_identity,
@@ -274,7 +269,6 @@ def get_recorded_boundary_locality(
     )
     expected_result = _result_material(act)
     expected = _recorded_result_material(
-        expected_result,
         act_occurrence_event_identity=act.identity,
     )
     if event.locality_identity != act.locality_identity or event.material != expected:
@@ -295,4 +289,5 @@ def get_recorded_boundary_locality(
         "through_occurrence_boundary_reference": deepcopy(
             expected_result["through_occurrence_boundary_reference"]
         ),
+        "destination_locality_identity": event.locality_identity,
     }

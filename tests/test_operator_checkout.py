@@ -121,7 +121,6 @@ def test_two_stage_relation_uses_one_reference_and_one_destination_locality():
     )
     assert tuple(sorted(result.material)) == (
         "act_occurrence_event_identity",
-        "destination_locality_identity",
     )
     assert destination != "source"
     assert recorded["through_occurrence_boundary_reference"] == {
@@ -129,6 +128,7 @@ def test_two_stage_relation_uses_one_reference_and_one_destination_locality():
     }
     assert "through_occurrence_boundary_reference" not in result.material
     assert recorded["destination_locality_identity"] == destination
+    assert "destination_locality_identity" not in result.material
     assert "locality_relation" not in recorded
     assert len(
         {
@@ -390,6 +390,24 @@ def test_relation_result_addresses_its_exact_preservation_act():
     assert "exact_act" not in result.material
 
     ledger.get(act.identity).material["act"] = "Measurement"
+    with pytest.raises(RecordedBoundaryLocalityError):
+        get_recorded_boundary_locality(ledger, result.identity)
+
+
+def test_relation_result_requires_its_act_locality():
+    ledger = EventLedger()
+    _reference_result, current_coordinates = (
+        _coordinates_with_through_occurrence_reference(ledger)
+    )
+    act = _act(ledger, current_coordinates)
+    result = record_recorded_boundary_locality_result(
+        ledger, act_occurrence_event_identity=act.identity
+    )
+    assert "destination_locality_identity" not in result.material
+
+    object.__setattr__(
+        ledger.get(result.identity), "locality_identity", "elsewhere"
+    )
     with pytest.raises(RecordedBoundaryLocalityError):
         get_recorded_boundary_locality(ledger, result.identity)
 
