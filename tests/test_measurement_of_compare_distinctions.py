@@ -246,6 +246,44 @@ def test_material_slice_measures_every_current_compare_result():
     ) == tuple(result.identity for result in compare_results)
 
 
+def test_measurement_subject_and_through_occurrence_boundary_can_be_separate():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+    acts = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == compare_distinctions.COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND
+    )
+    separate = tuple(
+        act
+        for act in acts
+        if act.material["subject_reference"][
+            "comparison_result_occurrence_identity"
+        ]
+        != act.material["through_event_occurrence_identity"]
+    )
+
+    assert separate
+    for act in separate:
+        subject_identity = act.material["subject_reference"][
+            "comparison_result_occurrence_identity"
+        ]
+        boundary_identity = act.material["through_event_occurrence_identity"]
+        assert tuple(
+            event.identity
+            for event in ledger.occurrences_in_append_order(
+                (subject_identity, boundary_identity, act.identity),
+                locality_identity=LOCALITY,
+            )
+        ) == (subject_identity, boundary_identity, act.identity)
+
+
 def test_material_slice_preserves_current_coordinates_through_pair_measurement(
     monkeypatch,
 ):
