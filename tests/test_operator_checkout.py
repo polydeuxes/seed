@@ -230,6 +230,45 @@ def test_zero_and_two_carried_references_both_refuse_selection():
         _binding(ledger, ambiguous)
 
 
+@pytest.mark.parametrize(
+    ("coordinate", "replacement"),
+    (
+        ("kind", "different"),
+        ("exact_material", b"/different\n"),
+    ),
+)
+def test_corruption_cannot_reduce_two_checkpoint_occurrences_to_one(
+    coordinate, replacement
+):
+    ledger = _IntegrityAdversaryLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=BytesIO(b"/checkpoint\n/checkpoint\n"),
+    )
+    coordinates = read_operator_current_coordinates(
+        ledger, locality_identity="source"
+    )
+    checkpoints = [
+        event
+        for event in ledger.list_locality("source")
+        if event.exact_material == b"/checkpoint\n"
+    ]
+    assert len(checkpoints) == 2
+    changed = ledger.get(checkpoints[1].identity)
+    ledger.corrupted.add(changed.identity)
+    object.__setattr__(changed, coordinate, replacement)
+    before = tuple(ledger.list())
+
+    with pytest.raises(
+        RecordedBoundaryLocalityError,
+        match="intact material result coordinates",
+    ):
+        _binding(ledger, coordinates)
+
+    assert tuple(ledger.list()) == before
+
+
 def test_different_locality_or_corrupted_reference_refuses_before_destination_write():
     ledger = _IntegrityAdversaryLedger()
     reference_result, current_coordinates = _coordinates_with_through_occurrence_reference(ledger)

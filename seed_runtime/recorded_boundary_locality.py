@@ -7,6 +7,7 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_checkpoint import (
     get_operator_checkpoint_material_occurrence,
     is_operator_checkpoint_material,
@@ -82,11 +83,30 @@ def _resolve_one_carried_reference(
             raise RecordedBoundaryLocalityError(
                 "recorded boundary Locality requires exact material result coordinates"
             )
-        occurrence_identity = coordinate.get("result_occurrence_identity")
-        event = ledger.get(occurrence_identity)
+        occurrence_identity = _require_identity(
+            coordinate.get("result_occurrence_identity"),
+            "recorded boundary Locality requires exact material result coordinates",
+        )
+        if coordinate != {
+            "subject_reference": occurrence_identity,
+            "result_occurrence_identity": occurrence_identity,
+        }:
+            raise RecordedBoundaryLocalityError(
+                "recorded boundary Locality requires exact material result coordinates"
+            )
+        try:
+            event = read_exact_material_result(ledger, occurrence_identity)
+        except (TypeError, ValueError) as error:
+            raise RecordedBoundaryLocalityError(
+                "recorded boundary Locality requires intact material result coordinates; "
+                "one is absent or corrupted"
+            ) from error
+        if event.locality_identity != source_locality:
+            raise RecordedBoundaryLocalityError(
+                "recorded boundary Locality material has a different Locality"
+            )
         if (
-            event is not None
-            and event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+            event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
             and is_operator_checkpoint_material(event.exact_material)
         ):
             get_operator_checkpoint_material_occurrence(ledger, event.identity)
