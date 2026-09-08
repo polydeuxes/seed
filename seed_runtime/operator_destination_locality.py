@@ -65,7 +65,6 @@ def _act_material(
     return {
         "act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "operator_material_occurrence_reference": command.identity,
-        "operator_locality_identity": command.locality_identity,
         "operator_through_event_occurrence_identity": (
             through_event_occurrence_identity
         ),
@@ -179,14 +178,17 @@ def get_operator_destination_locality_act_occurrence(
     return event
 
 
-def _result_material(act: Event) -> dict[str, Any]:
+def _result_material(ledger: EventLedger, act: Event) -> dict[str, Any]:
     material = act.material
+    command = _command_event(
+        ledger, material["operator_material_occurrence_reference"]
+    )
     return {
         "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
         ],
-        "operator_locality_identity": material["operator_locality_identity"],
+        "operator_locality_identity": command.locality_identity,
         "destination_locality_identity": act.locality_identity,
     }
 
@@ -226,7 +228,7 @@ def record_operator_destination_locality_result(
         ledger, act_occurrence_event_identity
     )
     _refuse_second_result(ledger, act)
-    result = _result_material(act)
+    result = _result_material(ledger, act)
     return ledger.append(
         OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
@@ -255,7 +257,7 @@ def get_recorded_operator_destination_locality(
     act = get_operator_destination_locality_act_occurrence(
         ledger, event.material.get("act_occurrence_event_identity")
     )
-    result = _result_material(act)
+    result = _result_material(ledger, act)
     exact_result_material = _recorded_result_material(
         result,
         act_occurrence_event_identity=act.identity,
