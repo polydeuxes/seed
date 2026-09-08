@@ -11,8 +11,7 @@ import pytest
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
-    get_recorded_through_occurrence_boundary_reference,
+    get_operator_checkpoint_material_occurrence,
 )
 from seed_runtime.operator_checkout import (
     OperatorCheckoutRequest,
@@ -68,8 +67,9 @@ def _coordinates_with_through_occurrence_reference(ledger, *, locality="source")
     reference_result = next(
         event
         for event in ledger.list_locality(locality)
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.exact_material == b"/checkpoint\n"
     )
+    get_operator_checkpoint_material_occurrence(ledger, reference_result.identity)
     return reference_result, read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
@@ -139,7 +139,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
     assert destination != "source"
     assert recorded["through_occurrence_boundary_reference"] == {
         "recorded_occurrence_identity": reference_result.identity,
-        "result_identity": reference_result.material["result_identity"],
     }
     assert recorded["destination_locality_identity"] == destination
     assert "locality_relation" not in recorded
@@ -167,7 +166,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         result.identity: None
     }
     assert replayed["locality_continuation_relation_occurrences"] == {}
-    assert replayed["recorded_through_occurrence_boundary_references"] == {}
 
 
 def test_relation_descendants_carry_one_exact_reference():
@@ -193,7 +191,6 @@ def test_relation_descendants_carry_one_exact_reference():
     assert relations[0].locality_identity != relations[1].locality_identity
     expected = {
         "recorded_occurrence_identity": reference_result.identity,
-        "result_identity": reference_result.material["result_identity"],
     }
     assert [
         get_recorded_boundary_locality(ledger, relation.identity)[
@@ -201,8 +198,12 @@ def test_relation_descendants_carry_one_exact_reference():
         ]
         for relation in relations
     ] == [expected, expected]
-    before = get_recorded_through_occurrence_boundary_reference(ledger, reference_result.identity)
-    assert get_recorded_through_occurrence_boundary_reference(ledger, reference_result.identity) == before
+    before = get_operator_checkpoint_material_occurrence(
+        ledger, reference_result.identity
+    )
+    assert get_operator_checkpoint_material_occurrence(
+        ledger, reference_result.identity
+    ) == before
 
 
 def test_zero_and_two_carried_references_both_refuse_selection():

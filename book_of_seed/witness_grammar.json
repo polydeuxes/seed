@@ -164,18 +164,6 @@
       "result": "same_position_Measurement_Compare_result",
       "Applicability": "Applicability_result"
     },
-    "05.Recording.D": {
-      "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
-      "exact_Act": "recording",
-      "current_coordinates": "exact_addressed_occurrence",
-      "result": "one_reference",
-      "coordinates": [
-        "addressed_occurrence",
-        "through_occurrence_boundary_reference",
-        "Act_occurrence",
-        "Locality"
-      ]
-    },
     "06.Locality.A": {
       "subject": "Locality_relation",
       "exact_Act": "exact_Act",
@@ -196,7 +184,7 @@
       "result": "through_occurrence_boundary_in_destination_Locality"
     },
     "06.Locality.C": {
-      "subject": "recorded_through_occurrence_boundary_reference",
+      "subject": "exact_addressed_operator_material_occurrence_and_its_through_occurrence_boundary",
       "exact_Act": "preservation",
       "Locality": "06.Locality.A.Locality",
       "result": "recorded_boundary_Locality_relation"

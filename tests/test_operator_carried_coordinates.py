@@ -11,11 +11,8 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.operator_checkpoint import (
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
-    record_through_occurrence_boundary_reference_act_occurrence,
-    record_through_occurrence_boundary_reference_result,
+    get_operator_checkpoint_material_occurrence,
 )
-from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import (
     CarriedCoordinateReferenceError,
@@ -59,13 +56,17 @@ def _material_results(ledger: EventLedger, current_coordinates: dict) -> list[by
     ]
 
 
+def _checkpoint(ledger: EventLedger, locality_identity="source"):
+    return next(
+        get_operator_checkpoint_material_occurrence(ledger, event.identity)
+        for event in ledger.list_locality(locality_identity)
+        if event.exact_material == b"/checkpoint\n"
+    )
+
+
 def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
     ledger = _run(b"a\n/checkpoint\nlater\n")
-    checkpoint = next(
-        event
-        for event in ledger.list_locality("source")
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
-    )
+    checkpoint = _checkpoint(ledger)
 
     reading = read_current_coordinates_through_carried_reference(
         ledger,
@@ -142,17 +143,12 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
         b"a\n",
         b"/checkpoint\n",
     ]
-    assert reading["current_coordinates"]["recorded_through_occurrence_boundary_references"] == {}
     assert reading["current_coordinates"]["recorded_boundary_locality_relations"] == {}
 
 
 def test_an_exact_reference_is_not_globally_available_by_identity():
     ledger = _run(b"a\n/checkpoint\n/checkout\n")
-    checkpoint = next(
-        event
-        for event in ledger.list()
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
-    )
+    checkpoint = _checkpoint(ledger)
     relation = next(
         event
         for event in ledger.list()
@@ -175,11 +171,7 @@ def test_an_exact_reference_is_not_globally_available_by_identity():
 
 def test_unrelated_occurrences_do_not_change_the_recorded_read():
     ledger = _run(b"a\n/checkpoint\n")
-    checkpoint = next(
-        event
-        for event in ledger.list()
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
-    )
+    checkpoint = _checkpoint(ledger)
     before = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity="source",
@@ -203,11 +195,7 @@ def test_coordinate_reference_is_resolved_after_durable_reopen(tmp_path):
         locality_identity="source",
         input_stream=BytesIO(b"a\n/checkpoint\n"),
     )
-    checkpoint = next(
-        event
-        for event in ledger.list_locality("source")
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
-    )
+    checkpoint = _checkpoint(ledger)
     checkpoint_identity = checkpoint.identity
     ledger.close()
 

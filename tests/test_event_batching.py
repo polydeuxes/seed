@@ -1,4 +1,4 @@
-"""Recording: exact occurrence order."""
+"""Occurrence: exact order."""
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger

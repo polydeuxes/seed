@@ -8,7 +8,6 @@ from types import SimpleNamespace
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -111,13 +110,20 @@ def test_an_ordinary_command_does_not_divide_locality():
     assert ledger.get(boundary_identity).locality_identity == "root-locality"
 
 
-def test_checkpoint_records_one_boundary_reference():
+def test_checkpoint_is_one_exact_operator_material_occurrence():
     ledger = _run(b"before\n/checkpoint\nafter\n")
     checkpoint = next(
-        event for event in ledger.list()
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        and event.exact_material == b"/checkpoint\n"
     )
     assert checkpoint.locality_identity == "root-locality"
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if "through_occurrence_boundary_reference" in event.kind
+    )
 
 
 def test_checkpoint_does_not_divide_locality():
@@ -126,17 +132,17 @@ def test_checkpoint_does_not_divide_locality():
     assert {event.locality_identity for event in ledger.list()} == {"root-locality"}
 
 
-def test_repeated_checkpoints_record_distinct_exact_references_without_a_chain():
+def test_repeated_checkpoint_material_has_distinct_exact_occurrences():
     ledger = _run(b"/checkpoint\n/checkpoint\n")
     records = [
-        event for event in ledger.list()
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        and event.exact_material == b"/checkpoint\n"
     ]
 
     assert len(records) == 2
-    assert records[0].material["result_identity"] != records[1].material[
-        "result_identity"
-    ]
+    assert records[0].identity != records[1].identity
     assert {record.locality_identity for record in records} == {"root-locality"}
 
 

@@ -111,10 +111,8 @@ from seed_runtime.operator_locality_continuation import (
     get_locality_continuation_subject_to_act_binding,
 )
 from seed_runtime.operator_checkpoint import (
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
-    get_recorded_through_occurrence_boundary_reference,
-    get_through_occurrence_boundary_reference_act_occurrence,
+    get_operator_checkpoint_material_occurrence,
+    is_operator_checkpoint_material,
 )
 from seed_runtime.recorded_boundary_locality import (
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -250,10 +248,6 @@ _LOCALITY_CONTINUATION_KINDS = {
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     LOCALITY_CONTINUATION_RECORDED_KIND,
 }
-_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS = {
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
-}
 _RECORDED_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -336,7 +330,6 @@ _SUPPORTED_KINDS = {
     *_RESULT_POSITION_LOCALITY_MOVEMENT_KINDS,
     *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
     *_LOCALITY_CONTINUATION_KINDS,
-    *_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_SOURCE_KINDS,
     *_OPERATOR_DESTINATION_LOCALITY_KINDS,
@@ -700,18 +693,15 @@ def _require_carried_reference_identity(value: Any, message: str) -> str:
     return value
 
 
-def _source_reference_from_checkpoint(
-    ledger: EventLedger, recorded_occurrence_identity: str
+def _source_reference_from_checkpoint_occurrence(
+    ledger: EventLedger, checkpoint_occurrence_identity: str
 ) -> dict[str, str | None]:
-    recorded = get_recorded_through_occurrence_boundary_reference(
-        ledger, recorded_occurrence_identity
+    checkpoint = get_operator_checkpoint_material_occurrence(
+        ledger, checkpoint_occurrence_identity
     )
-    source = recorded["source_reference"]
     return {
-        "source_locality_identity": source["source_locality_identity"],
-        "source_through_event_occurrence_identity": source[
-            "through_event_occurrence_identity"
-        ],
+        "source_locality_identity": checkpoint.locality_identity,
+        "source_through_event_occurrence_identity": checkpoint.identity,
     }
 
 
@@ -726,14 +716,9 @@ def _source_reference_from_checkout(
         reference.get("recorded_occurrence_identity"),
         "recorded boundary Locality relation carries no exact boundary reference",
     )
-    recorded = get_recorded_through_occurrence_boundary_reference(
+    return _source_reference_from_checkpoint_occurrence(
         ledger, reference_occurrence_identity
     )
-    if reference.get("result_identity") != recorded["result_identity"]:
-        raise CarriedCoordinateReferenceError(
-            "recorded boundary Locality relation names a different boundary result"
-        )
-    return _source_reference_from_checkpoint(ledger, reference_occurrence_identity)
 
 
 def read_current_coordinates_through_carried_reference(
@@ -759,12 +744,25 @@ def read_current_coordinates_through_carried_reference(
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
-    direct_references = current_coordinates[
-        "recorded_through_occurrence_boundary_references"
-    ]
+    material_results = current_coordinates["material_result_occurrences"]
+    checkpoint_occurrences: dict[str, None] = {}
+    for coordinate in material_results:
+        if type(coordinate) is not dict:
+            raise CarriedCoordinateReferenceError(
+                "carried coordinate material result is not exact"
+            )
+        occurrence_identity = coordinate.get("result_occurrence_identity")
+        event = ledger.get(occurrence_identity)
+        if (
+            event is not None
+            and event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+            and is_operator_checkpoint_material(event.exact_material)
+        ):
+            get_operator_checkpoint_material_occurrence(ledger, event.identity)
+            checkpoint_occurrences[event.identity] = None
     continuations = current_coordinates["locality_continuation_relation_occurrences"]
     locality_relations = current_coordinates["recorded_boundary_locality_relations"]
-    carriers = (direct_references, continuations, locality_relations)
+    carriers = (checkpoint_occurrences, continuations, locality_relations)
     for carrier in carriers:
         if type(carrier) is not dict or any(
             value is not None for value in carrier.values()
@@ -785,8 +783,8 @@ def read_current_coordinates_through_carried_reference(
             "coordinate reference has a different carrying Locality"
         )
 
-    if recorded_occurrence_identity in direct_references:
-        source_reference = _source_reference_from_checkpoint(
+    if recorded_occurrence_identity in checkpoint_occurrences:
+        source_reference = _source_reference_from_checkpoint_occurrence(
             ledger, recorded_occurrence_identity
         )
     elif recorded_occurrence_identity in continuations:
@@ -868,7 +866,6 @@ def advance_operator_current_coordinates(
     result_position_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
     locality_continuation_relation_occurrences: dict[str, None] = {}
-    recorded_through_occurrence_boundary_references: dict[str, None] = {}
     recorded_boundary_locality_relations: dict[str, None] = {}
     operator_destination_locality_relations: dict[str, None] = {}
     subject_to_act_binding_occurrences: dict[str, None] = {}
@@ -906,14 +903,6 @@ def advance_operator_current_coordinates(
         if type(locality_continuation_relation_occurrences) is not dict:
             raise ValueError(
                 "prior coordinates require exact Locality continuation relations"
-            )
-        recorded_through_occurrence_boundary_references = prior[
-            "recorded_through_occurrence_boundary_references"
-        ]
-        if type(recorded_through_occurrence_boundary_references) is not dict:
-            raise ValueError(
-                "prior current coordinates require exact through-occurrence boundary "
-                "references"
             )
         recorded_boundary_locality_relations = prior[
             "recorded_boundary_locality_relations"
@@ -982,7 +971,6 @@ def advance_operator_current_coordinates(
             or event.kind in _RESULT_POSITION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
             or event.kind in _LOCALITY_CONTINUATION_KINDS
-            or event.kind in _THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_SOURCE_KINDS
             or event.kind in _OPERATOR_DESTINATION_LOCALITY_KINDS
@@ -1179,13 +1167,6 @@ def advance_operator_current_coordinates(
                 prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
-            continue
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT:
-            get_through_occurrence_boundary_reference_act_occurrence(ledger, event.identity)
-            continue
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND:
-            get_recorded_through_occurrence_boundary_reference(ledger, event.identity)
-            recorded_through_occurrence_boundary_references[event.identity] = None
             continue
         if (
             event.kind
@@ -1591,9 +1572,6 @@ def advance_operator_current_coordinates(
         "exact_result_occurrences": exact_result_occurrences,
         "locality_continuation_relation_occurrences": (
             locality_continuation_relation_occurrences
-        ),
-        "recorded_through_occurrence_boundary_references": (
-            recorded_through_occurrence_boundary_references
         ),
         "recorded_boundary_locality_relations": (
             recorded_boundary_locality_relations

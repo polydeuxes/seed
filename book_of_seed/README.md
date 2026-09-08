@@ -52,6 +52,5 @@ The exact Act occurrence coordinates are addressed by the result.
 - [Locality](chapters/06_locality_relations.md)
 - [Measurement](chapters/07_measurement.md)
 - [Compare](chapters/08_compare.md)
-- [Recording](chapters/09_recording.md)
 - [Movement](chapters/10_movement.md)
 - [Emission](chapters/11_emission.md)

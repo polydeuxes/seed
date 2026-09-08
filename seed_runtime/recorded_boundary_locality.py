@@ -7,7 +7,11 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.operator_checkpoint import get_recorded_through_occurrence_boundary_reference
+from seed_runtime.operator_checkpoint import (
+    get_operator_checkpoint_material_occurrence,
+    is_operator_checkpoint_material,
+)
+from seed_runtime.operator_material_source import OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
 RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.recorded_boundary_locality_subject_to_act_binding_recorded"
 )
@@ -41,14 +45,13 @@ def _require_identity(value: Any, message: str) -> str:
 
 
 def _through_occurrence_reference(
-    ledger: EventLedger, recorded_result_event_identity: str
+    ledger: EventLedger, checkpoint_occurrence_identity: str
 ) -> dict[str, str]:
-    recorded = get_recorded_through_occurrence_boundary_reference(
-        ledger, recorded_result_event_identity
+    checkpoint = get_operator_checkpoint_material_occurrence(
+        ledger, checkpoint_occurrence_identity
     )
     return {
-        "recorded_occurrence_identity": recorded_result_event_identity,
-        "result_identity": recorded["result_identity"],
+        "recorded_occurrence_identity": checkpoint.identity,
     }
 
 
@@ -65,21 +68,34 @@ def _resolve_one_carried_reference(
         source_current_coordinates.get("locality_identity"),
         "recorded boundary Locality requires one source Locality",
     )
-    direct_references = source_current_coordinates.get(
-        "recorded_through_occurrence_boundary_references"
-    )
+    material_results = source_current_coordinates.get("material_result_occurrences")
     relations = source_current_coordinates.get(
         "recorded_boundary_locality_relations"
     )
-    if type(direct_references) is not dict or type(relations) is not dict:
+    if type(material_results) is not list or type(relations) is not dict:
         raise RecordedBoundaryLocalityError(
             "recorded boundary Locality requires exact current-coordinate identities"
         )
+    checkpoint_occurrences = []
+    for coordinate in material_results:
+        if type(coordinate) is not dict:
+            raise RecordedBoundaryLocalityError(
+                "recorded boundary Locality requires exact material result coordinates"
+            )
+        occurrence_identity = coordinate.get("result_occurrence_identity")
+        event = ledger.get(occurrence_identity)
+        if (
+            event is not None
+            and event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+            and is_operator_checkpoint_material(event.exact_material)
+        ):
+            get_operator_checkpoint_material_occurrence(ledger, event.identity)
+            checkpoint_occurrences.append(event.identity)
     carried_occurrences = [
-        *(identity for identity, value in direct_references.items() if value is None),
+        *checkpoint_occurrences,
         *(identity for identity, value in relations.items() if value is None),
     ]
-    if len(carried_occurrences) != len(direct_references) + len(relations):
+    if len(carried_occurrences) != len(checkpoint_occurrences) + len(relations):
         raise RecordedBoundaryLocalityError(
             "recorded boundary Locality carriers are not exact"
         )
@@ -93,7 +109,7 @@ def _resolve_one_carried_reference(
         raise RecordedBoundaryLocalityError(
             "recorded boundary Locality names a different current occurrence"
         )
-    if event_identity in direct_references:
+    if event_identity in checkpoint_occurrences:
         return _through_occurrence_reference(ledger, event_identity)
     relation = get_recorded_boundary_locality(ledger, event_identity)
     return deepcopy(relation["through_occurrence_boundary_reference"])
