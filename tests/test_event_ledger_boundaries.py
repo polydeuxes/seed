@@ -584,6 +584,32 @@ def test_a_durable_identity_read_matches_its_occurrence_read(tmp_path):
         ledger.close()
 
 
+def _kind_identity_read_matches_occurrence_read(ledger):
+    ledger.append_many([
+        Event(identity="i1", kind="target", locality_identity="a"),
+        Event(identity="i2", kind="other", locality_identity="a"),
+        Event(identity="i3", kind="target", locality_identity="b"),
+    ])
+    ledger.append_many(
+        [Event(identity="i4", kind="target", locality_identity="a")]
+    )
+
+    assert list(ledger.iter_kind_identities("target")) == ["i1", "i3", "i4"]
+    assert list(ledger.iter_kind_identities("absent")) == []
+
+
+def test_an_in_memory_kind_identity_read_crosses_localities():
+    _kind_identity_read_matches_occurrence_read(EventLedger())
+
+
+def test_a_durable_kind_identity_read_crosses_localities(tmp_path):
+    ledger = SQLiteEventLedger(str(tmp_path / "kind-identities.db"))
+    try:
+        _kind_identity_read_matches_occurrence_read(ledger)
+    finally:
+        ledger.close()
+
+
 def test_the_two_ledgers_preserve_the_same_material(tmp_path):
     """An append must mean the same thing in either ledger.
 

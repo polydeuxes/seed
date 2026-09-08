@@ -204,6 +204,44 @@ def test_one_operator_occurrence_cannot_have_two_destination_localities():
         )
 
 
+@pytest.mark.parametrize("sqlite", (False, True))
+def test_destination_act_cardinality_does_not_list_unrelated_events(
+    tmp_path, monkeypatch, sqlite
+):
+    ledger = (
+        SQLiteEventLedger(tmp_path / "destination-cardinality.sqlite")
+        if sqlite
+        else EventLedger()
+    )
+    unrelated = _command(ledger, exact=b"ordinary material\n")
+    command = _command(ledger)
+
+    def refuse_broad_read(*_args, **_kwargs):
+        raise AssertionError("unrelated Ledger material was read")
+
+    monkeypatch.setattr(ledger, "list_events", refuse_broad_read)
+    act = record_operator_destination_locality_act_occurrence(
+        ledger,
+        operator_material_occurrence_reference=command.identity,
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity=command.locality_identity
+        ),
+    )
+
+    assert act.material["operator_material_occurrence_reference"] == command.identity
+    assert unrelated.identity != command.identity
+    with pytest.raises(OperatorDestinationLocalityError, match="already has"):
+        record_operator_destination_locality_act_occurrence(
+            ledger,
+            operator_material_occurrence_reference=command.identity,
+            current_coordinates=read_operator_current_coordinates(
+                ledger, locality_identity=command.locality_identity
+            ),
+        )
+    if isinstance(ledger, SQLiteEventLedger):
+        ledger.close()
+
+
 def test_act_requires_exact_current_operator_material():
     ledger = EventLedger()
     command = _command(ledger)

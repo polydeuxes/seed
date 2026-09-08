@@ -135,10 +135,14 @@ def record_operator_destination_locality_act_occurrence(
         command=command,
         through_event_occurrence_identity=boundary_identity,
     )
-    for act in ledger.list_events():
+    for act_identity in ledger.iter_kind_identities(
+        OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
+    ):
+        act = get_operator_destination_locality_act_occurrence(
+            ledger, act_identity
+        )
         if (
-            act.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
-            and act.material.get("operator_material_occurrence_reference")
+            act.material.get("operator_material_occurrence_reference")
             == command.identity
         ):
             raise OperatorDestinationLocalityError(

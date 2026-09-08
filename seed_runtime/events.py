@@ -576,6 +576,16 @@ class EventLedger:
         ):
             yield event.identity
 
+    def iter_kind_identities(
+        self,
+        kind: str,
+    ) -> Iterator[str]:
+        """Yield exact identities of one occurrence kind in append order."""
+
+        for event in self._events:
+            if event.kind == kind:
+                yield event.identity
+
     def extend(self, events: Iterable[Event]) -> None:
         """Append supplied events while preserving order and identities."""
         self.append_many(events)
@@ -1111,6 +1121,19 @@ class SQLiteEventLedger(EventLedger):
             "SELECT identity FROM events WHERE locality_identity = ? "
             "AND kind = ? " + boundary + "ORDER BY rowid",
             args,
+        )
+        for row in rows:
+            yield row[0]
+
+    def iter_kind_identities(
+        self,
+        kind: str,
+    ) -> Iterator[str]:
+        """Read identities of one occurrence kind without decoding material."""
+
+        rows = self._connection.execute(
+            "SELECT identity FROM events WHERE kind = ? ORDER BY rowid",
+            (kind,),
         )
         for row in rows:
             yield row[0]
