@@ -123,6 +123,10 @@ def test_exact_occurrence_identities_have_one_append_order(tmp_path, durable):
             ledger.occurrence_identities_in_append_order(
                 (second.identity, first.identity)
             )
+        with pytest.raises(ValueError, match="more than once"):
+            ledger.occurrence_identities_in_append_order(
+                (first.identity, first.identity)
+            )
         with pytest.raises(ValueError, match="absent"):
             ledger.occurrence_identities_in_append_order(
                 (first.identity, "missing")
