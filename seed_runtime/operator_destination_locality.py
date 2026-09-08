@@ -71,6 +71,35 @@ def _act_material(
     }
 
 
+def _source_cut_event(
+    ledger: EventLedger,
+    *,
+    command: Event,
+    through_event_occurrence_identity: str,
+) -> Event:
+    boundary = ledger.get(through_event_occurrence_identity)
+    if (
+        boundary is None
+        or boundary.locality_identity != command.locality_identity
+        or ledger.integrity_of(boundary.identity) == CORRUPTED
+    ):
+        raise OperatorDestinationLocalityError(
+            "destination Locality Act requires an intact source cut"
+        )
+    ordered = (
+        (command.identity,)
+        if command.identity == boundary.identity
+        else (command.identity, boundary.identity)
+    )
+    try:
+        ledger.occurrence_identities_in_append_order(ordered)
+    except (TypeError, ValueError) as error:
+        raise OperatorDestinationLocalityError(
+            "destination Locality Act requires its operator occurrence at or before the source cut"
+        ) from error
+    return boundary
+
+
 def record_operator_destination_locality_act_occurrence(
     ledger: EventLedger,
     *,
@@ -101,6 +130,11 @@ def record_operator_destination_locality_act_occurrence(
         raise OperatorDestinationLocalityError(
             "destination Locality Act requires exact current operator material coordinates"
         )
+    _source_cut_event(
+        ledger,
+        command=command,
+        through_event_occurrence_identity=boundary_identity,
+    )
     for act in ledger.list_events():
         if (
             act.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
@@ -152,14 +186,15 @@ def get_operator_destination_locality_act_occurrence(
             "operator_through_event_occurrence_identity"
         ),
     )
-    boundary = ledger.get(
-        material.get("operator_through_event_occurrence_identity")
+    boundary = _source_cut_event(
+        ledger,
+        command=command,
+        through_event_occurrence_identity=material.get(
+            "operator_through_event_occurrence_identity"
+        ),
     )
     if (
         material != exact_act_material
-        or boundary is None
-        or boundary.locality_identity != command.locality_identity
-        or ledger.integrity_of(boundary.identity) == CORRUPTED
     ):
         raise OperatorDestinationLocalityError(
             "destination Locality Act occurrence is not exact"

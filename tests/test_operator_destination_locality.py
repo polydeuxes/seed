@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -290,6 +290,74 @@ def test_destination_locality_act_requires_current_operator_coordinates():
             operator_material_occurrence_reference=command.identity,
             current_coordinates=without_command,
         )
+
+
+@pytest.mark.parametrize("sqlite", (False, True))
+@pytest.mark.parametrize(
+    "boundary_case",
+    ("absent", "before-command", "different-locality", "corrupted"),
+)
+def test_invalid_source_cut_refuses_before_the_act(
+    tmp_path, monkeypatch, sqlite, boundary_case
+):
+    ledger = (
+        SQLiteEventLedger(tmp_path / f"{boundary_case}.sqlite")
+        if sqlite
+        else EventLedger()
+    )
+    prior = (
+        _command(ledger, exact=b"!prior\n")
+        if boundary_case == "before-command"
+        else None
+    )
+    command = _command(ledger)
+    valid_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity=command.locality_identity
+    )
+    boundary = None
+    if boundary_case == "absent":
+        invalid_boundary = "missing-boundary"
+    elif boundary_case == "before-command":
+        invalid_boundary = prior.identity
+    elif boundary_case == "different-locality":
+        invalid_boundary = _command(ledger, locality="other").identity
+    else:
+        boundary = _command(ledger)
+        invalid_boundary = boundary.identity
+        integrity_of = ledger.integrity_of
+        monkeypatch.setattr(
+            ledger,
+            "integrity_of",
+            lambda identity: (
+                CORRUPTED if identity == boundary.identity else integrity_of(identity)
+            ),
+        )
+    invalid_coordinates = {
+        **valid_coordinates,
+        "through_event_occurrence_identity": invalid_boundary,
+    }
+
+    with pytest.raises(OperatorDestinationLocalityError):
+        record_operator_destination_locality_act_occurrence(
+            ledger,
+            operator_material_occurrence_reference=command.identity,
+            current_coordinates=invalid_coordinates,
+        )
+
+    assert not any(
+        event.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
+        for event in ledger.list_events()
+    )
+    if boundary_case == "corrupted":
+        monkeypatch.setattr(ledger, "integrity_of", integrity_of)
+    corrected = record_operator_destination_locality_act_occurrence(
+        ledger,
+        operator_material_occurrence_reference=command.identity,
+        current_coordinates=valid_coordinates,
+    )
+    assert corrected.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
+    if isinstance(ledger, SQLiteEventLedger):
+        ledger.close()
 
 
 def test_destination_locality_act_refuses_a_boundary_after_the_act():
