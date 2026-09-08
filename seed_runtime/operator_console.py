@@ -57,7 +57,6 @@ from seed_runtime.operator_destination_locality import (
     record_operator_destination_locality_result,
 )
 from seed_runtime.recorded_boundary_locality import (
-    record_recorded_boundary_locality_subject_to_act_binding,
     record_recorded_boundary_locality_act_occurrence,
     record_recorded_boundary_locality_result,
 )
@@ -645,29 +644,15 @@ def run_persistent_operator_console(
             if isinstance(request, OperatorCheckpointRequest):
                 continue
             if isinstance(request, OperatorCheckoutRequest):
-                binding = (
-                    record_recorded_boundary_locality_subject_to_act_binding(
-                        ledger,
-                        source_current_coordinates=current_coordinates,
+                act_occurrence = (
+                    record_recorded_boundary_locality_act_occurrence(
+                        ledger, source_current_coordinates=current_coordinates
                     )
                 )
-                locality_identity = binding.locality_identity
+                locality_identity = act_occurrence.locality_identity
                 pair_premise = None
                 current_coordinates = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
-                )
-                act_occurrence = (
-                    record_recorded_boundary_locality_act_occurrence(
-                        ledger,
-                        subject_to_act_binding_event_identity=binding.identity,
-                        current_coordinates=current_coordinates,
-                    )
-                )
-                current_coordinates = _advance_over(
-                    ledger,
-                    current_coordinates,
-                    (act_occurrence.identity,),
-                    locality_identity=locality_identity,
                 )
                 relation = record_recorded_boundary_locality_result(
                     ledger,

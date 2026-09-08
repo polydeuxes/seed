@@ -117,10 +117,8 @@ from seed_runtime.operator_checkpoint import (
 from seed_runtime.recorded_boundary_locality import (
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
-    RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     get_recorded_boundary_locality,
     get_recorded_boundary_locality_act_occurrence,
-    get_recorded_boundary_locality_subject_to_act_binding,
 )
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
@@ -249,7 +247,6 @@ _LOCALITY_CONTINUATION_KINDS = {
     LOCALITY_CONTINUATION_RECORDED_KIND,
 }
 _RECORDED_BOUNDARY_LOCALITY_KINDS = {
-    RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
 }
@@ -507,6 +504,17 @@ def _subject_to_act_binding_of_exact_result(
         return {
             "act_occurrence_event_identity": act_occurrence.identity,
             **expected_coordinates,
+        }
+    if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND:
+        exact_act = get_recorded_boundary_locality_act_occurrence(
+            ledger, act_occurrence.identity
+        )
+        return {
+            "act_occurrence_event_identity": exact_act.identity,
+            "exact_act_identity": exact_act.material["exact_act_identity"],
+            "subject_reference": deepcopy(
+                exact_act.material["subject_reference"]
+            ),
         }
     if reference is None:
         return None
@@ -1166,15 +1174,6 @@ def advance_operator_current_coordinates(
                 ledger,
                 event.identity,
                 prior_coordinates=pair_prior_coordinates,
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
-            continue
-        if (
-            event.kind
-            == RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_recorded_boundary_locality_subject_to_act_binding(
-                ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
