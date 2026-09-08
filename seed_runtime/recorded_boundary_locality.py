@@ -135,9 +135,6 @@ def _act_material(
     return {
         "act": RECORDED_BOUNDARY_LOCALITY_ACT,
         "subject_reference": deepcopy(through_occurrence_boundary_reference),
-        "through_occurrence_boundary_reference": deepcopy(
-            through_occurrence_boundary_reference
-        ),
     }
 
 
@@ -146,7 +143,7 @@ def _result_material(act: Event) -> dict[str, Any]:
     return {
         "exact_act": RECORDED_BOUNDARY_LOCALITY_ACT,
         "through_occurrence_boundary_reference": deepcopy(
-            material["through_occurrence_boundary_reference"]
+            material["subject_reference"]
         ),
         "destination_locality_identity": act.locality_identity,
     }
