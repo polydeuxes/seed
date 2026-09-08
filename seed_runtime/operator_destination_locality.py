@@ -184,7 +184,6 @@ def _result_material(ledger: EventLedger, act: Event) -> dict[str, Any]:
         ledger, material["operator_material_occurrence_reference"]
     )
     return {
-        "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
         ],
@@ -209,7 +208,6 @@ def _recorded_result_material(
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "exact_act": result["exact_act"],
         "operator_material_occurrence_reference": result[
             "operator_material_occurrence_reference"
         ],
