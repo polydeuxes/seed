@@ -104,6 +104,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
     assert "subject_to_act_binding_reference" not in recorded
     assert "exact_act" not in result.material
     assert "source_coordinate_reference" not in result.material
+    assert "destination_locality_identity" not in result.material
     assert "applicability" not in recorded
     assert "priority" not in recorded
     advanced = advance_operator_current_coordinates(
@@ -295,13 +296,7 @@ def test_one_continuation_act_occurrence_cannot_address_two_results():
         )
 
 
-@pytest.mark.parametrize(
-    "coordinate",
-    (
-        "destination_locality_identity",
-    ),
-)
-def test_changed_result_coordinates_are_refused(coordinate):
+def test_changed_result_act_occurrence_is_refused():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
     act_occurrence = _act(ledger, boundary)
@@ -310,7 +305,7 @@ def test_changed_result_coordinates_are_refused(coordinate):
         act_occurrence_event_identity=act_occurrence.identity,
     )
     changed = ledger.get(result.identity)
-    changed.material[coordinate] = "different"
+    changed.material["act_occurrence_event_identity"] = "different"
 
     with pytest.raises(LocalityContinuationError):
         get_recorded_locality_continuation(ledger, result.identity)

@@ -88,11 +88,9 @@ def _act_occurrence_material(
 def _result_material(
     *,
     source_coordinate_reference: dict[str, str | None],
-    destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
-        "destination_locality_identity": destination_locality_identity,
     }
 
 
@@ -104,9 +102,6 @@ def _recorded_result_material(
     """Record every result coordinate at one literal durable address."""
 
     return {
-        "destination_locality_identity": result_material[
-            "destination_locality_identity"
-        ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
     }
 
@@ -227,7 +222,6 @@ def record_locality_continuation_result(
 
     result_material = _result_material(
         source_coordinate_reference=material["source_coordinate_reference"],
-        destination_locality_identity=locality_identity,
     )
     return ledger.append(
         LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -267,7 +261,6 @@ def get_recorded_locality_continuation(
         source_coordinate_reference=act_occurrence.material[
             "source_coordinate_reference"
         ],
-        destination_locality_identity=event.locality_identity,
     )
     expected_event_material = _recorded_result_material(
         expected,
@@ -294,4 +287,5 @@ def get_recorded_locality_continuation(
         "source_coordinate_reference": deepcopy(
             expected["source_coordinate_reference"]
         ),
+        "destination_locality_identity": event.locality_identity,
     }
