@@ -101,6 +101,9 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     assert act.material["subject_reference"] == {
         "comparison_result_occurrence_identity": source.identity,
     }
+    assert result.material["act_occurrence_event_identity"] == act.identity
+    assert "act_occurrence_identity" not in act.material
+    assert "act_occurrence_identity" not in result.material
     assert "measurement_result_identity" not in act.material
     assert "result_identity" not in result.material
     assert "subject_to_act_binding_reference" not in act.material
