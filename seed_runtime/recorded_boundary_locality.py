@@ -130,12 +130,10 @@ def _resolve_one_carried_reference(
 
 def _act_material(
     *,
-    exact_act_identity: str,
     through_occurrence_boundary_reference: dict[str, str],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "exact_act_identity": exact_act_identity,
         "act": RECORDED_BOUNDARY_LOCALITY_ACT,
         "subject_reference": deepcopy(through_occurrence_boundary_reference),
         "through_occurrence_boundary_reference": deepcopy(
@@ -148,7 +146,6 @@ def _act_material(
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
-        "exact_act_identity": material["exact_act_identity"],
         "exact_act": RECORDED_BOUNDARY_LOCALITY_ACT,
         "through_occurrence_boundary_reference": deepcopy(
             material["through_occurrence_boundary_reference"]
@@ -162,7 +159,6 @@ def _recorded_result_material(
     *, act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "exact_act_identity": result_material["exact_act_identity"],
         "exact_act": result_material["exact_act"],
         "through_occurrence_boundary_reference": deepcopy(
             result_material["through_occurrence_boundary_reference"]
@@ -191,11 +187,9 @@ def record_recorded_boundary_locality_act_occurrence(
         raise RecordedBoundaryLocalityError(
             "recorded boundary Locality requires one unused destination Locality"
         )
-    exact_act_identity = ledger.mint_identity("recorded_boundary_locality_act")
     return ledger.append(
         RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
         _act_material(
-            exact_act_identity=exact_act_identity,
             through_occurrence_boundary_reference=carried_reference,
             destination_locality_identity=destination,
         ),
@@ -216,14 +210,11 @@ def get_recorded_boundary_locality_act_occurrence(
     ):
         raise RecordedBoundaryLocalityError(
             "recorded boundary relation Act occurrence is absent or corrupted"
-        )
+    )
     material = event.material
     reference = material.get("subject_reference")
-    exact_act_identity = material.get("exact_act_identity")
     if (
         type(reference) is not dict
-        or type(exact_act_identity) is not str
-        or not exact_act_identity
         or type(event.locality_identity) is not str
     ):
         raise RecordedBoundaryLocalityError(
@@ -233,7 +224,6 @@ def get_recorded_boundary_locality_act_occurrence(
         ledger, reference.get("recorded_occurrence_identity")
     )
     expected = _act_material(
-        exact_act_identity=exact_act_identity,
         through_occurrence_boundary_reference=expected_reference,
         destination_locality_identity=event.locality_identity,
     )

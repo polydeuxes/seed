@@ -511,7 +511,6 @@ def _subject_to_act_binding_of_exact_result(
         )
         return {
             "act_occurrence_event_identity": exact_act.identity,
-            "exact_act_identity": exact_act.material["exact_act_identity"],
             "subject_reference": deepcopy(
                 exact_act.material["subject_reference"]
             ),
