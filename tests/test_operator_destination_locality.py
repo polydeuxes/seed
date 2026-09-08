@@ -65,7 +65,6 @@ def test_operator_occurrence_has_a_fresh_destination_locality_relation():
         "operator_material_result_occurrence_identity",
         "operator_locality_identity",
         "operator_through_event_occurrence_identity",
-        "destination_locality_identity",
     }
     assert act.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
@@ -87,6 +86,7 @@ def test_operator_occurrence_has_a_fresh_destination_locality_relation():
         "subject_to_act_binding_event_identity" not in occurrence.material
         for occurrence in (act, result)
     )
+    assert "destination_locality_identity" not in act.material
     assert all(
         occurrence.kind
         != "operator.destination_locality_subject_to_act_binding_recorded"

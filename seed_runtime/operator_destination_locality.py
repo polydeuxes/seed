@@ -61,7 +61,6 @@ def _act_material(
     *,
     command: Event,
     through_event_occurrence_identity: str,
-    destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
         "act": OPERATOR_DESTINATION_LOCALITY_ACT,
@@ -71,7 +70,6 @@ def _act_material(
         "operator_through_event_occurrence_identity": (
             through_event_occurrence_identity
         ),
-        "destination_locality_identity": destination_locality_identity,
     }
 
 
@@ -122,7 +120,6 @@ def record_operator_destination_locality_act_occurrence(
         _act_material(
             command=command,
             through_event_occurrence_identity=boundary_identity,
-            destination_locality_identity=destination_locality_identity,
         ),
         locality_identity=destination_locality_identity,
     )
@@ -147,13 +144,7 @@ def get_operator_destination_locality_act_occurrence(
     command = _command_event(
         ledger, material.get("operator_material_occurrence_reference")
     )
-    destination_locality_identity = material.get(
-        "destination_locality_identity"
-    )
-    if (
-        type(destination_locality_identity) is not str
-        or not destination_locality_identity
-    ):
+    if type(event.locality_identity) is not str or not event.locality_identity:
         raise OperatorDestinationLocalityError(
             "destination Locality Act coordinates are not exact"
         )
@@ -162,15 +153,12 @@ def get_operator_destination_locality_act_occurrence(
         through_event_occurrence_identity=material.get(
             "operator_through_event_occurrence_identity"
         ),
-        destination_locality_identity=destination_locality_identity,
     )
     boundary = ledger.get(
         material.get("operator_through_event_occurrence_identity")
     )
     if (
         material != exact_act_material
-        or event.locality_identity
-        != material.get("destination_locality_identity")
         or boundary is None
         or boundary.locality_identity != command.locality_identity
         or ledger.integrity_of(boundary.identity) == CORRUPTED
@@ -200,9 +188,7 @@ def _result_material(act: Event) -> dict[str, Any]:
             "operator_material_occurrence_reference"
         ],
         "operator_locality_identity": material["operator_locality_identity"],
-        "destination_locality_identity": material[
-            "destination_locality_identity"
-        ],
+        "destination_locality_identity": act.locality_identity,
     }
 
 
