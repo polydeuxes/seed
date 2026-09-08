@@ -139,7 +139,6 @@ def _binding_material(
     *,
     exact_act_identity: str,
     act_occurrence_identity: str,
-    result_identity: str,
     through_occurrence_boundary_reference: dict[str, str],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -147,7 +146,6 @@ def _binding_material(
         "book_clause_identity": RECORDED_BOUNDARY_LOCALITY_BOOK_CLAUSE,
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "result_identity": result_identity,
         "subject_reference": deepcopy(through_occurrence_boundary_reference),
     }
 
@@ -174,14 +172,12 @@ def _act_material(binding: Event) -> dict[str, Any]:
             material["subject_reference"]
         ),
         "destination_locality_identity": binding.locality_identity,
-        "result_identity": material["result_identity"],
     }
 
 
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
-        "result_identity": material["result_identity"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": RECORDED_BOUNDARY_LOCALITY_ACT,
@@ -200,7 +196,6 @@ def _recorded_result_material(
     *, act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     return {
-        "result_identity": result_material["result_identity"],
         "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
@@ -241,9 +236,6 @@ def record_recorded_boundary_locality_subject_to_act_binding(
         "act_occurrence_identity": ledger.mint_identity(
             "recorded_boundary_locality_act_occurrence"
         ),
-        "result_identity": ledger.mint_identity(
-            "recorded_boundary_locality_result"
-        ),
     }
     return ledger.append(
         RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -277,7 +269,6 @@ def get_recorded_boundary_locality_subject_to_act_binding(
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
-        material.get("result_identity"),
     )
     if (
         type(carried_reference) is not dict
@@ -293,7 +284,6 @@ def get_recorded_boundary_locality_subject_to_act_binding(
     expected = _binding_material(
         exact_act_identity=identities[0],
         act_occurrence_identity=identities[1],
-        result_identity=identities[2],
         through_occurrence_boundary_reference=expected_reference,
         destination_locality_identity=event.locality_identity,
     )

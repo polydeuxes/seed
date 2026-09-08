@@ -131,7 +131,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
-        "result_identity",
         "subject_reference",
     )
     assert act.kind == RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT
@@ -147,11 +146,13 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
             binding.identity,
             binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
-            binding.material["result_identity"],
             act.identity,
             result.identity,
         }
-    ) == 6
+    ) == 5
+    assert "result_identity" not in binding.material
+    assert "result_identity" not in act.material
+    assert "result_identity" not in result.material
     advanced = advance_operator_current_coordinates(
         ledger,
         (result.identity,),

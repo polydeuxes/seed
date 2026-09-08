@@ -561,11 +561,12 @@ def _subject_to_act_binding_of_exact_result(
         and value
     }
     result_identity = event.material.get("result_identity")
-    source_result_without_family_identity = (
+    result_without_family_identity = (
         event.kind
         in {
             OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
             WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+            RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
         }
         and not declared_results
         and result_identity is None
@@ -573,7 +574,7 @@ def _subject_to_act_binding_of_exact_result(
     )
     if (
         result_identity not in declared_results
-        and not source_result_without_family_identity
+        and not result_without_family_identity
     ):
         raise ValueError(
             "recorded subject-to-Act binding disagrees with its occurrence"
