@@ -77,12 +77,10 @@ def _source_coordinate_reference(
 
 def _act_occurrence_material(
     *,
-    continuation_act_identity: str,
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "continuation_act_identity": continuation_act_identity,
         "act": LOCALITY_CONTINUATION_ACT,
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
@@ -91,12 +89,10 @@ def _act_occurrence_material(
 
 def _result_material(
     *,
-    continuation_act_identity: str,
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "continuation_act_identity": continuation_act_identity,
         "exact_act": LOCALITY_CONTINUATION_ACT,
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
@@ -111,9 +107,6 @@ def _recorded_result_material(
     """Record every result coordinate at one literal durable address."""
 
     return {
-        "continuation_act_identity": result_material[
-            "continuation_act_identity"
-        ],
         "exact_act": result_material["exact_act"],
         "source_coordinate_reference": result_material[
             "source_coordinate_reference"
@@ -149,11 +142,9 @@ def record_locality_continuation_act_occurrence(
         raise LocalityContinuationError(
             "Locality continuation requires one fresh destination Locality"
         )
-    continuation_act_identity = ledger.mint_identity("locality_continuation_act")
     return ledger.append(
         LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
-            continuation_act_identity=continuation_act_identity,
             source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
@@ -197,15 +188,11 @@ def _validated_act_occurrence(
         raise LocalityContinuationError(
             "Locality continuation Act occurrence names another source boundary"
         )
-    continuation_act_identity = material.get("continuation_act_identity")
     if (
-        type(continuation_act_identity) is not str
-        or not continuation_act_identity
-        or material.get("destination_locality_identity")
+        material.get("destination_locality_identity")
         != act_occurrence.locality_identity
         or material
         != _act_occurrence_material(
-            continuation_act_identity=continuation_act_identity,
             source_coordinate_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
         )
@@ -251,7 +238,6 @@ def record_locality_continuation_result(
             )
 
     result_material = _result_material(
-        continuation_act_identity=material["continuation_act_identity"],
         source_coordinate_reference=material["source_coordinate_reference"],
         destination_locality_identity=locality_identity,
     )
@@ -290,9 +276,6 @@ def get_recorded_locality_continuation(
         ledger, event.material.get("act_occurrence_event_identity")
     )
     expected = _result_material(
-        continuation_act_identity=act_occurrence.material[
-            "continuation_act_identity"
-        ],
         source_coordinate_reference=act_occurrence.material[
             "source_coordinate_reference"
         ],

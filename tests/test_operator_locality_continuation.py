@@ -71,6 +71,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
         for event in ledger.list_events()
     )
     assert "act_occurrence_identity" not in act_occurrence.material
+    assert "continuation_act_identity" not in act_occurrence.material
     assert after_act["event_count"] == 1
     assert after_act["locality_continuation_relation_occurrences"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {}
@@ -96,9 +97,7 @@ def test_two_stage_continuation_records_exact_relation_without_copying_source_co
     assert recorded["destination_locality_identity"] == destination
     assert "locality_relation" not in recorded
     assert result.identity not in {
-        recorded["continuation_act_identity"],
         act_occurrence.identity,
-        act_occurrence.material["continuation_act_identity"],
     }
     assert "subject_to_act_binding_reference" not in recorded
     assert "applicability" not in recorded
@@ -137,7 +136,6 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     )
     first_identities = {
         first_act.locality_identity,
-        first_act.material["continuation_act_identity"],
         first_act.identity,
         first_result.identity,
     }
@@ -150,12 +148,11 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     )
     second_identities = {
         second_act.locality_identity,
-        second_act.material["continuation_act_identity"],
         second_act.identity,
         second_result.identity,
     }
 
-    assert len(first_identities) == len(second_identities) == 4
+    assert len(first_identities) == len(second_identities) == 3
     assert first_identities.isdisjoint(second_identities)
     assert "result_identity" not in get_recorded_locality_continuation(
         ledger, first_result.identity
@@ -326,6 +323,8 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
     assert first.locality_identity != second.locality_identity
     assert "act_occurrence_identity" not in first.material
     assert "act_occurrence_identity" not in second.material
+    assert "continuation_act_identity" not in first.material
+    assert "continuation_act_identity" not in second.material
     assert first.identity != second.identity
 
 
