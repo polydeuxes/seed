@@ -106,9 +106,8 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 from seed_runtime.operator_locality_continuation import (
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     LOCALITY_CONTINUATION_RECORDED_KIND,
-    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    _validated_act_occurrence,
     get_recorded_locality_continuation,
-    get_locality_continuation_subject_to_act_binding,
 )
 from seed_runtime.operator_checkpoint import (
     get_operator_checkpoint_material_occurrence,
@@ -240,7 +239,6 @@ _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 }
 _LOCALITY_CONTINUATION_KINDS = {
-    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     LOCALITY_CONTINUATION_RECORDED_KIND,
 }
@@ -510,6 +508,14 @@ def _subject_to_act_binding_of_exact_result(
             "act_occurrence_event_identity": exact_act.identity,
             "subject_reference": deepcopy(
                 exact_act.material["subject_reference"]
+            ),
+        }
+    if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND:
+        exact_act = _validated_act_occurrence(ledger, act_occurrence.identity)
+        return {
+            "act_occurrence_event_identity": exact_act.identity,
+            "subject_reference": deepcopy(
+                exact_act.material["source_coordinate_reference"]
             ),
         }
     if reference is None:
@@ -1433,15 +1439,6 @@ def advance_operator_current_coordinates(
                         "act_occurrence_event_identity"
                     ],
                 }
-            continue
-        if (
-            event.kind
-            == LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_locality_continuation_subject_to_act_binding(
-                ledger, event.identity
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT:
             continue

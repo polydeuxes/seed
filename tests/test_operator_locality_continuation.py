@@ -16,11 +16,8 @@ from seed_runtime.operator_current_coordinates import (
 from seed_runtime.operator_locality_continuation import (
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     LOCALITY_CONTINUATION_RECORDED_KIND,
-    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     LocalityContinuationError,
     get_recorded_locality_continuation,
-    get_locality_continuation_subject_to_act_binding,
-    record_locality_continuation_subject_to_act_binding,
     record_locality_continuation_act_occurrence,
     record_locality_continuation_result,
 )
@@ -38,52 +35,25 @@ def _source_boundary(
     return source, source.identity
 
 
-def _binding(
-    ledger: EventLedger,
-    boundary: str,
-    *,
-    source_locality_identity: str = "source",
-):
-    return record_locality_continuation_subject_to_act_binding(
-        ledger,
-        source_locality_identity=source_locality_identity,
-        source_through_event_occurrence_identity=boundary,
-    )
-
-
 def _act(
     ledger: EventLedger,
     boundary: str,
     *,
     source_locality_identity: str = "source",
 ):
-    binding = _binding(
-        ledger,
-        boundary,
-        source_locality_identity=source_locality_identity,
-    )
-    current_coordinates = read_operator_current_coordinates(
-        ledger, locality_identity=binding.locality_identity
-    )
     return record_locality_continuation_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=current_coordinates,
+        source_locality_identity=source_locality_identity,
+        source_through_event_occurrence_identity=boundary,
     )
 
 
-def test_three_stage_continuation_records_exact_direct_relation_without_copying_source_coordinates():
+def test_two_stage_continuation_records_exact_relation_without_copying_source_coordinates():
     ledger = EventLedger()
     source, boundary = _source_boundary(ledger)
 
     act_occurrence = _act(ledger, boundary)
     destination = act_occurrence.locality_identity
-    binding_reference = act_occurrence.material[
-        "subject_to_act_binding_reference"
-    ]
-    binding = get_locality_continuation_subject_to_act_binding(
-        ledger, binding_reference["recorded_occurrence_identity"]
-    )
     after_act = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
@@ -91,41 +61,19 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert act_occurrence.kind == LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
     assert destination != "source"
     assert act_occurrence.exact_material is None
-    assert binding.kind == (
-        LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    )
-    assert binding.locality_identity == destination
-    assert binding.material["book_clause_identity"] == "06.Locality.B"
-    assert binding.identity in after_act[
-        "subject_to_act_binding_occurrences"
-    ]
-    assert binding.material["subject_reference"][
+    assert act_occurrence.material["source_coordinate_reference"][
         "source_through_event_occurrence_identity"
     ] == boundary
-    assert tuple(sorted(binding.material)) == (
-        "book_clause_identity",
-        "exact_act_identity",
-        "subject_reference",
+    assert "subject_to_act_binding_reference" not in act_occurrence.material
+    assert all(
+        event.kind
+        != "operator.locality_continuation_subject_to_act_binding_recorded"
+        for event in ledger.list_events()
     )
-    assert binding_reference == {
-        "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": "06.Locality.B",
-        "exact_act_identity": binding.material["exact_act_identity"],
-        "subject_reference": binding.material["subject_reference"],
-    }
-    assert len(
-        {
-            binding.identity,
-            binding.material["exact_act_identity"],
-            act_occurrence.material["continuation_act_identity"],
-        }
-    ) == 2
     assert "act_occurrence_identity" not in act_occurrence.material
-    assert after_act["event_count"] == 2
+    assert after_act["event_count"] == 1
     assert after_act["locality_continuation_relation_occurrences"] == {}
-    assert after_act["subject_to_act_binding_occurrences"] == {
-        binding.identity: None
-    }
+    assert after_act["subject_to_act_binding_occurrences"] == {}
     assert after_act["material_result_occurrences"] == []
     assert after_act["measurement_occurrences"] == {}
     assert after_act["exact_result_occurrences"] == {}
@@ -150,10 +98,9 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert result.identity not in {
         recorded["continuation_act_identity"],
         act_occurrence.identity,
-        binding.identity,
-        binding.material["exact_act_identity"],
+        act_occurrence.material["continuation_act_identity"],
     }
-    assert recorded["subject_to_act_binding_reference"] == binding_reference
+    assert "subject_to_act_binding_reference" not in recorded
     assert "applicability" not in recorded
     assert "priority" not in recorded
     advanced = advance_operator_current_coordinates(
@@ -167,13 +114,16 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     )
     assert advanced == replayed
     assert replayed["locality_continuation_relation_occurrences"] == {result.identity: None}
-    assert replayed["subject_to_act_binding_occurrences"] == {
-        binding.identity: None
-    }
+    assert replayed["subject_to_act_binding_occurrences"] == {}
     assert replayed["material_result_occurrences"] == []
     assert replayed["measurement_occurrences"] == {}
     assert replayed["exact_result_occurrences"] == {
-        result.identity: binding_reference,
+        result.identity: {
+            "act_occurrence_event_identity": act_occurrence.identity,
+            "subject_reference": act_occurrence.material[
+                "source_coordinate_reference"
+            ],
+        },
     }
 
 
@@ -185,15 +135,9 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     first_result = record_locality_continuation_result(
         ledger, act_occurrence_event_identity=first_act.identity
     )
-    first_binding = get_locality_continuation_subject_to_act_binding(
-        ledger,
-        first_act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ],
-    )
     first_identities = {
         first_act.locality_identity,
-        first_binding.material["exact_act_identity"],
+        first_act.material["continuation_act_identity"],
         first_act.identity,
         first_result.identity,
     }
@@ -204,15 +148,9 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     second_result = record_locality_continuation_result(
         ledger, act_occurrence_event_identity=second_act.identity
     )
-    second_binding = get_locality_continuation_subject_to_act_binding(
-        ledger,
-        second_act.material["subject_to_act_binding_reference"][
-            "recorded_occurrence_identity"
-        ],
-    )
     second_identities = {
         second_act.locality_identity,
-        second_binding.material["exact_act_identity"],
+        second_act.material["continuation_act_identity"],
         second_act.identity,
         second_result.identity,
     }
@@ -225,24 +163,6 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
     assert "result_identity" not in get_recorded_locality_continuation(
         ledger, second_result.identity
     )
-
-
-def test_act_refuses_a_binding_absent_from_current_coordinates():
-    ledger = EventLedger()
-    _source, boundary = _source_boundary(ledger)
-    binding = _binding(ledger, boundary)
-    source_coordinates = read_operator_current_coordinates(
-        ledger, locality_identity="source"
-    )
-
-    with pytest.raises(
-        LocalityContinuationError, match="exact current binding"
-    ):
-        record_locality_continuation_act_occurrence(
-            ledger,
-            subject_to_act_binding_event_identity=binding.identity,
-            current_coordinates=source_coordinates,
-        )
 
 
 def test_durable_continuation_material_contains_no_operator_shorthand():
@@ -292,14 +212,14 @@ def test_source_occurrence_from_another_locality_is_refused():
     _source, boundary = _source_boundary(ledger)
 
     with pytest.raises(LocalityContinuationError):
-        _binding(ledger, boundary, source_locality_identity="other")
+        _act(ledger, boundary, source_locality_identity="other")
 
 
 def test_missing_source_occurrence_is_refused():
     ledger = EventLedger()
 
     with pytest.raises(LocalityContinuationError):
-        _binding(ledger, "missing")
+        _act(ledger, "missing")
 
 
 def test_corrupted_source_occurrence_is_refused(monkeypatch):
@@ -313,7 +233,7 @@ def test_corrupted_source_occurrence_is_refused(monkeypatch):
     )
 
     with pytest.raises(LocalityContinuationError):
-        _binding(ledger, boundary)
+        _act(ledger, boundary)
 
 
 def test_continuation_carries_only_its_direct_source_coordinates():
@@ -373,7 +293,6 @@ def test_one_continuation_act_occurrence_cannot_address_two_results():
     (
         "source_coordinate_reference",
         "destination_locality_identity",
-        "subject_to_act_binding_reference",
     ),
 )
 def test_changed_result_coordinates_are_refused(coordinate):
@@ -410,7 +329,7 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
     assert first.identity != second.identity
 
 
-def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
+def test_act_occurrence_without_result_is_not_carried_as_a_relation():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
     act_occurrence = _act(ledger, boundary)
@@ -420,12 +339,7 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
     )
 
     assert standing["locality_continuation_relation_occurrences"] == {}
-    binding_identity = act_occurrence.material[
-        "subject_to_act_binding_reference"
-    ]["recorded_occurrence_identity"]
-    assert standing["subject_to_act_binding_occurrences"] == {
-        binding_identity: None
-    }
+    assert standing["subject_to_act_binding_occurrences"] == {}
     assert standing["through_event_occurrence_identity"] == act_occurrence.identity
 
 
@@ -453,18 +367,19 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         )
 
 
-def test_act_occurrence_cannot_cite_another_exact_binding():
+def test_act_occurrence_refuses_a_source_boundary_after_it():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
-    first = _act(ledger, boundary)
-    second = _act(ledger, boundary)
-    changed = ledger.get(first.identity)
-    changed.material["subject_to_act_binding_reference"] = dict(
-        second.material["subject_to_act_binding_reference"]
-    )
+    act = _act(ledger, boundary)
+    later, _later_boundary = _source_boundary(ledger)
+    changed = ledger.get(act.identity)
+    changed.material["source_coordinate_reference"] = {
+        "source_locality_identity": later.locality_identity,
+        "source_through_event_occurrence_identity": later.identity,
+    }
 
-    with pytest.raises(LocalityContinuationError):
+    with pytest.raises(LocalityContinuationError, match="prior source boundary"):
         record_locality_continuation_result(
             ledger,
-            act_occurrence_event_identity=first.identity,
+            act_occurrence_event_identity=act.identity,
         )

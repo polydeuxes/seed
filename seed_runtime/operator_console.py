@@ -47,7 +47,6 @@ from seed_runtime.operator_memory_command import (
     request_operator_memory,
 )
 from seed_runtime.operator_locality_continuation import (
-    record_locality_continuation_subject_to_act_binding,
     record_locality_continuation_act_occurrence,
     record_locality_continuation_result,
 )
@@ -583,8 +582,8 @@ def run_persistent_operator_console(
             )
             request = command_run.handler_result
             if isinstance(request, OperatorMemoryRequest):
-                binding = (
-                    record_locality_continuation_subject_to_act_binding(
+                continuation_act_occurrence = (
+                    record_locality_continuation_act_occurrence(
                         ledger,
                         source_locality_identity=locality_identity,
                         source_through_event_occurrence_identity=(
@@ -592,23 +591,10 @@ def run_persistent_operator_console(
                         ),
                     )
                 )
-                locality_identity = binding.locality_identity
+                locality_identity = continuation_act_occurrence.locality_identity
                 pair_premise = None
                 current_coordinates = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
-                )
-                continuation_act_occurrence = (
-                    record_locality_continuation_act_occurrence(
-                        ledger,
-                        subject_to_act_binding_event_identity=binding.identity,
-                        current_coordinates=current_coordinates,
-                    )
-                )
-                current_coordinates = _advance_over(
-                    ledger,
-                    current_coordinates,
-                    (continuation_act_occurrence.identity,),
-                    locality_identity=locality_identity,
                 )
                 continuation = record_locality_continuation_result(
                     ledger,
