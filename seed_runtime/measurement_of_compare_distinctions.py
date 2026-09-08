@@ -197,7 +197,6 @@ def _act_material(
                 comparison_result_occurrence_identity
             ),
         },
-        "book_clause_identity": BOOK_CLAUSE,
         "act": MEASUREMENT_ACT,
         "through_event_occurrence_identity": through_event_occurrence_identity,
     }
