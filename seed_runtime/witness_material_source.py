@@ -22,13 +22,11 @@ class WitnessMaterialSourceError(MaterialSourceError):
 def _act_occurrence_material(
     *,
     source_boundary: str,
-    exact_act_identity: str,
 ) -> dict[str, object]:
     return {
         "subject_reference": {
             "source_boundary": source_boundary,
         },
-        "exact_act_identity": exact_act_identity,
     }
 
 
@@ -138,18 +136,15 @@ def record_witness_material_source(
         )
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
-    source_act_identity = ledger.mint_identity("witness_material_source_act")
     act_occurrence = ledger.append(
         WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
             source_boundary=source_boundary,
-            exact_act_identity=source_act_identity,
         ),
         locality_identity=locality_identity,
     )
     recorded_result_event_identity = ledger.allocate_event_identity()
     result: dict[str, object] = {
-        "exact_act_identity": source_act_identity,
         "source_boundary": source_boundary,
         "source_occurrence_references": list(
             source_occurrence_references
@@ -188,7 +183,6 @@ def _read_witness_material_source_result(
     material = event.material
     source_references = material.get("source_occurrence_references")
     read_occurrences = material.get("read_occurrences", [])
-    source_act_identity = material.get("exact_act_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_boundary = material.get("source_boundary")
     boundary_outcomes = {
@@ -210,8 +204,6 @@ def _read_witness_material_source_result(
         or type(event.locality_identity) is not str
         or not event.locality_identity
         or type(event.exact_material) is not bytes
-        or type(source_act_identity) is not str
-        or not source_act_identity
         or type(source_boundary) is not str
         or not source_boundary
         or any(type(value) is not bool for value in boundary_outcomes.values())
@@ -236,10 +228,8 @@ def _read_witness_material_source_result(
         )
     expected_act_occurrence = _act_occurrence_material(
         source_boundary=source_boundary,
-        exact_act_identity=source_act_identity,
     )
     result: dict[str, object] = {
-        "exact_act_identity": source_act_identity,
         "source_boundary": source_boundary,
         "source_occurrence_references": source_references,
     }

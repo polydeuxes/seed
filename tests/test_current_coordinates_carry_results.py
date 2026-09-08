@@ -28,7 +28,6 @@ from tests.operator_material_source_test_witness import (
 OPERATOR_SOURCE_BINDING_COORDINATES = {
     "act_occurrence_event_identity",
     "current_coordinate_reference",
-    "exact_act_identity",
     "subject_reference",
 }
 
@@ -157,7 +156,6 @@ def test_witness_result_carries_its_act_binding_coordinates():
     }
     assert set(carried) == {
         "act_occurrence_event_identity",
-        "exact_act_identity",
         "subject_reference",
     }
     assert carried["subject_reference"] == {

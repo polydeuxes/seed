@@ -497,9 +497,6 @@ def _subject_to_act_binding_of_exact_result(
         WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     }:
         expected_coordinates = {
-            "exact_act_identity": act_occurrence.material.get(
-                "exact_act_identity"
-            ),
             "subject_reference": deepcopy(
                 act_occurrence.material.get("subject_reference")
             ),

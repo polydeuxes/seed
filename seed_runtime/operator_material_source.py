@@ -93,14 +93,12 @@ def _current_coordinate_reference(
 
 def _act_occurrence_material(
     *,
-    exact_act_identity: str,
     source_boundary: str,
     current_coordinate_reference: dict[str, str | None],
 ) -> dict[str, Any]:
     subject_reference = {"source_boundary": source_boundary}
     return {
         "subject_reference": subject_reference,
-        "exact_act_identity": exact_act_identity,
         "current_coordinate_reference": deepcopy(
             current_coordinate_reference
         ),
@@ -123,7 +121,6 @@ def _result_material(
             "operator material source result crossed its exact source boundary"
         )
     return {
-        "exact_act_identity": material["exact_act_identity"],
         "current_coordinate_reference": deepcopy(
             material["current_coordinate_reference"]
         ),
@@ -137,7 +134,6 @@ def _recorded_result_material(
     act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     recorded = {
-        "exact_act_identity": result_material["exact_act_identity"],
         "current_coordinate_reference": result_material[
             "current_coordinate_reference"
         ],
@@ -207,11 +203,9 @@ def _record_operator_material_source_act_occurrence(
     source_boundary: str,
     current_reference: dict[str, str | None],
 ) -> Event:
-    exact_act_identity = ledger.mint_identity("operator_material_source_act")
     return ledger.append(
         OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
-            exact_act_identity=exact_act_identity,
             source_boundary=source_boundary,
             current_coordinate_reference=current_reference,
         ),
@@ -259,10 +253,6 @@ def get_operator_material_source_act_occurrence(
         occurrence_event_identity=act_occurrence.identity,
     )
     exact_material = _act_occurrence_material(
-        exact_act_identity=_require_identity(
-            material.get("exact_act_identity"),
-            "operator material source Act requires one exact Act identity",
-        ),
         source_boundary=subject_reference["source_boundary"],
         current_coordinate_reference=exact_current_reference,
     )

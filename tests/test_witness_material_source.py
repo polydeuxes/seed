@@ -140,11 +140,11 @@ def test_witness_material_source_act_fixes_its_exact_source_subject():
         occurred.material["act_occurrence_event_identity"]
     )
     assert act_occurrence is not None
+    assert "exact_act_identity" not in occurred.material
     assert act_occurrence.material["subject_reference"] == {
         "source_boundary": "source boundary",
     }
     assert tuple(sorted(act_occurrence.material)) == (
-        "exact_act_identity",
         "subject_reference",
     )
     assert [

@@ -85,13 +85,11 @@ def test_one_read_records_act_and_exact_raw_result():
     assert result.exact_material == b"\x00\xffraw\n"
     assert tuple(sorted(act_occurrence.material)) == (
         "current_coordinate_reference",
-        "exact_act_identity",
         "subject_reference",
     )
     assert tuple(sorted(result.material)) == (
         "act_occurrence_event_identity",
         "current_coordinate_reference",
-        "exact_act_identity",
         "source_boundary",
         "source_occurrence_references",
     )
@@ -108,11 +106,10 @@ def test_one_read_records_act_and_exact_raw_result():
     assert read_exact_material_result(ledger, result.identity) == result
     assert len(
         {
-            act_occurrence.material["exact_act_identity"],
             act_occurrence.identity,
             result.identity,
         }
-    ) == 3
+    ) == 2
 
     carried = advance_operator_current_coordinates(
         ledger,
@@ -447,7 +444,7 @@ def test_changed_act_coordinates_are_refused(coordinate):
         get_operator_material_source_act_occurrence(ledger, act.identity)
 
 
-def test_act_and_result_carry_no_family_local_lifecycle_identities():
+def test_act_and_result_carry_no_separate_act_or_result_identities():
     ledger = EventLedger()
     current_coordinates, _through_occurrence = _context(ledger)
     act = _act(ledger, current_coordinates)
@@ -458,6 +455,7 @@ def test_act_and_result_carry_no_family_local_lifecycle_identities():
     )
 
     for occurrence in (act, result):
+        assert "exact_act_identity" not in occurrence.material
         assert "act_occurrence_identity" not in occurrence.material
         assert "result_identity" not in occurrence.material
 
@@ -465,7 +463,6 @@ def test_act_and_result_carry_no_family_local_lifecycle_identities():
 @pytest.mark.parametrize(
     "coordinate",
     (
-        "exact_act_identity",
         "current_coordinate_reference",
         "source_boundary",
         "act_occurrence_event_identity",
