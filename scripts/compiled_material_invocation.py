@@ -1525,9 +1525,9 @@ def recurring_added_result_coordinates(
         raise ValueError("source invocation differs from the addition Act")
 
     addition_coordinates = (
-        addition.source_admission_result_reference.recorded_occurrence_identity,
+        addition.source_admission_result_reference.result_identity,
         addition.source_admitted_material_position,
-        addition.added_admission_result_reference.recorded_occurrence_identity,
+        addition.added_admission_result_reference.result_identity,
         addition.added_admitted_material_position,
         addition.position,
         len(addition.source_material),
@@ -1548,9 +1548,9 @@ def recurring_added_result_coordinates(
         ):
             continue
         prior_coordinates = (
-            prior.source_admission_result_reference.recorded_occurrence_identity,
+            prior.source_admission_result_reference.result_identity,
             prior.source_admitted_material_position,
-            prior.added_admission_result_reference.recorded_occurrence_identity,
+            prior.added_admission_result_reference.result_identity,
             prior.added_admitted_material_position,
             prior.position,
             len(prior.source_material),
