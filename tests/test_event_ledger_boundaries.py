@@ -105,6 +105,34 @@ def test_one_occurrence_resolves_its_existing_append_boundary(tmp_path, durable)
 
 
 @pytest.mark.parametrize("durable", (False, True))
+def test_one_append_boundary_contains_only_its_exact_occurrences(
+    tmp_path, durable
+):
+    ledger = (
+        SQLiteEventLedger(str(tmp_path / "boundary.db"))
+        if durable
+        else EventLedger()
+    )
+    try:
+        first = ledger.append("first", locality_identity="source")
+        boundary = ledger.append_boundary()
+        second = ledger.append("second", locality_identity="elsewhere")
+
+        assert ledger.append_boundary_contains_occurrence(
+            first.identity, through=boundary
+        )
+        assert not ledger.append_boundary_contains_occurrence(
+            second.identity, through=boundary
+        )
+        assert not ledger.append_boundary_contains_occurrence(
+            "missing", through=boundary
+        )
+    finally:
+        if durable:
+            ledger.close()
+
+
+@pytest.mark.parametrize("durable", (False, True))
 def test_locality_occurrence_interval_includes_every_occurrence_between_boundaries(
     tmp_path, durable
 ):

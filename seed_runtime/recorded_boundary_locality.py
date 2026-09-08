@@ -233,9 +233,9 @@ def get_recorded_boundary_locality_act_occurrence(
         )
     subject_identity = expected_reference["recorded_occurrence_identity"]
     through_act = ledger.append_boundary_through_occurrence(event.identity)
-    if subject_identity not in {
-        occurrence.identity for occurrence in ledger.list(through=through_act)
-    }:
+    if not ledger.append_boundary_contains_occurrence(
+        subject_identity, through=through_act
+    ):
         raise RecordedBoundaryLocalityError(
             "recorded boundary relation Act requires its prior subject"
         )

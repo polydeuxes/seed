@@ -28,6 +28,7 @@ from seed_runtime.recorded_boundary_locality import (
     RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
     RecordedBoundaryLocalityError,
     get_recorded_boundary_locality,
+    get_recorded_boundary_locality_act_occurrence,
     record_recorded_boundary_locality_act_occurrence,
     record_recorded_boundary_locality_result,
 )
@@ -54,6 +55,15 @@ class _IntegrityAdversaryLedger(EventLedger):
         if event_identity in self.corrupted:
             return CORRUPTED
         return super().integrity_of(event_identity)
+
+
+class _UnreadableUnrelatedSQLiteLedger(SQLiteEventLedger):
+    unreadable_identity = None
+
+    def _row_to_event(self, row):
+        if row is not None and row["identity"] == self.unreadable_identity:
+            raise ValueError("unrelated material must not be decoded")
+        return super()._row_to_event(row)
 
 
 def _coordinates_with_through_occurrence_reference(ledger, *, locality="source"):
@@ -172,6 +182,53 @@ def test_act_reader_refuses_changed_subject_coordinates():
         read_operator_current_coordinates(
             ledger, locality_identity=act.locality_identity
         )
+
+
+def test_act_order_reads_only_its_exact_occurrence_identities(tmp_path):
+    ledger = _UnreadableUnrelatedSQLiteLedger(str(tmp_path / "order.sqlite"))
+    unrelated = ledger.append(
+        "unrelated",
+        {"material": "unreadable"},
+        locality_identity="unrelated",
+    )
+    _reference_result, source_coordinates = (
+        _coordinates_with_through_occurrence_reference(ledger)
+    )
+    act = _act(ledger, source_coordinates)
+    ledger.unreadable_identity = unrelated.identity
+
+    assert get_recorded_boundary_locality_act_occurrence(
+        ledger, act.identity
+    ).identity == act.identity
+    ledger.close()
+
+
+def test_act_refuses_a_subject_outside_its_append_boundary():
+    ledger = EventLedger()
+    future_q_identity = "evt_000003"
+    act = ledger.append(
+        RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
+        {
+            "act": "Preservation",
+            "subject_reference": {
+                "recorded_occurrence_identity": future_q_identity,
+            },
+            "through_occurrence_boundary_reference": {
+                "recorded_occurrence_identity": future_q_identity,
+            },
+            "destination_locality_identity": "destination",
+        },
+        locality_identity="destination",
+    )
+    reference_result, _source_coordinates = (
+        _coordinates_with_through_occurrence_reference(ledger)
+    )
+    assert reference_result.identity == future_q_identity
+
+    with pytest.raises(
+        RecordedBoundaryLocalityError, match="requires its prior subject"
+    ):
+        get_recorded_boundary_locality_act_occurrence(ledger, act.identity)
 
 
 def test_relation_descendants_carry_one_exact_reference():

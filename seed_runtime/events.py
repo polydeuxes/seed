@@ -432,6 +432,18 @@ class EventLedger:
             )
         return EventLedgerBoundary(self._prefix_identities_by_position[position])
 
+    def append_boundary_contains_occurrence(
+        self,
+        event_identity: str,
+        *,
+        through: EventLedgerBoundary,
+    ) -> bool:
+        """Report whether one append prefix contains an exact occurrence."""
+
+        through_position = self._position_through(through)
+        position = self._by_identity_position.get(event_identity)
+        return position is not None and position <= through_position
+
     def _position_through(self, through: EventLedgerBoundary | None) -> int:
         if through is None:
             return len(self._events)
@@ -912,6 +924,25 @@ class SQLiteEventLedger(EventLedger):
                 "occurrence does not belong to this append sequence"
             )
         return EventLedgerBoundary(row["identity"])
+
+    def append_boundary_contains_occurrence(
+        self,
+        event_identity: str,
+        *,
+        through: EventLedgerBoundary,
+    ) -> bool:
+        """Report whether one durable append prefix contains an occurrence."""
+
+        through_rowid = self._rowid_through(through)
+        row = self._connection.execute(
+            "SELECT rowid FROM events WHERE identity = ?",
+            (event_identity,),
+        ).fetchone()
+        return (
+            row is not None
+            and through_rowid is not None
+            and int(row["rowid"]) <= through_rowid
+        )
 
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:
