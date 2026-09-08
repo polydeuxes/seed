@@ -15,8 +15,7 @@ exact coordinates of the result. That count is reported by the destination
 boundary.
 
 The emission Act occurrence and its accepted write are one occurrence and one
-result. A failure is a separate Act occurrence with its
-result, and its reported count is a coordinate of that failure.
+result.
 
 ### 07.Emission.D — Material supplied in the destination Locality
 

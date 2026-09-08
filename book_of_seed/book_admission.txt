@@ -44,7 +44,6 @@ emission
 every
 exact
 exhaustive
-failure
 finding
 findings
 first

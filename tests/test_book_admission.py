@@ -154,23 +154,20 @@ def test_rosetta_translates_warrant_to_exact_references():
     ) in translations
 
 
-def test_failure_is_book_material_and_performative_forms_are_rosetta_composites():
-    book_failure = {
-        word for word in book_admission() if word.startswith("fail")
-    }
+def test_failure_forms_are_rosetta_composites_of_exact_outcome_coordinates():
     rosetta_failure = {
         word
         for word in _admission_entries(ROSETTA_ADMISSION)
         if word.startswith("fail")
     }
-    assert book_failure == {"failure"}
     assert rosetta_failure == {"fail", "failed", "failure", "fails"}
     translations = (
         ROOT / "rosetta" / "standing_and_responsibility.md"
     ).read_text(encoding="utf-8")
     assert (
-        "These forms compress one exact Act occurrence plus a bounded failure "
-        "Assertion\nor result and exact source and occurrence references."
+        "These forms compress one exact Act occurrence plus an exact result and exact\n"
+        "source and occurrence references. The exact result coordinates required by a\n"
+        "use carry what the word alone does not."
     ) in translations
 
 

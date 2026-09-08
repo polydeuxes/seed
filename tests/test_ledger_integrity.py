@@ -1,4 +1,4 @@
-"""Exact material reference and bounded failure."""
+"""Exact material reference and bounded result."""
 
 from __future__ import annotations
 

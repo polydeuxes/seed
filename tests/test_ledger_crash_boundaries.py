@@ -1,4 +1,4 @@
-"""Exact occurrence boundary and failure results."""
+"""Exact occurrence boundary and recorded results."""
 
 from __future__ import annotations
 

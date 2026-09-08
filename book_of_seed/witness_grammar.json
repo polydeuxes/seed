@@ -214,8 +214,7 @@
       "one_occurrence": [
         "emission_Act_occurrence",
         "accepted_write"
-      ],
-      "separate_occurrence": "failure"
+      ]
     },
     "07.Emission.D": {
       "subject": "material_supplied_by_the_addressed_boundary",

@@ -179,11 +179,13 @@ and occurrence references, Locality, Unknown, result, and bounded
 current coordinates.
 The word alone establishes none of them.
 
-### Fail / fails / failed
+### Fail / fails / failed / failure
 
-These forms compress one exact Act occurrence plus a bounded failure Assertion
-or result and exact source and occurrence references. They do not mean
-absence of an Act occurrence, Stop, or completion by identity.
+These forms compress one exact Act occurrence plus an exact result and exact
+source and occurrence references. The exact result coordinates required by a
+use carry what the word alone does not. They do not name one Book result by
+identity and do not mean absence of an Act occurrence, Stop, or completion by
+identity.
 
 ### Shared
 
