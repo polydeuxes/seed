@@ -89,6 +89,7 @@ def test_operator_occurrence_has_a_fresh_destination_locality_relation():
     assert "operator_locality_identity" not in act.material
     assert "exact_act" not in result.material
     assert "operator_material_occurrence_reference" not in result.material
+    assert "operator_locality_identity" not in result.material
     assert all(
         occurrence.kind
         != "operator.destination_locality_subject_to_act_binding_recorded"
