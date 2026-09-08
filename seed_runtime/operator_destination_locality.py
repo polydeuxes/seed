@@ -69,7 +69,6 @@ def _binding_material(
     command: Event,
     through_event_occurrence_identity: str,
     operator_destination_locality_act_identity: str,
-    act_occurrence_identity: str,
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
@@ -78,7 +77,6 @@ def _binding_material(
         "operator_destination_locality_act_identity": (
             operator_destination_locality_act_identity
         ),
-        "act_occurrence_identity": act_occurrence_identity,
         "operator_material_occurrence_reference": command.identity,
         "operator_material_result_occurrence_identity": command.identity,
         "operator_locality_identity": command.locality_identity,
@@ -133,9 +131,6 @@ def record_operator_destination_locality_subject_to_act_binding(
         "operator_destination_locality_act_identity": ledger.mint_identity(
             "operator_destination_locality_act"
         ),
-        "act_occurrence_identity": ledger.mint_identity(
-            "operator_destination_locality_act_occurrence"
-        ),
         "destination_locality_identity": ledger.mint_identity(
             "operator_destination_locality"
         ),
@@ -175,7 +170,6 @@ def get_operator_destination_locality_subject_to_act_binding(
     )
     identity_coordinates = (
         "operator_destination_locality_act_identity",
-        "act_occurrence_identity",
         "destination_locality_identity",
     )
     identities = tuple(material.get(key) for key in identity_coordinates)
@@ -192,8 +186,7 @@ def get_operator_destination_locality_subject_to_act_binding(
             "operator_through_event_occurrence_identity"
         ),
         operator_destination_locality_act_identity=identities[0],
-        act_occurrence_identity=identities[1],
-        destination_locality_identity=identities[2],
+        destination_locality_identity=identities[1],
     )
     boundary = ledger.get(
         material.get("operator_through_event_occurrence_identity")
@@ -229,7 +222,6 @@ def _act_material(binding: Event) -> dict[str, Any]:
         "operator_destination_locality_act_identity": material[
             "operator_destination_locality_act_identity"
         ],
-        "act_occurrence_identity": material["act_occurrence_identity"],
         "act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "subject_to_act_binding_event_identity": binding.identity,
         "operator_material_occurrence_reference": material[
@@ -316,7 +308,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "operator_destination_locality_act_identity": material[
             "operator_destination_locality_act_identity"
         ],
-        "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "subject_to_act_binding_event_identity": material[
             "subject_to_act_binding_event_identity"
@@ -350,7 +341,6 @@ def _recorded_result_material(
         "operator_destination_locality_act_identity": result[
             "operator_destination_locality_act_identity"
         ],
-        "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],
         "subject_to_act_binding_event_identity": result[
             "subject_to_act_binding_event_identity"
