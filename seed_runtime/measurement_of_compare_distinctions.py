@@ -379,7 +379,6 @@ def _recorded_result_material(
             ],
         },
         "findings": deepcopy(result["findings"]),
-        "source_locality_identity": result["source_locality_identity"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
     }
 

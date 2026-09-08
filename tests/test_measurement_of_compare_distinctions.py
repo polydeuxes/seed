@@ -104,6 +104,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     assert result.material["act_occurrence_event_identity"] == act.identity
     assert act.material["act"] == compare_distinctions.MEASUREMENT_ACT
     assert "source_result_occurrence_identity" not in result.material
+    assert "source_locality_identity" not in result.material
     assert result.material["completeness_boundary"] == {
         "distinction_count": len(expected),
     }
