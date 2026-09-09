@@ -319,7 +319,7 @@ def test_act_occurrence_is_observable_before_result():
     ) == events
 
 
-def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecycle_identities():
+def test_exact_byte_binding_enters_current_coordinates_without_a_future_result_identity():
     ledger = _ledger(b"a\n")
     assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
@@ -350,11 +350,12 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
         assignment.identity,
         assignment.material["exact_act_identity"],
         assignment.material["act_occurrence_identity"],
-        assignment.material["measurement_result_identity"],
         act.identity,
         result.identity,
     }
-    assert len(identities) == 6
+    assert len(identities) == 5
+    assert "measurement_result_identity" not in assignment.material
+    assert "result_identity" not in result.material
     assert "yield_relation_identity" not in result.material
     assert result.material["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
@@ -1896,7 +1897,6 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
         "subject_reference",
         "exact_act_identity",
         "act_occurrence_identity",
-        "measurement_result_identity",
         "book_clause_identity",
         "source_localities",
         "completeness_boundary_identity",
@@ -2562,13 +2562,13 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
-def test_byte_result_reader_refuses_changed_result_identity():
+def test_byte_result_reader_refuses_reintroduced_result_identity():
     ledger = _ledger(b"ta\n")
     event = _byte_source(ledger)
     assert result_positions_of_recorded_byte_measurement(ledger, event.identity)
     event.material["result_identity"] = "crossed-byte-result"
 
-    with pytest.raises(ByteMeasurementError, match="Measurement boundary"):
+    with pytest.raises(ByteMeasurementError, match="result and recording surfaces"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
@@ -2656,7 +2656,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
         test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors,
-        test_byte_result_reader_refuses_changed_result_identity,
+        test_byte_result_reader_refuses_reintroduced_result_identity,
         test_pair_result_reader_refuses_changed_result_identity,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (

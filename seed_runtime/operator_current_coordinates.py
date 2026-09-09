@@ -596,6 +596,7 @@ def _subject_to_act_binding_of_exact_result(
             RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
             LOCALITY_CONTINUATION_RECORDED_KIND,
             OCCURRENCE_POSITION_RECORDED_KIND,
+            BYTE_MEASUREMENT_RECORDED_KIND,
         }
         and not declared_results
         and result_identity is None

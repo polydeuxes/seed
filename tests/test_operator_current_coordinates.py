@@ -280,7 +280,7 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
     }
     assert (
         set(standing["measurement_occurrences"][byte.identity])
-        == exact_measurement_coordinates
+        == exact_measurement_coordinates - {"result_identity"}
     )
     assert (
         set(standing["measurement_occurrences"][pair.identity])
