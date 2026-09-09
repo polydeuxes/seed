@@ -2346,19 +2346,10 @@ def _record_byte_measurement_result_from_exact_inputs(
     act_occurrence: Event,
     measured: MeasuredByteInputs,
 ) -> Event:
-    result_material = {
-        "dimensions": {
-                "identity": "byte-count-measurement-occurrence",
-                "content": (
-                    "exact source material, byte count, and same content"
-                ),
-        },
-        "result_positions": _result_positions(measured),
-    }
     return ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
         {
-            **result_material,
+            "result_positions": _result_positions(measured),
             "act_occurrence_event_identity": act_occurrence.identity,
         },
         locality_identity=act_occurrence.locality_identity,
@@ -2469,18 +2460,12 @@ def _result_positions_of_recorded_byte_measurement(
         "exact_act",
         "source_localities",
         "completeness_boundary",
+        "dimensions",
     }) | {
         "act_occurrence_event_identity",
     }:
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact byte result and recording surfaces"
-        )
-    if material.get("dimensions") != {
-                "identity": "byte-count-measurement-occurrence",
-                "content": "exact source material, byte count, and same content",
-    }:
-        raise ByteMeasurementError(
-            f"{event_identity} does not preserve its exact Measurement result"
         )
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     act_occurrence = ledger.get(act_occurrence_event_identity) if isinstance(act_occurrence_event_identity, str) else None

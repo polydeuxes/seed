@@ -1051,6 +1051,22 @@ def test_byte_measurement_reader_refuses_reintroduced_occurrence_preservation():
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
+def test_byte_measurement_reader_refuses_reintroduced_result_dimensions():
+    ledger = _ledger(b"a\n")
+    event = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    event.material["dimensions"] = {
+        "identity": "byte-count-measurement-occurrence",
+        "content": "exact source material, byte count, and same content",
+    }
+
+    with pytest.raises(ByteMeasurementError, match="recording surfaces"):
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
+
+
 def test_byte_measurement_reader_refuses_two_results_for_one_act():
     ledger = _ledger(b"a\n")
     event = _record_byte_measurement(
