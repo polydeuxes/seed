@@ -91,7 +91,7 @@ The family satisfies four independent controls:
 active through the operator console                 yes
 subject exact before the Act                        yes
 separate binding occurrence                         absent
-positive result-to-later-Act composition consumer  yes
+exact read-only result composition consumer       yes
 ```
 
 Its results later participate in the exact read-only joint of two Distinction

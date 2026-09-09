@@ -156,6 +156,133 @@ def test_changed_measurement_act_is_refused():
         )
 
 
+@pytest.mark.parametrize("sqlite", (False, True))
+@pytest.mark.parametrize(
+    "boundary_case",
+    (
+        "absent",
+        "source-order-reversed",
+        "different-locality",
+        "act-identity",
+        "act-precedes-boundary",
+        "corrupted",
+    ),
+)
+def test_measurement_act_requires_exact_source_boundary_order(
+    tmp_path,
+    monkeypatch,
+    sqlite,
+    boundary_case,
+):
+    ledger = (
+        SQLiteEventLedger(tmp_path / f"{boundary_case}.sqlite")
+        if sqlite
+        else EventLedger()
+    )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    act = next(
+        event
+        for event in ledger.list_locality(LOCALITY)
+        if event.kind
+        == compare_distinctions.COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND
+        and event.material["subject_reference"][
+            "comparison_result_occurrence_identity"
+        ]
+        != event.material["through_event_occurrence_identity"]
+    )
+    source = ledger.get(
+        act.material["subject_reference"][
+            "comparison_result_occurrence_identity"
+        ]
+    )
+    result = next(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+        )
+        if event.material["act_occurrence_event_identity"] == act.identity
+    )
+    valid_boundary_identity = act.material["through_event_occurrence_identity"]
+
+    if boundary_case == "absent":
+        invalid_boundary_identity = "missing-boundary"
+    elif boundary_case == "source-order-reversed":
+        invalid_boundary_identity = next(
+            event.identity
+            for event in ledger.list_locality(LOCALITY)
+            if event.identity != source.identity
+        )
+    elif boundary_case == "different-locality":
+        invalid_boundary_identity = ledger.append(
+            "test.unrelated",
+            locality_identity="other-locality",
+        ).identity
+    elif boundary_case == "act-identity":
+        invalid_boundary_identity = act.identity
+    elif boundary_case == "act-precedes-boundary":
+        invalid_boundary_identity = ledger.append(
+            "test.unrelated",
+            locality_identity=LOCALITY,
+        ).identity
+    else:
+        invalid_boundary_identity = valid_boundary_identity
+        integrity_of = ledger.integrity_of
+        monkeypatch.setattr(
+            ledger,
+            "integrity_of",
+            lambda identity: (
+                compare_distinctions.CORRUPTED
+                if identity == invalid_boundary_identity
+                else integrity_of(identity)
+            ),
+        )
+
+    get_event = ledger.get
+
+    def get_with_changed_boundary(identity):
+        event = get_event(identity)
+        if identity != act.identity or event is None:
+            return event
+        changed = deepcopy(event)
+        changed.material["through_event_occurrence_identity"] = (
+            invalid_boundary_identity
+        )
+        return changed
+
+    monkeypatch.setattr(ledger, "get", get_with_changed_boundary)
+
+    with pytest.raises(ValueError, match="Act is not exact"):
+        compare_distinctions._read_act(
+            ledger,
+            act.identity,
+            prior_coordinates=current_coordinates,
+        )
+    with pytest.raises(ValueError, match="Act is not exact"):
+        record_compare_distinction_measurement_result(
+            ledger,
+            act_occurrence_event_identity=act.identity,
+            current_coordinates=current_coordinates,
+        )
+    with pytest.raises(ValueError, match="Act is not exact"):
+        get_recorded_compare_distinction_measurement(
+            ledger,
+            result.identity,
+            prior_coordinates=current_coordinates,
+        )
+
+    if isinstance(ledger, SQLiteEventLedger):
+        ledger.close()
+
+
 def test_changed_measured_distinction_is_refused():
     ledger = EventLedger()
     _source, result, _current_coordinates = _record_measurement(ledger)

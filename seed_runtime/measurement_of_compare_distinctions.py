@@ -25,7 +25,6 @@ COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND = (
     "operator.measurement.compare_distinctions.recorded"
 )
 
-BOOK_CLAUSE = "01.Source.D"
 MEASUREMENT_ACT = "Measurement"
 
 EVENT_KIND_BOOK_CLAUSES = {
@@ -296,39 +295,33 @@ def _read_act(
             locality_identity=act.locality_identity,
             through_event_occurrence_identity=through_identity,
         )
+    boundary = ledger.get(through_identity)
+    if (
+        boundary is None
+        or boundary.locality_identity != act.locality_identity
+        or ledger.integrity_of(boundary.identity) == CORRUPTED
+        or through_identity == act.identity
+    ):
+        raise ValueError("Compare Distinction Measurement Act is not exact")
+    ordered_identities = (
+        (source_identity, act.identity)
+        if source_identity == through_identity
+        else (source_identity, through_identity, act.identity)
+    )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            ordered_identities,
+            locality_identity=act.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "Compare Distinction Measurement Act is not exact"
+        ) from error
     distinctions = _exact_distinctions(
-            ledger,
-            comparison_result_occurrence_identity=source_identity,
+        ledger,
+        comparison_result_occurrence_identity=source_identity,
         current_coordinates=prior_coordinates,
     )
-    prior_boundary_identity = prior_coordinates.get(
-        "through_event_occurrence_identity"
-    )
-    ordered_identities = ()
-    ordered = ()
-    for candidate in (
-        tuple(
-            dict.fromkeys(
-                (source_identity, through_identity, prior_boundary_identity, act.identity)
-            )
-        ),
-        tuple(
-            dict.fromkeys(
-                (source_identity, through_identity, act.identity, prior_boundary_identity)
-            )
-        ),
-    ):
-        try:
-            resolved = ledger.occurrences_in_append_order(
-                candidate,
-                locality_identity=act.locality_identity,
-            )
-        except (TypeError, ValueError):
-            continue
-        if tuple(event.identity for event in resolved) == candidate:
-            ordered_identities = candidate
-            ordered = resolved
-            break
     if (
         prior_coordinates.get("locality_identity") != act.locality_identity
         or tuple(event.identity for event in ordered) != ordered_identities
