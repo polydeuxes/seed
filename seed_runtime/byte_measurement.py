@@ -2354,9 +2354,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source material, byte count, and same content"
                 ),
         },
-        "completeness_boundary": {
-            "identity": measured.completeness_boundary.identity
-        },
         "result_positions": _result_positions(measured),
     }
     return ledger.append(
@@ -2473,6 +2470,7 @@ def _result_positions_of_recorded_byte_measurement(
         "subject_to_act_binding_reference",
         "exact_act",
         "source_localities",
+        "completeness_boundary",
     }) | {
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -2534,21 +2532,6 @@ def _result_positions_of_recorded_byte_measurement(
     ):
         raise ByteMeasurementError(
             f"{event_identity} is not the single exact byte Measurement result"
-        )
-    boundary_value = material.get("completeness_boundary")
-    if (
-        not isinstance(boundary_value, dict)
-        or set(boundary_value) != {"identity"}
-        or not isinstance(boundary_value["identity"], str)
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} does not carry the exact byte Measurement boundary"
-        )
-    if (
-        measured.completeness_boundary.identity != boundary_value["identity"]
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} does not establish its Seed-native Measurement boundary"
         )
     recorded_result_positions = material.get("result_positions")
     if type(recorded_result_positions) is not list:

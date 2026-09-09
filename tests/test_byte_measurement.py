@@ -886,8 +886,9 @@ def test_recurrence_exists_only_above_one():
 
 
 def test_source_result_position_subject_is_the_exact_material_results():
+    ledger = _ledger(b"the cat\n")
     event = _record_byte_measurement(
-        _ledger(b"the cat\n"),
+        ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
@@ -902,9 +903,10 @@ def test_source_result_position_subject_is_the_exact_material_results():
             "source_material"
         ],
     }
-    assert source["dimensions"]["content"]["completeness_boundary"] == event.material[
-        "completeness_boundary"
-    ]
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    assert source["dimensions"]["content"]["completeness_boundary"] == {
+        "identity": act.material["completeness_boundary_identity"]
+    }
 
 
 def test_recorded_results_replay_the_complete_bounded_source_read():
@@ -1800,9 +1802,37 @@ def test_byte_measurement_act_addresses_its_exact_source_occurrences():
             "source_material"
         ]
     }
-    assert act.material["completeness_boundary_identity"] == source.material[
-        "completeness_boundary"
-    ]["identity"]
+    assert act.material["completeness_boundary_identity"] == source_set[
+        "dimensions"
+    ]["content"]["completeness_boundary"]["identity"]
+
+
+def test_byte_measurement_reader_refuses_reintroduced_result_boundary_copy():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    act = ledger.get(source.material["act_occurrence_event_identity"])
+    source.material["completeness_boundary"] = {
+        "identity": act.material["completeness_boundary_identity"]
+    }
+
+    with pytest.raises(ByteMeasurementError, match="recording surfaces"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
+
+
+def test_byte_measurement_reader_refuses_changed_finding_boundary():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    source_set = next(
+        result_position
+        for result_position in source.material["result_positions"]
+        if result_position["result"] == "exact_source_material_set"
+    )
+    source_set["dimensions"]["content"]["completeness_boundary"][
+        "identity"
+    ] = "substituted-boundary"
+
+    with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
 
 
 def test_byte_measurement_reader_refuses_reintroduced_book_clause_copy():
