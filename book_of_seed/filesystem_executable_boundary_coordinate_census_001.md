@@ -174,6 +174,43 @@ Likewise, a broad `!ls` invocation does not claim that every filesystem
 coordinate under an exact selected boundary was addressed. Discovery and use
 remain separate experiments.
 
+## Emission is a neighboring boundary, not the missing operation
+
+Active Book law for Emission already addresses:
+
+```text
+exact source material result
++ exact destination boundary
++ Locality
++ Emission
+-> accepted boundary write
++ destination-reported count
+```
+
+That is relevant to placing exact bytes at a destination boundary. It does not
+say that an executable file interprets those bytes or that a later filesystem
+coordinate is the expansion of an earlier compressed coordinate.
+
+There is also no active Emission runtime road in `seed_runtime`. The current
+executable provider does not record an Emission Act or an accepted-write result
+before starting its subprocess.
+
+Therefore this census must not stretch the admitted word:
+
+```text
+Emission
+!=
+execute a filesystem file
+!=
+decompress material
+!=
+the complete B-to-C filesystem change
+```
+
+If a later road writes exact input to a process boundary, Emission may describe
+that write independently. Its existence does not supply the remaining
+filesystem coordinates or mechanics.
+
 ## Disposition
 
 The current runtime cannot perform the proposed honest gzip experiment.
