@@ -229,6 +229,15 @@ def test_result_addresses_its_exact_act_through_the_act_occurrence():
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
+def test_result_addresses_its_source_locality_through_the_act_occurrence():
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    act = ledger.get(recorded.material["act_occurrence_event_identity"])
+    act.material["source_locality_identity"] = "b"
+
+    with pytest.raises(ValueError, match="no exact Act occurrence"):
+        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
+
+
 def test_binding_coordinates_are_carried_by_the_act_occurrence():
     ledger, occurrences, boundary, _finding, recorded = recorded_road()
     act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
@@ -540,7 +549,7 @@ def test_result_has_one_ordered_result_position_per_exact_position():
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "act_occurrence_event_identity",
     }
-    assert recorded.material["source_localities"] == ["a"]
+    assert "source_localities" not in recorded.material
     assert recorded.material["completeness_boundary"] == {
         "identity": boundary.identity
     }
@@ -597,7 +606,6 @@ def test_missing_reordered_duplicated_or_substituted_result_positions_are_refuse
 @pytest.mark.parametrize(
     "coordinate, value",
     (
-        ("source_localities", ["b"]),
         ("completeness_boundary", {"identity": "another-boundary"}),
     ),
 )

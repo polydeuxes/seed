@@ -16,7 +16,6 @@ OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
-        "source_localities",
         "completeness_boundary",
         "result_positions",
     }
@@ -117,7 +116,6 @@ def _occurrence_position_result_material(
     result_positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
         },
@@ -471,7 +469,6 @@ def _record_occurrence_position_measurement_result(
         result_positions=result_positions,
     )
     recorded_material = {
-        "source_localities": result_material["source_localities"],
         "completeness_boundary": result_material["completeness_boundary"],
         "result_positions": result_material["result_positions"],
         "act_occurrence_event_identity": act_occurrence.identity,
@@ -565,14 +562,9 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         )
-    source_localities = material.get("source_localities")
     boundary = material.get("completeness_boundary")
     if (
-        type(source_localities) is not list
-        or len(source_localities) != 1
-        or type(source_localities[0]) is not str
-        or not source_localities[0]
-        or type(boundary) is not dict
+        type(boundary) is not dict
         or set(boundary) != {"identity"}
         or type(boundary["identity"]) is not str
         or not boundary["identity"]
@@ -582,9 +574,19 @@ def get_recorded_occurrence_position_measurement(
             "the occurrence position Measurement carries malformed coordinates"
         )
     try:
+        act_occurrence, bound_finding = (
+                _read_occurrence_position_measurement_act_occurrence(
+                    ledger, material.get("act_occurrence_event_identity")
+                )
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "the occurrence position Measurement carries no exact Act occurrence"
+        ) from error
+    try:
         finding = _measure_occurrence_position_through(
             ledger,
-            source_locality_identity=source_localities[0],
+            source_locality_identity=bound_finding.source_locality_identity,
             boundary=EventLedgerBoundary(boundary["identity"]),
         )
     except (TypeError, ValueError) as error:
@@ -596,17 +598,6 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries malformed result positions"
         )
-
-    try:
-        act_occurrence, bound_finding = (
-                _read_occurrence_position_measurement_act_occurrence(
-                    ledger, material.get("act_occurrence_event_identity")
-                )
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError(
-            "the occurrence position Measurement carries no exact Act occurrence"
-        ) from error
     if (
         act_occurrence.locality_identity != event.locality_identity
         or bound_finding != finding
