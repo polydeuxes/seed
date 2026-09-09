@@ -2354,7 +2354,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source material, byte count, and same content"
                 ),
         },
-        "exact_act": "Measurement",
         "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
@@ -2473,6 +2472,7 @@ def _result_positions_of_recorded_byte_measurement(
         "act_occurrence_identity",
         "addressed_act_identity",
         "subject_to_act_binding_reference",
+        "exact_act",
     }) | {
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -2482,7 +2482,6 @@ def _result_positions_of_recorded_byte_measurement(
         )
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "Measurement"
         or material.get("dimensions")
         != {
                 "identity": "byte-count-measurement-occurrence",

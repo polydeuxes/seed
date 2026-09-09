@@ -1836,6 +1836,15 @@ def test_byte_measurement_reader_refuses_changed_act():
         result_positions_of_recorded_byte_measurement(ledger, source.identity)
 
 
+def test_byte_measurement_reader_refuses_reintroduced_result_act_copy():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    source.material["exact_act"] = "Measurement"
+
+    with pytest.raises(ByteMeasurementError, match="recording surfaces"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
+
+
 def test_locality_movement_binding_addresses_the_exact_source():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
