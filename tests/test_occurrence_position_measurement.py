@@ -203,6 +203,7 @@ def test_recorded_position_measurement_has_exact_act_and_result():
     assert act_occurrence.identity != recorded.identity
     assert "act_occurrence_identity" not in act_occurrence.material
     assert "act_occurrence_identity" not in recorded.material
+    assert "exact_act" not in recorded.material
     assert "yield_relation_identity" not in recorded.material
     assert not tuple(
         event
@@ -217,6 +218,15 @@ def test_recorded_position_measurement_has_exact_act_and_result():
         ledger,
         recorded.identity,
     ) == finding
+
+
+def test_result_addresses_its_exact_act_through_the_act_occurrence():
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    act = ledger.get(recorded.material["act_occurrence_event_identity"])
+    act.material["act"] = "Compare"
+
+    with pytest.raises(ValueError, match="no exact Act occurrence"):
+        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
 def test_binding_coordinates_are_carried_by_the_act_occurrence():

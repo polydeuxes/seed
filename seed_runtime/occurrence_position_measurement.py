@@ -16,7 +16,6 @@ OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
-        "exact_act",
         "source_localities",
         "completeness_boundary",
         "result_positions",
@@ -118,7 +117,6 @@ def _occurrence_position_result_material(
     result_positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "exact_act": OCCURRENCE_POSITION_ACT,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
@@ -473,7 +471,6 @@ def _record_occurrence_position_measurement_result(
         result_positions=result_positions,
     )
     recorded_material = {
-        "exact_act": result_material["exact_act"],
         "source_localities": result_material["source_localities"],
         "completeness_boundary": result_material["completeness_boundary"],
         "result_positions": result_material["result_positions"],
@@ -571,8 +568,7 @@ def get_recorded_occurrence_position_measurement(
     source_localities = material.get("source_localities")
     boundary = material.get("completeness_boundary")
     if (
-        material.get("exact_act") != OCCURRENCE_POSITION_ACT
-        or type(source_localities) is not list
+        type(source_localities) is not list
         or len(source_localities) != 1
         or type(source_localities[0]) is not str
         or not source_localities[0]
