@@ -1,8 +1,8 @@
 """Record all Measurement subjects declared through B.
 
-All subjects are read once from one exact current-coordinate projection. Each binding
-preserves that same through-occurrence boundary; durable writes remain serial
-without making an earlier Measurement lifecycle an input to a later binding.
+All subjects are read once from one exact current-coordinate projection. Each Act
+addresses that same through-occurrence boundary; durable writes remain serial
+without making an earlier Measurement lifecycle an input to a later Act.
 """
 
 from __future__ import annotations
@@ -12,10 +12,9 @@ from dataclasses import dataclass
 from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     BYTE_MEASUREMENT_RECORDED_KIND,
-    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence,
-    _record_byte_measurement_act_occurrence_from_current_coordinates,
+    _record_byte_measurement_act_occurrence_from_through_event_occurrence,
     _record_byte_measurement_result_from_current_coordinates,
 )
 from seed_runtime.event import Event
@@ -40,7 +39,6 @@ from seed_runtime.measurement_of_compare_distinctions import (
     record_compare_distinction_measurement_result,
 )
 from seed_runtime.operator_current_coordinates import (
-    _carry_byte_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
     advance_operator_current_coordinates,
@@ -238,24 +236,25 @@ def _record_direct_measurement(
     )
 
 
-def _byte_binding_source_sets(
+def _byte_act_source_sets(
     ledger: EventLedger, locality_identity: str
 ) -> set[tuple[str, ...]]:
     source_sets: set[tuple[str, ...]] = set()
-    for binding in ledger.iter_locality_kind(
-        locality_identity, BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    for act in ledger.iter_locality_kind(
+        locality_identity, BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
     ):
-        subject = binding.material.get("subject_reference")
+        subject = act.material.get("subject_reference")
         references = (
             subject.get("source_occurrence_references")
             if type(subject) is dict
             else None
         )
         if (
-            ledger.integrity_of(binding.identity) == CORRUPTED
+            ledger.integrity_of(act.identity) == CORRUPTED
+            or act.material.get("act") != "exact-byte Measurement"
             or type(references) is not list
         ):
-            raise ValueError("recorded byte Measurement binding is malformed")
+            raise ValueError("recorded byte Measurement Act is malformed")
         identities = []
         for reference in references:
             if (
@@ -278,7 +277,7 @@ def _discover_byte_measurements(
     current_sources = _material_result_identities(current_coordinates)
     if not current_sources:
         return ()
-    if current_sources in _byte_binding_source_sets(ledger, locality_identity):
+    if current_sources in _byte_act_source_sets(ledger, locality_identity):
         return ()
     return (ExactByteOccurrenceMeasurementSubject(current_sources),)
 
@@ -302,22 +301,8 @@ def _complete_byte_measurement(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     locality_identity: str,
-    binding: Event,
-    through_occurrence_coordinates: dict[str, Any],
+    act: Event,
 ) -> tuple[dict[str, Any], Event]:
-    prior_boundary = current_coordinates["through_event_occurrence_identity"]
-    current_coordinates = _carry_byte_measurement_binding_into_current_coordinates(
-        ledger,
-        current_coordinates,
-        binding,
-        prior_through_event_occurrence_identity=prior_boundary,
-        through_occurrence_coordinates=through_occurrence_coordinates,
-    )
-    act = _record_byte_measurement_act_occurrence_from_current_coordinates(
-        ledger,
-        subject_to_act_binding=binding,
-        current_coordinates=current_coordinates,
-    )
     current_coordinates = _advance(
         ledger,
         current_coordinates,
@@ -327,7 +312,6 @@ def _complete_byte_measurement(
     result = _record_byte_measurement_result_from_current_coordinates(
         ledger,
         act_occurrence=act,
-        subject_to_act_binding=binding,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance(
@@ -352,7 +336,7 @@ def _record_byte_measurement(
     through_event_occurrence_identity = through_occurrence_coordinates.get(
         "through_event_occurrence_identity"
     )
-    binding = _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
+    act = _record_byte_measurement_act_occurrence_from_through_event_occurrence(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
@@ -362,8 +346,7 @@ def _record_byte_measurement(
         ledger,
         current_coordinates,
         locality_identity,
-        binding,
-        through_occurrence_coordinates,
+        act,
     )
 
 

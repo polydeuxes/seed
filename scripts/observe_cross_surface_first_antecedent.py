@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from seed_runtime.byte_measurement import (
     result_positions_of_recorded_byte_measurement,
     record_byte_measurement_act_occurrence,
-    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
@@ -58,19 +57,11 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     coordinates_before = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    binding = record_byte_measurement_subject_to_act_binding(
+    act = record_byte_measurement_act_occurrence(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
         current_coordinates=coordinates_before,
-    )
-    coordinates_with_binding = read_operator_current_coordinates(
-        ledger, locality_identity=locality
-    )
-    act = record_byte_measurement_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=coordinates_with_binding,
     )
     result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
@@ -106,7 +97,7 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         _digest(bytes((content,))): count for content, count in count_findings.items()
     }
     order = ledger.occurrences_in_append_order(
-        (binding.identity, act.identity, result.identity),
+        (act.identity, result.identity),
         locality_identity=locality,
     )
     return {
@@ -130,8 +121,8 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         "projection_observer_ledger_occurrence_count": (
             projection_observer_ledger_occurrence_count
         ),
-        "binding_precedes_Act_and_result": tuple(event.identity for event in order)
-        == (binding.identity, act.identity, result.identity),
+        "Act_precedes_result": tuple(event.identity for event in order)
+        == (act.identity, result.identity),
         "result_is_Measurement_in_current_coordinates": result.identity
         in coordinates_after["measurement_occurrences"],
         "result_has_exact_binding_in_current_coordinates": result.identity

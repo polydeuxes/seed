@@ -409,34 +409,6 @@ def test_measurement_subject_and_through_occurrence_boundary_can_be_separate():
         ) == (subject_identity, boundary_identity, act.identity)
 
 
-def test_material_slice_preserves_current_coordinates_through_pair_measurement(
-    monkeypatch,
-):
-    ledger = EventLedger()
-    original = byte_measurement._read_byte_measurement_subject_to_act_binding
-    reads = 0
-
-    def require_current_coordinates(*args, **kwargs):
-        nonlocal reads
-        reads += 1
-        assert kwargs.get("prior_coordinates") is not None
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(
-        byte_measurement,
-        "_read_byte_measurement_subject_to_act_binding",
-        require_current_coordinates,
-    )
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b"a\nab\nabc\n"),
-    )
-
-    assert reads > 0
-
-
 def test_material_slice_preserves_current_coordinates_through_distinction_result(
     monkeypatch,
 ):

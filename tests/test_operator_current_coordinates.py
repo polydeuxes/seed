@@ -15,7 +15,6 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     result_positions_of_recorded_byte_position_pair_measurement,
-    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -47,17 +46,10 @@ class DictSubclass(dict):
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    assignment = record_byte_measurement_subject_to_act_binding(
+    act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=recording_locality_identity
-        ),
-    )
-    act_occurrence = record_byte_measurement_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
@@ -423,9 +415,17 @@ def test_current_coordinates_carry_only_exact_yielded_result_identities():
             "act_occurrence_event_identity": source_act.identity,
             **source_act.material,
         },
-        measurement.identity: measurement_act.material[
-            "subject_to_act_binding_reference"
-        ],
+        measurement.identity: {
+            "act_occurrence_event_identity": measurement_act.identity,
+            "subject_reference": measurement_act.material["subject_reference"],
+            "source_localities": measurement_act.material["source_localities"],
+            "completeness_boundary_identity": measurement_act.material[
+                "completeness_boundary_identity"
+            ],
+            "through_event_occurrence_identity": measurement_act.material[
+                "through_event_occurrence_identity"
+            ],
+        },
     }
     assert all(
         type(identity) is str for identity in standing["exact_result_occurrences"]

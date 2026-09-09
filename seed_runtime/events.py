@@ -539,6 +539,20 @@ class EventLedger:
         events = self._by_locality.get(locality_identity, ())
         return events[-1] if events else None
 
+    def latest_locality_occurrence_identity(
+        self,
+        locality_identity: str,
+        *,
+        through: EventLedgerBoundary,
+    ) -> str | None:
+        """Return the last Locality occurrence identity through one boundary."""
+
+        position = self._position_through(through)
+        for event in reversed(self._by_locality.get(locality_identity, ())):
+            if self._by_identity_position[event.identity] <= position:
+                return event.identity
+        return None
+
     def prior_locality_event(
         self, event_identity: str, locality_identity: str
     ) -> Event | None:
@@ -1083,6 +1097,23 @@ class SQLiteEventLedger(EventLedger):
             (locality_identity,),
         ).fetchone()
         return None if row is None else self._row_to_event(row)
+
+    def latest_locality_occurrence_identity(
+        self,
+        locality_identity: str,
+        *,
+        through: EventLedgerBoundary,
+    ) -> str | None:
+        """Return the last Locality occurrence identity through one boundary."""
+
+        rowid = self._rowid_through(through)
+        row = self._connection.execute(
+            "SELECT identity FROM events "
+            "WHERE locality_identity = ? AND rowid <= ? "
+            "ORDER BY rowid DESC LIMIT 1",
+            (locality_identity, rowid),
+        ).fetchone()
+        return None if row is None else row[0]
 
     def prior_locality_event(
         self, event_identity: str, locality_identity: str

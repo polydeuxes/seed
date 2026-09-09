@@ -12,7 +12,6 @@ from tests.operator_material_source_test_witness import (
 import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -49,17 +48,10 @@ from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 LOCALITY = "recorded-pair-comparison-locality"
 def _pair_measurement(ledger):
-    binding = record_byte_measurement_subject_to_act_binding(
+    act = record_byte_measurement_act_occurrence(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        ),
-    )
-    act = record_byte_measurement_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),

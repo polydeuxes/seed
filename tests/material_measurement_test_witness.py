@@ -4,7 +4,6 @@ from pathlib import Path
 import sys
 
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
 )
@@ -29,17 +28,10 @@ def measured_material(exact: bytes):
         exact=exact,
         source_boundary="one-byte material test boundary",
     )
-    assignment = record_byte_measurement_subject_to_act_binding(
+    act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         source_localities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity="one-byte-measurement"
-        ),
-    )
-    act_occurrence = record_byte_measurement_act_occurrence(
-        ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="one-byte-measurement"
         ),

@@ -13,7 +13,6 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_measurement_act_occurrence_from_current_coordinates,
     _record_byte_measurement_result_from_current_coordinates,
-    _record_byte_measurement_subject_to_act_binding_from_current_coordinates,
     result_positions_of_recorded_byte_position_pair_measurement,
     _record_byte_position_pair_count_layer_from_current_coordinates,
 )
@@ -249,7 +248,7 @@ def _advance_since(ledger, current_coordinates, prior_count):
 
 def _pair_measurement(ledger, current_coordinates):
     prior_count = len(ledger.list_locality(LOCALITY))
-    binding = _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
+    act = _record_byte_measurement_act_occurrence_from_current_coordinates(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
@@ -257,17 +256,9 @@ def _pair_measurement(ledger, current_coordinates):
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     prior_count = len(ledger.list_locality(LOCALITY))
-    act = _record_byte_measurement_act_occurrence_from_current_coordinates(
-        ledger,
-        subject_to_act_binding=binding,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
-    prior_count = len(ledger.list_locality(LOCALITY))
     byte_result = _record_byte_measurement_result_from_current_coordinates(
         ledger,
         act_occurrence=act,
-        subject_to_act_binding=binding,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
