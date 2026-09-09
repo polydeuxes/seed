@@ -1931,7 +1931,6 @@ def _byte_measurement_binding_reference(binding: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
     }
 
@@ -1942,7 +1941,6 @@ def _byte_measurement_binding_material(
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
     through_event_occurrence_identity: str | None,
-    exact_act_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -1950,7 +1948,6 @@ def _byte_measurement_binding_material(
                 dict(reference) for reference in source_material
             ],
         },
-        "exact_act_identity": exact_act_identity,
         "book_clause_identity": "01.Source.D",
         "source_localities": list(source_localities),
         "completeness_boundary_identity": completeness_boundary_identity,
@@ -2125,9 +2122,6 @@ def _append_byte_measurement_subject_to_act_binding(
     through_event_occurrence_identity: str | None,
     recording_locality_identity: str,
 ) -> Event:
-    identities = {
-        "exact_act_identity": ledger.mint_identity("byte_measurement_act"),
-    }
     return ledger.append(
         BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _byte_measurement_binding_material(
@@ -2135,7 +2129,6 @@ def _append_byte_measurement_subject_to_act_binding(
             source_material=source_material,
             completeness_boundary_identity=completeness_boundary_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            **identities,
         ),
         locality_identity=recording_locality_identity,
     )
@@ -2283,21 +2276,13 @@ def _read_byte_measurement_subject_to_act_binding(
             "byte Measurement subject-to-Act binding is absent or corrupted"
         )
     material = binding.material
-    identities = {
-        coordinate: material.get(coordinate)
-        for coordinate in (
-            "exact_act_identity",
-        )
-    }
     localities_value = material.get("source_localities")
     completeness_boundary_identity = material.get(
         "completeness_boundary_identity"
     )
     through_event_occurrence_identity = material.get("through_event_occurrence_identity")
     if (
-        any(type(identity) is not str or not identity for identity in identities.values())
-        or len(set(identities.values())) != len(identities)
-        or type(localities_value) is not list
+        type(localities_value) is not list
         or not localities_value
         or any(type(locality) is not str or not locality for locality in localities_value)
         or len(set(localities_value)) != len(localities_value)
@@ -2324,7 +2309,6 @@ def _read_byte_measurement_subject_to_act_binding(
         source_material=source_material,
         completeness_boundary_identity=completeness_boundary_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
-        **identities,
     )
     if material != expected:
         raise ByteMeasurementError(
@@ -2418,7 +2402,6 @@ def _byte_measurement_act_occurrence_material(
     binding: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["exact_act_identity"],
         "act": "exact-byte Measurement",
         "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(binding)
@@ -2536,7 +2519,6 @@ def _measurement_of_act_occurrence(
             != {
                 "recorded_occurrence_identity",
                 "book_clause_identity",
-                "exact_act_identity",
                 "subject_reference",
             }
         or type(event.locality_identity) is not str
@@ -2601,9 +2583,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                 ),
         },
         "exact_act": "exact-byte Measurement",
-        "addressed_act_identity": act_occurrence.material[
-            "addressed_act_identity"
-        ],
         "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(binding)
         ),
@@ -2732,6 +2711,7 @@ def _result_positions_of_recorded_byte_measurement(
     if set(material) != (BYTE_RESULT_COORDINATES - {
         "result_identity",
         "act_occurrence_identity",
+        "addressed_act_identity",
     }) | {
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -2742,8 +2722,6 @@ def _result_positions_of_recorded_byte_measurement(
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
         or material.get("exact_act") != "exact-byte Measurement"
-        or not isinstance(material.get("addressed_act_identity"), str)
-        or not material["addressed_act_identity"]
         or material.get("dimensions")
         != {
                 "identity": "byte-count-measurement-occurrence",
@@ -2756,7 +2734,6 @@ def _result_positions_of_recorded_byte_measurement(
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     act_occurrence = ledger.get(act_occurrence_event_identity) if isinstance(act_occurrence_event_identity, str) else None
     expected_act_occurrence = {
-        "addressed_act_identity": material["addressed_act_identity"],
         "act": "exact-byte Measurement",
         "subject_to_act_binding_reference": material[
             "subject_to_act_binding_reference"
@@ -2824,8 +2801,6 @@ def _result_positions_of_recorded_byte_measurement(
     if (
         material.get("subject_to_act_binding_reference")
         != _byte_measurement_binding_reference(binding)
-        or material.get("addressed_act_identity")
-        != binding.material["exact_act_identity"]
         or measured.completeness_boundary.identity != boundary_value["identity"]
         or list(measured.source_localities) != localities_value
     ):

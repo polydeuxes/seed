@@ -540,7 +540,11 @@ def _subject_to_act_binding_of_exact_result(
         raise ValueError(
             "recorded subject-to-Act binding requires its intact Act occurrence"
         )
-    required_binding_coordinates = _REQUIRED_DIRECT_BINDING_COORDINATES
+    required_binding_coordinates = (
+        _REQUIRED_DIRECT_BINDING_COORDINATES - {"exact_act_identity"}
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+        else _REQUIRED_DIRECT_BINDING_COORDINATES
+    )
     direct_shape = (
         type(reference) is dict
         and frozenset(reference)
