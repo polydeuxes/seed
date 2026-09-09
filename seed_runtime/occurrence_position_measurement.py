@@ -19,7 +19,6 @@ OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
-        "addressed_act_identity",
         "exact_act",
         "subject_to_act_binding_reference",
         "source_localities",
@@ -125,7 +124,6 @@ def _occurrence_position_result_material(
     result_positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["exact_act_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "source_localities": [finding.source_locality_identity],
@@ -140,7 +138,6 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
     }
 
@@ -149,7 +146,6 @@ def _binding_material(
     finding: OccurrencePositionFinding,
     *,
     through_event_occurrence_identity: str | None,
-    exact_act_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -158,7 +154,6 @@ def _binding_material(
                 for identity, _position in finding.occurrences
             ],
         },
-        "exact_act_identity": exact_act_identity,
         "book_clause_identity": "01.Source.D",
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -225,7 +220,6 @@ def _occurrence_position_act_occurrence_material(
     binding: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["exact_act_identity"],
         "act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "source_locality_identity": finding.source_locality_identity,
@@ -361,17 +355,11 @@ def _record_occurrence_position_measurement_subject_to_act_binding(
         raise ValueError(
             "occurrence position Measurement requires exact current coordinates"
         )
-    identities = {
-        "exact_act_identity": ledger.mint_identity(
-            "occurrence_position_measurement_act"
-        ),
-    }
     return ledger.append(
         OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             finding,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            **identities,
         ),
         locality_identity=recording_locality_identity,
     )
@@ -435,12 +423,6 @@ def _read_occurrence_position_measurement_subject_to_act_binding(
             "occurrence position Measurement binding is absent or corrupted"
         )
     material = binding.material
-    identities = {
-        coordinate: material.get(coordinate)
-        for coordinate in (
-            "exact_act_identity",
-        )
-    }
     source_locality_identity = material.get("source_locality_identity")
     completeness_boundary_identity = material.get(
         "completeness_boundary_identity"
@@ -449,9 +431,7 @@ def _read_occurrence_position_measurement_subject_to_act_binding(
         "through_event_occurrence_identity"
     )
     if (
-        any(type(value) is not str or not value for value in identities.values())
-        or len(set(identities.values())) != len(identities)
-        or type(source_locality_identity) is not str
+        type(source_locality_identity) is not str
         or not source_locality_identity
         or type(completeness_boundary_identity) is not str
         or not completeness_boundary_identity
@@ -479,7 +459,6 @@ def _read_occurrence_position_measurement_subject_to_act_binding(
     if material != _binding_material(
         finding,
         through_event_occurrence_identity=through_event_occurrence_identity,
-        **identities,
     ):
         raise ValueError(
             "occurrence position Measurement binding coordinates are not exact"
@@ -600,26 +579,14 @@ def _require_carried_occurrence_position_binding(
             "occurrence position Measurement requires its exact carried binding"
         )
     material = binding.material
-    identity_coordinates = {
-        coordinate: material.get(coordinate)
-        for coordinate in (
-            "exact_act_identity",
-        )
-    }
     through_event_occurrence_identity = material.get(
         "through_event_occurrence_identity"
     )
     if (
-        any(
-            type(identity) is not str or not identity
-            for identity in identity_coordinates.values()
-        )
-        or len(set(identity_coordinates.values())) != len(identity_coordinates)
-        or material
+        material
         != _binding_material(
             finding,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            **identity_coordinates,
         )
     ):
         raise ValueError(
@@ -759,7 +726,6 @@ def _record_occurrence_position_measurement_result(
         result_positions=result_positions,
     )
     recorded_material = {
-        "addressed_act_identity": result_material["addressed_act_identity"],
         "exact_act": result_material["exact_act"],
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
@@ -877,8 +843,6 @@ def get_recorded_occurrence_position_measurement(
         or type(boundary["identity"]) is not str
         or not boundary["identity"]
         or type(material.get("result_positions")) is not list
-        or type(material.get("addressed_act_identity")) is not str
-        or not material["addressed_act_identity"]
     ):
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"

@@ -399,6 +399,10 @@ _DIRECT_BINDING_COORDINATES_WITH_RESULT = (
     _REQUIRED_DIRECT_BINDING_COORDINATES | {"result_identity"}
 )
 
+_OCCURRENCE_POSITION_BINDING_COORDINATES = (
+    _REQUIRED_DIRECT_BINDING_COORDINATES - {"exact_act_identity"}
+)
+
 
 _NO_RESULT_COORDINATE = object()
 
@@ -527,17 +531,22 @@ def _subject_to_act_binding_of_exact_result(
         raise ValueError(
             "recorded subject-to-Act binding requires its intact Act occurrence"
         )
+    required_binding_coordinates = (
+        _OCCURRENCE_POSITION_BINDING_COORDINATES
+        if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
+        else _REQUIRED_DIRECT_BINDING_COORDINATES
+    )
     direct_shape = (
         type(reference) is dict
         and frozenset(reference)
         in {
-            _REQUIRED_DIRECT_BINDING_COORDINATES,
-            _DIRECT_BINDING_COORDINATES_WITH_RESULT,
+            required_binding_coordinates,
+            required_binding_coordinates | {"result_identity"},
         }
         and all(
             type(reference.get(coordinate)) is str
             and reference[coordinate]
-            for coordinate in _REQUIRED_DIRECT_BINDING_COORDINATES
+            for coordinate in required_binding_coordinates
             - {"subject_reference"}
         )
         and type(reference.get("subject_reference")) is dict
@@ -556,7 +565,7 @@ def _subject_to_act_binding_of_exact_result(
         raise ValueError(
             "recorded subject-to-Act binding requires its exact occurrence"
         )
-    for coordinate in _REQUIRED_DIRECT_BINDING_COORDINATES - {
+    for coordinate in required_binding_coordinates - {
         "recorded_occurrence_identity",
     }:
         if binding_event.material.get(coordinate) != reference[coordinate]:

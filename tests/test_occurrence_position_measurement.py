@@ -232,7 +232,7 @@ def test_recorded_position_measurement_has_exact_act_and_result():
     ) == finding
 
 
-def test_binding_act_and_result_keep_distinct_exact_identities():
+def test_binding_act_and_result_remain_separate_exact_occurrences():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     reference = recorded.material["subject_to_act_binding_reference"]
     binding = get_occurrence_position_measurement_subject_to_act_binding(
@@ -245,7 +245,6 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
     )
     assert set(binding.material) == {
         "subject_reference",
-        "exact_act_identity",
         "book_clause_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
@@ -254,20 +253,15 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
     }
     assert binding.identity in _current_coordinates(ledger)[
         "subject_to_act_binding_occurrences"
     ]
-    assert len(
-        {
-            binding.material["exact_act_identity"],
-            binding.identity,
-            act_occurrence.identity,
-            recorded.identity,
-        }
-    ) == 4
+    assert len({binding.identity, act_occurrence.identity, recorded.identity}) == 3
+    assert "exact_act_identity" not in binding.material
+    assert "addressed_act_identity" not in act_occurrence.material
+    assert "addressed_act_identity" not in recorded.material
     assert "act_occurrence_identity" not in binding.material
     assert "measurement_result_identity" not in binding.material
     assert "result_identity" not in recorded.material
@@ -709,7 +703,7 @@ def test_durable_locality_positions_read_through_their_exact_yield(tmp_path):
     ) == finding
 
 
-def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
+def test_actual_position_occurrences_remain_exact_after_reopen(tmp_path):
     path = tmp_path / "occurrence-position.sqlite"
     ledger = SQLiteEventLedger(path)
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
@@ -722,18 +716,17 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
     )
-    carried = {
-        "occurrence_position_measurement_act": recorded.material[
-            "addressed_act_identity"
-        ],
-    }
+    act_identity = act_occurrence.identity
+    result_identity = recorded.identity
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
     try:
-        for prefix, identity in carried.items():
-            prior_number = int(identity.rsplit("_", 1)[1])
-            assert reopened.mint_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
+        assert reopened.get(act_identity) is not None
+        assert get_recorded_occurrence_position_measurement(
+            reopened,
+            result_identity,
+        ) == finding
     finally:
         reopened.close()
 
@@ -814,6 +807,6 @@ WITNESSED_BOOK_COORDINATES = {
         test_missing_reordered_duplicated_or_substituted_result_positions_are_refused,
         test_wrong_result_boundary_coordinates_are_refused,
         test_wrong_boundary_is_refused_without_reconstructing_positions,
-        test_durable_position_identities_are_not_reissued_after_reopen,
+        test_actual_position_occurrences_remain_exact_after_reopen,
     ),
 }
