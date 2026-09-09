@@ -550,9 +550,7 @@ def test_result_has_one_ordered_result_position_per_exact_position():
         "act_occurrence_event_identity",
     }
     assert "source_localities" not in recorded.material
-    assert recorded.material["completeness_boundary"] == {
-        "identity": boundary.identity
-    }
+    assert "completeness_boundary" not in recorded.material
     result_positions = recorded.material["result_positions"]
     assert len(result_positions) == len(occurrences)
     assert [
@@ -603,20 +601,6 @@ def test_missing_reordered_duplicated_or_substituted_result_positions_are_refuse
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-@pytest.mark.parametrize(
-    "coordinate, value",
-    (
-        ("completeness_boundary", {"identity": "another-boundary"}),
-    ),
-)
-def test_wrong_result_boundary_coordinates_are_refused(coordinate, value):
-    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    recorded.material[coordinate] = value
-
-    with pytest.raises(ValueError):
-        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
-
-
 def test_corrupted_input_or_act_occurrence_is_refused():
     for coordinate in (
         "input",
@@ -634,13 +618,12 @@ def test_corrupted_input_or_act_occurrence_is_refused():
             get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-def test_wrong_boundary_is_refused_without_reconstructing_positions():
+def test_wrong_act_boundary_is_refused_without_accepting_result_positions():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    changed = deepcopy(recorded.material["completeness_boundary"])
-    changed["identity"] = "not-a-boundary"
-    recorded.material["completeness_boundary"] = changed
+    act = ledger.get(recorded.material["act_occurrence_event_identity"])
+    act.material["completeness_boundary_identity"] = "not-a-boundary"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="no exact Act occurrence"):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -764,8 +747,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_recording_and_reading_do_not_reconstruct_complete_result_material,
         test_changed_position_is_refused_by_the_unchanged_result_coordinates,
         test_missing_reordered_duplicated_or_substituted_result_positions_are_refused,
-        test_wrong_result_boundary_coordinates_are_refused,
-        test_wrong_boundary_is_refused_without_reconstructing_positions,
+        test_wrong_act_boundary_is_refused_without_accepting_result_positions,
         test_actual_position_occurrences_remain_exact_after_reopen,
     ),
 }

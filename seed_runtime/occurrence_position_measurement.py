@@ -16,7 +16,6 @@ OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
-        "completeness_boundary",
         "result_positions",
     }
 )
@@ -116,9 +115,6 @@ def _occurrence_position_result_material(
     result_positions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "completeness_boundary": {
-            "identity": finding.completeness_boundary.identity,
-        },
         "result_positions": result_positions,
     }
 
@@ -469,7 +465,6 @@ def _record_occurrence_position_measurement_result(
         result_positions=result_positions,
     )
     recorded_material = {
-        "completeness_boundary": result_material["completeness_boundary"],
         "result_positions": result_material["result_positions"],
         "act_occurrence_event_identity": act_occurrence.identity,
     }
@@ -562,14 +557,7 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         )
-    boundary = material.get("completeness_boundary")
-    if (
-        type(boundary) is not dict
-        or set(boundary) != {"identity"}
-        or type(boundary["identity"]) is not str
-        or not boundary["identity"]
-        or type(material.get("result_positions")) is not list
-    ):
+    if type(material.get("result_positions")) is not list:
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         )
@@ -583,17 +571,8 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries no exact Act occurrence"
         ) from error
-    try:
-        finding = _measure_occurrence_position_through(
-            ledger,
-            source_locality_identity=bound_finding.source_locality_identity,
-            boundary=EventLedgerBoundary(boundary["identity"]),
-        )
-    except (TypeError, ValueError) as error:
-        raise ValueError(
-            "the occurrence position Measurement carries malformed coordinates"
-        ) from error
-    result_positions = _position_results(finding)
+    finding = bound_finding
+    result_positions = _position_results(bound_finding)
     if material["result_positions"] != result_positions:
         raise ValueError(
             "the occurrence position Measurement carries malformed result positions"
