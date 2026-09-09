@@ -40,7 +40,7 @@ def _contained_material_and_tar() -> tuple[bytes, bytes]:
     return contained, buffer.getvalue()
 
 
-def test_anonymous_gzip_material_does_not_imply_inner_material_or_host_invocation():
+def test_anonymous_gzip_material_does_not_invoke_an_unaddressed_host_callback():
     contained, tar_material = _contained_material_and_tar()
     assert len(ANONYMOUS_GZIP) == 157
     assert b"\n" not in ANONYMOUS_GZIP

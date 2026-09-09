@@ -52,11 +52,15 @@ expected inner bytes supplied  absent
 The tar bytes and contained bytes remain outside Seed and are used only after
 the run to compare exact material occurrences.
 
-The experiment supplies an invocation provider that can run the real
+As a host-interface control, the experiment supplies an invocation provider that can run the real
 `/usr/bin/gzip -dc` over the 157-byte specimen and return its output as exact
 Witness material. Before the Seed run, that executable independently returns
 the exact 10,240-byte tar material. The provider records every call it
 receives; Seed receives no command naming gzip.
+
+This callback is not an exact occurrence or current coordinate. Its presence
+tests the existing provider dispatch boundary; it does not constitute giving
+gzip to Seed.
 
 ## Observed Seed behavior
 
@@ -139,10 +143,47 @@ decomposition of the supplied representation
 The current runtime expands exact work over material whose inner distinctions
 remain absent from the Ledger.
 
+## The missed B-to-C physiology
+
+The current console does not measure only the newest source result. After a
+source result enters current coordinates, declared Measurement freezes those
+coordinates as `through_occurrence_coordinates` at append boundary `B` and
+discovers `complete_subjects` from that bounded reading.
+
+For exact-byte Measurement, the subject is the complete current
+material-result occurrence set through `B`. On a subsequent operator-material
+occurrence, that set contains prior material plus the new material. The new
+cumulative pair Measurement is then compared with the prior cumulative pair
+Measurement.
+
+In the older B-to-C description:
+
+```text
+B = frozen exact source append boundary
+S(B) = exact source coordinates read through B
+C = subsequent production-result boundary
+
+expected coordinates from S(B)
+are compared with
+actual coordinates recorded through C
+```
+
+The gzip callback in this experiment is absent from all of those coordinates:
+
+```text
+gzip callback Ledger occurrence             absent
+gzip callback current coordinate through B  absent
+gzip callback complete subject at B          absent
+```
+
+Therefore the callback and archive never enter Seed's existing/new comparison
+physiology together. Calling the callback "gzip given to Seed" would be
+incorrect.
+
 ## Current host-invocation boundary
 
-The live probe shows that passing a capable provider does not make its
-capability addressable by Seed. The process entry similarly supplies
+The live probe shows only that passing a capable callback does not append or
+address an environmental capability. The process entry similarly supplies
 `invoke_operator_host` to the console, but this does not presently let Seed
 explore an environment using a prior material result.
 
@@ -183,12 +224,12 @@ operator already chose.
 
 This is not a negative result about `/usr/bin/gzip`; the external control
 proves that executable transforms the specimen into the exact tar material.
-It is a result about the existing Seed/provider boundary:
+It is a narrower result about the existing Seed/provider boundary:
 
 ```text
-callable capability present in the host
+callable callback present in the host
 !=
-capability addressable by Seed
+exact environmental capability current in Seed
 ```
 
 ## Two separate ceilings
@@ -224,7 +265,8 @@ an exact Act occurrence over G
 ## Next falsifier
 
 The next experiment should not implement gzip. It should first census whether
-current Seed has any road in which all of these exact coordinates coexist:
+current Seed has any road in which an OS interface can become an exact current
+coordinate through `B`, so that all of these coordinates can coexist:
 
 ```text
 prior exact material result
@@ -234,9 +276,9 @@ operation occurrence
 exact returned material result
 ```
 
-The current operator-host road is a negative control because the operator
-preselects the operation and the process input does not address the prior
-material result.
+The current operator-host road is a negative control because its callback is
+not current through `B`, the operator preselects the operation, and the process
+input does not address the prior material result.
 
 If no current road supplies the full shape, that is the missing Seed behavior.
 Only then should a minimal experiment expose a bounded set of real host
@@ -255,7 +297,8 @@ inner tar material recorded                     no
 contained material recorded                     no
 prior material usable as host invocation input  no
 environmental interfaces explorable by Seed     no
-provided gzip capability addressed               no
+host gzip callback invoked                       no
+gzip given to Seed as a current coordinate       untested
 ```
 
 Seed is not presently decompiling the archive. It is exhaustively producing
