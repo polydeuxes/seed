@@ -184,17 +184,20 @@ was addressed only after that set and Act are exact.
 Do not add a DEFLATE reader. Do not infer gzip from low recurrence. Do not feed
 external bytes into private SQLite representation fields.
 
-The next exact experiment should expose one already-running implementation
-behavior as bounded testimony about this Seed, without yet treating a Python
-callable as an Act. Then pressure whether an exact prior material result can
-address that behavior's input and output coordinates.
+Do not expose a Python callable, callback, provider, or external Witness and
+then treat that surface as Seed behavior. That would preserve the missing road
+behind a new wrapper.
 
-The first positive specimen should remain smaller than the tar archive:
+The next work must first census the real filesystem and process roads. A
+positive experiment must address an executable file, exact input, and exact
+destination through a Seed Act occurrence before the operating-system
+operation, with the output addressing that Act occurrence rather than arriving
+as Witness material.
 
-```text
-exact zlib-wrapped JSON bytes
--> the exact JSON bytes or structure Seed's internal behavior already returns
-```
+The first experiment may be given an exact executable-file coordinate. That
+would test use of supplied filesystem material, not discovery. If the current
+runtime cannot record that chain, the result is a missing lower road; observer
+code must not impersonate it.
 
-Only after that coordinate crossing is real should the wrapper vary from zlib
-to gzip and the expanded result vary from JSON text to arbitrary bytes.
+The rejection gates for that work are recorded in
+`seed_behavior_experiment_protocol_001.md`.
