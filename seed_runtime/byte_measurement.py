@@ -1931,7 +1931,7 @@ def _byte_measurement_act_occurrence_material(
     through_event_occurrence_identity: str | None,
 ) -> dict[str, Any]:
     return {
-        "act": "exact-byte Measurement",
+        "act": "Measurement",
         "subject_reference": {
             "source_occurrence_references": [
                 dict(reference) for reference in source_material
@@ -2250,7 +2250,7 @@ def _read_byte_measurement_act_occurrence(
     )
     through_event_occurrence_identity = material.get("through_event_occurrence_identity")
     if (
-        material.get("act") != "exact-byte Measurement"
+        material.get("act") != "Measurement"
         or type(localities_value) is not list
         or not localities_value
         or any(type(locality) is not str or not locality for locality in localities_value)
@@ -2354,7 +2354,7 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source material, byte count, and same content"
                 ),
         },
-        "exact_act": "exact-byte Measurement",
+        "exact_act": "Measurement",
         "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
@@ -2482,7 +2482,7 @@ def _result_positions_of_recorded_byte_measurement(
         )
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "exact-byte Measurement"
+        or material.get("exact_act") != "Measurement"
         or material.get("dimensions")
         != {
                 "identity": "byte-count-measurement-occurrence",

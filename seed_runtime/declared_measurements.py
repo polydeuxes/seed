@@ -251,7 +251,7 @@ def _byte_act_source_sets(
         )
         if (
             ledger.integrity_of(act.identity) == CORRUPTED
-            or act.material.get("act") != "exact-byte Measurement"
+            or act.material.get("act") != "Measurement"
             or type(references) is not list
         ):
             raise ValueError("recorded byte Measurement Act is malformed")

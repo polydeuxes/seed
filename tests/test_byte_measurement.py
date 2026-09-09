@@ -311,7 +311,7 @@ def test_exact_byte_act_carries_binding_coordinates_without_lifecycle_aliases():
     result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    assert act.material["act"] == "exact-byte Measurement"
+    assert act.material["act"] == "Measurement"
     assert act.material["subject_reference"]["source_occurrence_references"]
     assert "subject_to_act_binding_reference" not in act.material
     assert all(
@@ -1823,6 +1823,16 @@ def test_byte_measurement_reader_refuses_changed_act_subject():
     ] = "substituted-source"
 
     with pytest.raises(ByteMeasurementError, match="coordinates are not exact"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
+
+
+def test_byte_measurement_reader_refuses_changed_act():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    act = ledger.get(source.material["act_occurrence_event_identity"])
+    act.material["act"] = "Compare"
+
+    with pytest.raises(ByteMeasurementError, match="malformed coordinates"):
         result_positions_of_recorded_byte_measurement(ledger, source.identity)
 
 
