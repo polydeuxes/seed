@@ -930,7 +930,8 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "occurrences_carrying": 2,
         "count": 2,
     }
-    assert event.material["source_localities"] == ["source"]
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    assert act.material["source_localities"] == ["source"]
     assert set(count) == {
         "dimensions",
         "result",
@@ -1842,6 +1843,25 @@ def test_byte_measurement_reader_refuses_reintroduced_result_act_copy():
     source.material["exact_act"] = "Measurement"
 
     with pytest.raises(ByteMeasurementError, match="recording surfaces"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
+
+
+def test_byte_measurement_reader_refuses_reintroduced_result_source_localities_copy():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    source.material["source_localities"] = ["source"]
+
+    with pytest.raises(ByteMeasurementError, match="recording surfaces"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
+
+
+def test_byte_measurement_reader_refuses_changed_act_source_localities():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    act = ledger.get(source.material["act_occurrence_event_identity"])
+    act.material["source_localities"] = ["substituted-source"]
+
+    with pytest.raises(ByteMeasurementError):
         result_positions_of_recorded_byte_measurement(ledger, source.identity)
 
 

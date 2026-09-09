@@ -2354,7 +2354,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source material, byte count, and same content"
                 ),
         },
-        "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
@@ -2473,6 +2472,7 @@ def _result_positions_of_recorded_byte_measurement(
         "addressed_act_identity",
         "subject_to_act_binding_reference",
         "exact_act",
+        "source_localities",
     }) | {
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -2536,22 +2536,16 @@ def _result_positions_of_recorded_byte_measurement(
             f"{event_identity} is not the single exact byte Measurement result"
         )
     boundary_value = material.get("completeness_boundary")
-    localities_value = material.get("source_localities")
     if (
         not isinstance(boundary_value, dict)
         or set(boundary_value) != {"identity"}
         or not isinstance(boundary_value["identity"], str)
-        or not isinstance(localities_value, list)
-        or not localities_value
-        or any(not isinstance(item, str) or not item for item in localities_value)
-        or len(set(localities_value)) != len(localities_value)
     ):
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact byte Measurement boundary"
         )
     if (
         measured.completeness_boundary.identity != boundary_value["identity"]
-        or list(measured.source_localities) != localities_value
     ):
         raise ByteMeasurementError(
             f"{event_identity} does not establish its Seed-native Measurement boundary"
@@ -2652,7 +2646,8 @@ def _read_byte_result_position(
     )
     if event is None or result_position is None:
         raise ByteMeasurementError("byte result position is absent")
-    return event, result_position, tuple(event.material["source_localities"])
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    return event, result_position, tuple(act.material["source_localities"])
 
 
 def _pair_result_positions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
