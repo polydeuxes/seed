@@ -9,9 +9,20 @@ import subprocess
 import tarfile
 
 from seed_runtime.byte_measurement import BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+    get_recorded_pair_measurement_comparison,
+)
 from seed_runtime.events import EventLedger
-from seed_runtime.material_source import exact_material_result_bytes
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    iter_exact_material_results,
+)
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
+from seed_runtime.operator_destination_locality import (
+    OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
+)
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
@@ -109,3 +120,94 @@ def test_anonymous_gzip_material_does_not_invoke_an_unaddressed_host_callback():
     ]
     assert result_kinds.count("count") == 140
     assert result_kinds.count("recurrence") == 1
+
+
+def test_gzip_interface_material_at_prior_boundary_is_compared_with_new_gzip_material():
+    gzip_executable = shutil.which("gzip")
+    assert gzip_executable is not None
+    gzip_interface_material = subprocess.run(
+        (gzip_executable, "--help"),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout[:64]
+    contained_material = b"A"
+    anonymous_gzip = gzip.compress(contained_material, compresslevel=9, mtime=0)
+    assert b"\n" not in anonymous_gzip
+
+    provider_calls = []
+
+    def supply_gzip_interface(exact_command, supply):
+        provider_calls.append(exact_command)
+        supply(
+            SuppliedWitnessMaterialOccurrence(
+                exact_bytes=gzip_interface_material,
+                source_boundary=f"{gzip_executable} --help stdout through byte 64",
+                output_byte_count_boundary_reached=True,
+            )
+        )
+
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="operator",
+        input_stream=BytesIO(b"!gzip --help\n"),
+        operator_invocation_provider=supply_gzip_interface,
+    )
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
+    )
+    gzip_locality = relation.locality_identity
+    prior_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity=gzip_locality
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=gzip_locality,
+        input_stream=BytesIO(anonymous_gzip),
+        operator_invocation_provider=supply_gzip_interface,
+    )
+
+    assert provider_calls == [b"!gzip --help\n"]
+    current_coordinates = read_operator_current_coordinates(
+        ledger, locality_identity=gzip_locality
+    )
+    assert (
+        prior_coordinates["through_event_occurrence_identity"]
+        != current_coordinates["through_event_occurrence_identity"]
+    )
+    material_results = tuple(iter_exact_material_results(ledger, gzip_locality))
+    assert [event.exact_material for event in material_results] == [
+        gzip_interface_material,
+        anonymous_gzip,
+    ]
+    assert all(
+        event.exact_material != contained_material for event in material_results
+    )
+
+    pair_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        and event.locality_identity == gzip_locality
+    )
+    comparisons = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+        and event.locality_identity == gzip_locality
+    )
+    assert len(pair_measurements) == 2
+    assert len(comparisons) == 1
+    subjects = get_recorded_pair_measurement_comparison(
+        ledger, comparisons[0].identity
+    )["subject_reference"]
+    assert subjects["earlier_measurement_reference"][
+        "recorded_occurrence_identity"
+    ] == pair_measurements[0].identity
+    assert subjects["later_measurement_reference"][
+        "recorded_occurrence_identity"
+    ] == pair_measurements[1].identity

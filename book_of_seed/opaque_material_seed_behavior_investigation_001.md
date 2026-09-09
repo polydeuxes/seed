@@ -180,6 +180,80 @@ Therefore the callback and archive never enter Seed's existing/new comparison
 physiology together. Calling the callback "gzip given to Seed" would be
 incorrect.
 
+## Gzip interface material through B
+
+A second control places bounded material produced by gzip inside Seed before
+supplying compressed material.
+
+The operator supplies this exact invocation material:
+
+```text
+!gzip --help\n
+```
+
+The experiment's provider invokes the real `/usr/bin/gzip --help` and supplies
+the first 64 output bytes under an explicit output-byte-count boundary:
+
+```text
+Usage: gzip [OPTION]... [FILE]...\n
+Compress or uncompress FILEs (
+```
+
+That exact Witness material is recorded and measured in the invocation's
+destination Locality. Its final pair Measurement occurrence is the current
+boundary before the second stage:
+
+```text
+gzip interface material bytes  64
+prior boundary B                evt_000166
+prior pair Measurement          evt_000166
+```
+
+The second stage supplies, in the same Ledger and Locality, the exact 21-byte
+gzip encoding of the single byte `A`. No command accompanies it. Seed records
+the compressed material, freezes the enlarged current material set, measures
+it, and compares the prior and enlarged pair Measurements:
+
+```text
+new gzip material bytes         21
+new cumulative pair Measurement evt_000373
+recorded-pair Compare result     evt_000375
+final result boundary C          evt_000490
+```
+
+The Compare result's exact subjects are:
+
+```text
+evt_000166 → evt_000373
+```
+
+Thus the corrected experiment exercises the existing B-to-C physiology. Gzip
+interface testimony is current before the compressed material arrives, and
+the cumulative Measurements are exact subjects of Compare.
+
+The run records 323 new occurrences between B and C. Its exact material
+results in that Locality remain:
+
+```text
+64-byte gzip interface material
+21-byte compressed material
+```
+
+There is no exact material result containing `A` alone, and no second gzip
+invocation occurs.
+
+This is a first decompilation surface, not a completed decompilation of gzip.
+Seed measures and compares gzip's interface text as exact bytes. It does not
+recover from those bytes an exact operation/input coordinate joining the
+interface to the compressed material.
+
+```text
+gzip interface testimony current through B       yes
+new compressed material compared through C       yes
+interface addressed as an operation over material no
+contained material result                         no
+```
+
 ## Current host-invocation boundary
 
 The live probe shows only that passing a capable callback does not append or
@@ -298,7 +372,8 @@ contained material recorded                     no
 prior material usable as host invocation input  no
 environmental interfaces explorable by Seed     no
 host gzip callback invoked                       no
-gzip given to Seed as a current coordinate       untested
+bounded gzip interface testimony current         yes
+gzip interface recovered as an applicable Act    no
 ```
 
 Seed is not presently decompiling the archive. It is exhaustively producing
