@@ -349,12 +349,14 @@ def test_exact_byte_binding_enters_current_coordinates_without_a_future_result_i
     identities = {
         assignment.identity,
         assignment.material["exact_act_identity"],
-        assignment.material["act_occurrence_identity"],
         act.identity,
         result.identity,
     }
-    assert len(identities) == 5
+    assert len(identities) == 4
     assert "measurement_result_identity" not in assignment.material
+    assert "act_occurrence_identity" not in assignment.material
+    assert "act_occurrence_identity" not in act.material
+    assert "act_occurrence_identity" not in result.material
     assert "result_identity" not in result.material
     assert "yield_relation_identity" not in result.material
     assert result.material["subject_to_act_binding_reference"] == {
@@ -1896,7 +1898,6 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
     assert set(binding) == {
         "subject_reference",
         "exact_act_identity",
-        "act_occurrence_identity",
         "book_clause_identity",
         "source_localities",
         "completeness_boundary_identity",
