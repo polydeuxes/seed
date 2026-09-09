@@ -28,9 +28,10 @@ exact reading C addresses output coordinate O
 exact comparison of B with C
 ```
 
-The operating system does not need to become an external Witness. It performs
-mechanics over files and processes. Seed must carry the exact coordinates on
-the two sides of that change.
+The operating system does not require an additional Witness road. Existing
+operator invocation output is material supplied by this Witness. Seed must
+carry the exact coordinates on the two sides of the change through that
+existing source physiology.
 
 No new Act occurrence is presumed between `B` and `C`. If an existing Act
 physiology independently addresses the operation, it must survive. The diagram
@@ -114,30 +115,34 @@ captured bytes supplied through callback
 Witness material result recorded by Seed
 ```
 
-The exact output bytes and their acquisition occurrences do not retroactively
-put the executable and input into the earlier Seed reading.
+The exact output bytes are already attributed to this Witness, the exact
+operator command occurrence, and its invocation Locality. Those source
+coordinates do not retroactively turn the provider's private executable-path
+choice into a Ledger coordinate.
 
 ## Gzip consequence
 
-Adding gzip to the provider's fixed mapping would prove only:
+Adding gzip to the provider's fixed mapping would establish:
 
 ```text
 the host script can choose /usr/bin/gzip
 the operating system can execute it
-Seed can record bytes returned by the callback
+Seed can record exact material supplied by this Witness
+the result addresses the operator command and invocation Locality
 ```
 
 It would not prove:
 
 ```text
 Seed addresses /usr/bin/gzip as a file
-Seed addresses compressed material as gzip's input
+Seed separately addresses compressed material as gzip's exact input
 Seed carries an exact B-to-C change over those filesystem coordinates
 Seed found gzip in its filesystem
 ```
 
-Calling the callback an external Witness, compiled behavior, or supplied
-implementation does not change that result.
+The existing Witness source attribution must not be replaced by a new
+filesystem Source family. It also must not be stretched into an unrecorded
+executable-selection coordinate.
 
 ## Existing internal JSON and DEFLATE behavior
 
@@ -166,13 +171,15 @@ Seed can address arbitrary material to that executable     no current road
 
 ## Search and broad listing do not repair the gap
 
-A host directory walk could expose path text or file bytes. Unless an exact
-reading `B` addresses the selected file, input, and destination, that remains a
-read.
+An exact `!ls` invocation already yields an exact Witness result whose source
+references address the command occurrence and invocation Locality. Its output
+bytes can be current through `B`.
 
-Likewise, a broad `!ls` invocation does not claim that every filesystem
-coordinate under an exact selected boundary was addressed. Discovery and use
-remain separate experiments.
+That result does not automatically decompose every output line into a separate
+filesystem-entry occurrence. A broad `!ls` invocation also does not claim
+that every filesystem coordinate under an exact selected boundary was
+addressed. Source attribution, decomposition, exhaustive coverage, and later
+use remain separate questions.
 
 ## Emission is a neighboring boundary, not the missing operation
 
@@ -213,29 +220,29 @@ filesystem coordinates or mechanics.
 
 ## Disposition
 
-The current runtime cannot perform the proposed honest gzip experiment.
-
-This is the supported result:
+This is the supported result at this census boundary:
 
 ```text
-filesystem executable use by Seed              absent
-host-provider executable use                   present
-Seed acquisition of provider output            present
-exact B-to-C filesystem-coordinate comparison absent
+exact Witness source attribution of output                 present
+exact command and invocation Locality provenance            present
+host-provider executable-path choice                        present
+Ledger coordinate for that executable-path choice           absent
+decomposition of result bytes into filesystem-entry subjects absent
+exact B-to-C comparison of Witness results                   available to test
 ```
 
-Do not add gzip to the provider. Do not write a decoder. Do not introduce an
-external Witness or callback replacement.
+Do not write a decoder. Do not introduce a third Source family, another
+Witness, or a callback replacement.
 
-Any later implementation must begin at the missing lower road itself:
+The next experiment must begin with the existing Witness results:
 
 ```text
-exact B addresses filesystem-file coordinates
-+ exact input and destination coordinates
+exact Witness result(s) current through B
 -> operating-system mechanics
--> exact C addresses the output
--> Seed compares B with C
+-> exact Witness result(s) current through C
+-> Seed compares those exact results
 ```
 
-Do not add an Act word or occurrence unless an independently variable Act
+Pressure which filesystem subjects, if any, the result bytes address. Do not
+add an Act word or occurrence unless an independently variable Act
 distinction survives subtraction from that boundary physiology.
