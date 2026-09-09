@@ -29,7 +29,8 @@ _LISTING_ROW = re.compile(
     r"^(?P<global_line>[0-9]{6}),(?P<source_line>[0-9]{6}):\s+"
     r"(?P<bank>[0-7]{2}),(?P<address>[0-7]{4})\s+"
     r"(?P<first>[0-7]{5})\s+(?P<second>[0-7]{5})\s+"
-    r"(?P<label>\S+)\s+2DEC\b"
+    r"(?P<label>\S+)\s+2DEC\s+(?P<operand>\S+)"
+    r"(?:\s+(?P<scale>B-[0-9]+))?\s*(?:#.*)?$"
 )
 
 
@@ -69,24 +70,50 @@ def _source_lines(source: Path) -> tuple[str, ...]:
 
 
 def _listing_rows(listing: Path, source_lines: tuple[str, ...]) -> tuple[dict[str, Any], ...]:
-    labels = tuple(line.split()[0] for line in source_lines)
+    source_statements = []
+    for line in source_lines:
+        fields = line.partition("#")[0].split()
+        if len(fields) not in {3, 4} or fields[1] != "2DEC":
+            raise ValueError("addressed Luminary source statement is malformed")
+        source_statements.append(
+            {
+                "label": fields[0],
+                "operand": fields[2],
+                # yaYUL prints the 2DEC default explicitly in the listing.
+                "scale": fields[3] if len(fields) == 4 else "B-28",
+            }
+        )
     expected_source_lines = range(SOURCE_FIRST_LINE, SOURCE_LAST_LINE + 1)
+    expected_keys = {
+        (source_line, statement["label"])
+        for source_line, statement in zip(
+            expected_source_lines, source_statements, strict=True
+        )
+    }
     matches: dict[tuple[int, str], re.Match[str]] = {}
     for line in listing.read_text(encoding="utf-8").splitlines():
         match = _LISTING_ROW.match(line)
         if match is None or int(match.group("bank"), 8) != BANK:
             continue
         key = (int(match.group("source_line")), match.group("label"))
-        if key in zip(expected_source_lines, labels, strict=True):
+        if key in expected_keys:
             if key in matches:
                 raise ValueError("listing repeats an addressed source statement")
             matches[key] = match
 
     rows = []
-    for source_line, label in zip(expected_source_lines, labels, strict=True):
+    for source_line, statement in zip(
+        expected_source_lines, source_statements, strict=True
+    ):
+        label = statement["label"]
         match = matches.get((source_line, label))
         if match is None:
             raise ValueError("listing omits an addressed source statement")
+        if (
+            match.group("operand") != statement["operand"]
+            or match.group("scale") != statement["scale"]
+        ):
+            raise ValueError("listing differs from the addressed source statement")
         rows.append(
             {
                 "global_line": int(match.group("global_line")),
@@ -95,6 +122,8 @@ def _listing_rows(listing: Path, source_lines: tuple[str, ...]) -> tuple[dict[st
                 "address_octal": match.group("address"),
                 "words_octal": [match.group("first"), match.group("second")],
                 "label": label,
+                "operand": match.group("operand"),
+                "scale": match.group("scale"),
             }
         )
 
@@ -145,7 +174,7 @@ def observe_luminary099(
     if len(reference) != expected_binary_size or len(assembled) != expected_binary_size:
         raise ValueError("Luminary binary does not have the exact Block II rope size")
     if reference != assembled:
-        raise ValueError("source-assembled and independently entered binaries differ")
+        raise ValueError("source-assembled and proofread-reference binaries differ")
 
     bank_position = binary_bank_position(BANK)
     bank_byte_offset = bank_position * WORDS_PER_BANK * BYTES_PER_WORD
@@ -198,6 +227,15 @@ def observe_luminary099(
     }
 
 
+def require_expected_reading(
+    observation: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    """Refuse an observation that differs from one pinned exact reading."""
+
+    if observation != expected:
+        raise ValueError("exact Luminary observation differs from expected reading")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("virtualagc_root", type=Path)
@@ -211,8 +249,10 @@ def main() -> None:
     observation = observe_luminary099(args.virtualagc_root)
     if args.expected is not None:
         expected = json.loads(args.expected.read_text(encoding="utf-8"))
-        if observation != expected:
-            raise SystemExit("exact Luminary observation differs from expected reading")
+        try:
+            require_expected_reading(observation, expected)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
     print(json.dumps(observation, indent=2, sort_keys=True))
 
 

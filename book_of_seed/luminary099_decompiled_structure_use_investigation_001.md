@@ -24,7 +24,10 @@ and [program Makefile](https://github.com/virtualagc/virtualagc/blob/ebd8695d23b
 identify the program material as public domain. The source describes its
 transcription from images of the original hardcopy program listing. The
 upstream [binary-source file](https://github.com/virtualagc/virtualagc/blob/ebd8695d23bde6eb9f26933ddf244b8d18987f21/Luminary099/Luminary099.binsource)
-is a separately entered octal representation of the executable listing.
+is a proofread octal binary reference. The
+[Virtual AGC Luminary history](https://www.ibiblio.org/apollo/Luminary.html)
+records its origin in an earlier assembled image and its later correction
+against the historical listing images.
 
 Virtual AGC's build produces two exact binary files by different roads:
 
@@ -33,7 +36,7 @@ transcribed AGC source
 → yaYUL assembly
 → MAIN.agc.bin
 
-separately entered octal binary source
+proofread octal binary reference
 → oct2bin conversion
 → Luminary099.bin
 ```
@@ -52,9 +55,11 @@ Both produced files contain 73,728 bytes and have the same SHA-256 digest:
 
 The build's exact byte comparison also reports the files as identical.
 
-This is stronger than comparing one convenient excerpt. A difference at any
-binary position makes the observer refuse the reading, including a difference
-outside the selected window.
+This is stronger than comparing one convenient excerpt. The raw observer
+requires the two present-day construction roads to produce equal complete
+binaries. Equal changes to both files outside the selected window remain equal
+under that comparison, but change both reported whole-image digests. The
+committed `--expected` reading pins those digests and refuses such a change.
 
 The two files nevertheless remain separate filesystem results reached through
 separate construction roads:
@@ -106,7 +111,7 @@ image. The exact 24-byte window through address `2013` is:
 The observer independently requires:
 
 ```text
-six exact source statements
+six exact source statements, including operands and scales
 → six exact listing rows
 → twelve exact listing words
 
@@ -119,13 +124,15 @@ assembled binary window = listing-derived window
 complete reference binary = complete assembled binary
 ```
 
-A changed source label, changed addressed binary position, changed binary byte,
-missing listing row, changed revision, or whole-image difference refuses the
-observation.
+A changed source label, operand, or scale; changed addressed binary position;
+changed binary byte; missing listing row; changed revision; or difference
+between the two whole images refuses the raw observation. A common off-window
+change to both images is visible in their new digests and is refused by the
+committed expected-reading comparison.
 
 ## Placement
 
-`Placement` is useful Rosetta compression for this exact relation:
+`Placement` is useful report-local shorthand for this exact relation:
 
 ```text
 listing bank and address
@@ -144,8 +151,8 @@ carry the observed distinction without a new wrapper.
 
 ## Decompiled
 
-`Decompiled` remains a composite Rosetta orientation, not the name of an Act
-observed here.
+`Decompiled` remains ordinary explanatory shorthand for a composite, not the
+name of an Act observed here and not a word admitted to Rosetta.
 
 The public history includes recovery from hardcopy listing images into
 source-like and octal forms. This focused experiment begins after that human

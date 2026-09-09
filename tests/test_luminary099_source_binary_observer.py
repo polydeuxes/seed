@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -21,6 +22,7 @@ from scripts.observe_luminary099_source_binary import (
     agc_words_to_bytes,
     binary_bank_position,
     observe_luminary099,
+    require_expected_reading,
 )
 
 
@@ -47,7 +49,8 @@ def _fixture_checkout(tmp_path: Path, reading: dict) -> Path:
             f'{row["global_line"]:06d},{row["source_line"]:06d}: '
             f'{row["bank_octal"]},{row["address_octal"]}           '
             f'{row["words_octal"][0]} {row["words_octal"][1]}  '
-            f'{row["label"]}               2DEC'
+            f'{row["label"]}               2DEC     '
+            f'{row["operand"]}     {row["scale"]}'
         )
     (program / LISTING_PATH).write_text("\n".join(listing_lines) + "\n", encoding="utf-8")
 
@@ -103,7 +106,7 @@ def test_observer_reconstructs_the_committed_coordinate_shape(tmp_path):
     assert observed["assembled_binary"]["window_hex"] == reading["assembled_binary"]["window_hex"]
 
 
-def test_observer_refuses_different_independently_entered_binary(tmp_path):
+def test_observer_refuses_different_proofread_reference_binary(tmp_path):
     reading = _reading()
     root = _fixture_checkout(tmp_path, reading)
     reference = root / PROGRAM_DIRECTORY / REFERENCE_BINARY_PATH
@@ -113,7 +116,7 @@ def test_observer_refuses_different_independently_entered_binary(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="source-assembled and independently entered binaries differ",
+        match="source-assembled and proofread-reference binaries differ",
     ):
         observe_luminary099(root, revision=PINNED_REVISION)
 
@@ -140,6 +143,43 @@ def test_observer_refuses_source_listing_nonidentity(tmp_path):
 
     with pytest.raises(ValueError, match="listing omits an addressed source statement"):
         observe_luminary099(root, revision=PINNED_REVISION)
+
+
+@pytest.mark.parametrize(
+    "changed_statement",
+    (
+        "FDPS               2DEC     4.3671     B-7",
+        "FDPS               2DEC     4.3670     B-6",
+        "FDPS               2DEC",
+    ),
+)
+def test_observer_refuses_changed_listing_statement(tmp_path, changed_statement):
+    reading = _reading()
+    root = _fixture_checkout(tmp_path, reading)
+    listing = root / PROGRAM_DIRECTORY / LISTING_PATH
+    lines = listing.read_text(encoding="utf-8").splitlines()
+    lines[0] = re.sub(r"FDPS\s+2DEC.*$", changed_statement, lines[0])
+    listing.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="source statement"):
+        observe_luminary099(root, revision=PINNED_REVISION)
+
+
+def test_expected_reading_refuses_equal_off_window_binary_changes(tmp_path):
+    reading = _reading()
+    root = _fixture_checkout(tmp_path, reading)
+    for name in (REFERENCE_BINARY_PATH, ASSEMBLED_BINARY_PATH):
+        path = root / PROGRAM_DIRECTORY / name
+        material = bytearray(path.read_bytes())
+        material[-1] ^= 1
+        path.write_bytes(material)
+
+    observed = observe_luminary099(root, revision=PINNED_REVISION)
+
+    assert observed["reference_binary"]["sha256"] == observed["assembled_binary"]["sha256"]
+    assert observed["reference_binary"]["sha256"] != reading["reference_binary"]["sha256"]
+    with pytest.raises(ValueError, match="expected reading"):
+        require_expected_reading(observed, reading)
 
 
 def test_observer_refuses_unpinned_revision(tmp_path):

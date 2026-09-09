@@ -17,12 +17,12 @@
   "listing": {
     "path": "Luminary099/Luminary099.lst",
     "rows": [
-      {"address_octal": "2000", "bank_octal": "36", "global_line": 1547, "label": "FDPS", "source_line": 40, "words_octal": ["01056", "37167"]},
-      {"address_octal": "2002", "bank_octal": "36", "global_line": 1548, "label": "MDOTDPS", "source_line": 41, "words_octal": ["00457", "03250"]},
-      {"address_octal": "2004", "bank_octal": "36", "global_line": 1549, "label": "DTDECAY", "source_line": 42, "words_octal": ["77777", "77731"]},
-      {"address_octal": "2006", "bank_octal": "36", "global_line": 1550, "label": "FAPS", "source_line": 43, "words_octal": ["00307", "11040"]},
-      {"address_octal": "2010", "bank_octal": "36", "global_line": 1551, "label": "MDOTAPS", "source_line": 44, "words_octal": ["00151", "05214"]},
-      {"address_octal": "2012", "bank_octal": "36", "global_line": 1552, "label": "ATDECAY", "source_line": 45, "words_octal": ["77777", "77765"]}
+      {"address_octal": "2000", "bank_octal": "36", "global_line": 1547, "label": "FDPS", "operand": "4.3670", "scale": "B-7", "source_line": 40, "words_octal": ["01056", "37167"]},
+      {"address_octal": "2002", "bank_octal": "36", "global_line": 1548, "label": "MDOTDPS", "operand": "0.1480", "scale": "B-3", "source_line": 41, "words_octal": ["00457", "03250"]},
+      {"address_octal": "2004", "bank_octal": "36", "global_line": 1549, "label": "DTDECAY", "operand": "-38", "scale": "B-28", "source_line": 42, "words_octal": ["77777", "77731"]},
+      {"address_octal": "2006", "bank_octal": "36", "global_line": 1550, "label": "FAPS", "operand": "1.5569", "scale": "B-7", "source_line": 43, "words_octal": ["00307", "11040"]},
+      {"address_octal": "2010", "bank_octal": "36", "global_line": 1551, "label": "MDOTAPS", "operand": "0.05135", "scale": "B-3", "source_line": 44, "words_octal": ["00151", "05214"]},
+      {"address_octal": "2012", "bank_octal": "36", "global_line": 1552, "label": "ATDECAY", "operand": "-10", "scale": "B-28", "source_line": 45, "words_octal": ["77777", "77765"]}
     ],
     "word_count": 12,
     "words_octal": ["01056", "37167", "00457", "03250", "77777", "77731", "00307", "11040", "00151", "05214", "77777", "77765"]
