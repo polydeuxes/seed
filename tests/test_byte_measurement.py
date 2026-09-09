@@ -368,7 +368,7 @@ def test_current_coordinate_replay_refuses_corrupted_exact_byte_act():
         read_operator_current_coordinates(ledger, locality_identity="measurement")
 
 
-def test_exact_byte_act_refuses_an_older_recording_cut():
+def test_byte_measurement_act_refuses_reintroduced_recording_cut_copy():
     ledger = _ledger(b"a\n")
     earlier = _record_operator_material_source(
         ledger,
@@ -389,12 +389,96 @@ def test_exact_byte_act_refuses_an_older_recording_cut():
     )
     act.material["through_event_occurrence_identity"] = earlier.identity
 
-    with pytest.raises(ByteMeasurementError, match="exact recording cut"):
+    with pytest.raises(ByteMeasurementError, match="coordinates are not exact"):
         _read_byte_measurement_act_occurrence(ledger, act.identity)
-    with pytest.raises(ByteMeasurementError, match="exact recording cut"):
+    with pytest.raises(ByteMeasurementError, match="coordinates are not exact"):
         record_byte_measurement_result(
             ledger, act_occurrence_event_identity=act.identity
         )
+
+
+def test_byte_measurement_act_derives_stable_recording_cut_through_its_boundary():
+    ledger = _ledger(b"a\n")
+    recording_cut = _record_operator_material_source(
+        ledger,
+        locality_identity="measurement",
+        exact_bytes=b"before",
+        source_boundary="before boundary",
+    )
+    act = _record_byte_measurement_act(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    _record_operator_material_source(
+        ledger,
+        locality_identity="measurement",
+        exact_bytes=b"after",
+        source_boundary="after boundary",
+    )
+
+    _exact_act, _localities, boundary = _read_byte_measurement_act_occurrence(
+        ledger, act.identity
+    )
+    assert ledger.latest_locality_occurrence_identity(
+        act.locality_identity, through=boundary
+    ) == (
+        recording_cut.identity
+    )
+
+
+def test_byte_measurement_act_derives_empty_recording_cut():
+    ledger = _ledger(b"a\n")
+    act = _record_byte_measurement_act(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+
+    _exact_act, _localities, boundary = _read_byte_measurement_act_occurrence(
+        ledger, act.identity
+    )
+    assert ledger.latest_locality_occurrence_identity(
+        act.locality_identity, through=boundary
+    ) is None
+
+
+def test_byte_measurement_recording_cut_replays_after_sqlite_reopen(tmp_path):
+    path = tmp_path / "byte-recording-cut.sqlite"
+    ledger = SQLiteEventLedger(path)
+    source = _record_operator_material_source(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"a\n",
+        source_boundary="source boundary",
+    )
+    act = record_byte_measurement_act_occurrence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="source",
+        current_coordinates=read_operator_current_coordinates(
+            ledger, locality_identity="source"
+        ),
+    )
+    result = record_byte_measurement_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+    )
+    ledger.close()
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        coordinates = read_operator_current_coordinates(
+            ledger, locality_identity="source"
+        )
+        assert coordinates["exact_result_occurrences"][result.identity][
+            "through_event_occurrence_identity"
+        ] == source.identity
+        assert "through_event_occurrence_identity" not in ledger.get(
+            act.identity
+        ).material
+    finally:
+        ledger.close()
 
 
 def test_declared_discovery_reads_act_subjects_without_recomputing_findings(
@@ -1830,7 +1914,6 @@ def test_byte_measurement_act_addresses_its_exact_source_occurrences():
         "subject_reference",
         "source_localities",
         "completeness_boundary_identity",
-        "through_event_occurrence_identity",
     }
     assert act.material["subject_reference"] == {
         "source_occurrence_references": source_set["dimensions"]["content"][

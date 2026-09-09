@@ -533,8 +533,12 @@ def _subject_to_act_binding_of_exact_result(
             ],
         }
     if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
-        exact_act, _localities, _boundary = _read_byte_measurement_act_occurrence(
-            ledger, act_occurrence.identity
+        exact_act, _localities, boundary = (
+            _read_byte_measurement_act_occurrence(ledger, act_occurrence.identity)
+        )
+        recording_cut = ledger.latest_locality_occurrence_identity(
+            exact_act.locality_identity,
+            through=boundary,
         )
         return {
             "act_occurrence_event_identity": exact_act.identity,
@@ -543,9 +547,7 @@ def _subject_to_act_binding_of_exact_result(
             "completeness_boundary_identity": exact_act.material[
                 "completeness_boundary_identity"
             ],
-            "through_event_occurrence_identity": exact_act.material[
-                "through_event_occurrence_identity"
-            ],
+            "through_event_occurrence_identity": recording_cut,
         }
     if reference is None:
         return None

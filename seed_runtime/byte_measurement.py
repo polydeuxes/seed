@@ -1927,7 +1927,6 @@ def _byte_measurement_act_occurrence_material(
     source_localities: tuple[str, ...],
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
-    through_event_occurrence_identity: str | None,
 ) -> dict[str, Any]:
     return {
         "act": "Measurement",
@@ -1938,7 +1937,6 @@ def _byte_measurement_act_occurrence_material(
         },
         "source_localities": list(source_localities),
         "completeness_boundary_identity": completeness_boundary_identity,
-        "through_event_occurrence_identity": through_event_occurrence_identity,
     }
 
 
@@ -2086,7 +2084,6 @@ def _append_byte_measurement_act_occurrence(
     source_localities: tuple[str, ...],
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
-    through_event_occurrence_identity: str | None,
     recording_locality_identity: str,
 ) -> Event:
     return ledger.append(
@@ -2095,7 +2092,6 @@ def _append_byte_measurement_act_occurrence(
             source_localities=source_localities,
             source_material=source_material,
             completeness_boundary_identity=completeness_boundary_identity,
-            through_event_occurrence_identity=through_event_occurrence_identity,
         ),
         locality_identity=recording_locality_identity,
     )
@@ -2117,7 +2113,7 @@ def record_byte_measurement_act_occurrence(
             recording_locality_identity=recording_locality_identity,
         )
     )
-    through_event_occurrence_identity = _require_current_byte_measurement_coordinates(
+    _require_current_byte_measurement_coordinates(
         ledger,
         recording_locality_identity=recording_locality_identity,
         current_coordinates=current_coordinates,
@@ -2131,7 +2127,6 @@ def record_byte_measurement_act_occurrence(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=boundary.identity,
-        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2150,12 +2145,10 @@ def _record_byte_measurement_act_occurrence_from_current_coordinates(
             recording_locality_identity=recording_locality_identity,
         )
     )
-    through_event_occurrence_identity = (
-        _require_carried_byte_measurement_coordinates_at_current_boundary(
-            ledger,
-            recording_locality_identity=recording_locality_identity,
-            current_coordinates=current_coordinates,
-        )
+    _require_carried_byte_measurement_coordinates_at_current_boundary(
+        ledger,
+        recording_locality_identity=recording_locality_identity,
+        current_coordinates=current_coordinates,
     )
     if ledger.append_boundary() != boundary:
         raise ByteMeasurementError(
@@ -2166,7 +2159,6 @@ def _record_byte_measurement_act_occurrence_from_current_coordinates(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=boundary.identity,
-        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2215,7 +2207,6 @@ def _record_byte_measurement_act_occurrence_from_through_event_occurrence(
         source_localities=localities,
         source_material=current_source_material,
         completeness_boundary_identity=through_occurrence_boundary.identity,
-        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2247,7 +2238,6 @@ def _read_byte_measurement_act_occurrence(
     completeness_boundary_identity = material.get(
         "completeness_boundary_identity"
     )
-    through_event_occurrence_identity = material.get("through_event_occurrence_identity")
     if (
         material.get("act") != "Measurement"
         or type(localities_value) is not list
@@ -2256,13 +2246,6 @@ def _read_byte_measurement_act_occurrence(
         or len(set(localities_value)) != len(localities_value)
         or type(completeness_boundary_identity) is not str
         or not completeness_boundary_identity
-        or (
-            through_event_occurrence_identity is not None
-            and (
-                type(through_event_occurrence_identity) is not str
-                or not through_event_occurrence_identity
-            )
-        )
     ):
         raise ByteMeasurementError(
             "byte Measurement Act occurrence carries malformed coordinates"
@@ -2276,22 +2259,15 @@ def _read_byte_measurement_act_occurrence(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=completeness_boundary_identity,
-        through_event_occurrence_identity=through_event_occurrence_identity,
     )
     if material != expected:
         raise ByteMeasurementError(
             "byte Measurement Act occurrence coordinates are not exact"
         )
-    if (
-        ledger.latest_locality_occurrence_identity(
-            act_occurrence.locality_identity,
-            through=boundary,
-        )
-        != through_event_occurrence_identity
-    ):
-        raise ByteMeasurementError(
-            "byte Measurement Act has no exact recording cut"
-        )
+    through_event_occurrence_identity = ledger.latest_locality_occurrence_identity(
+        act_occurrence.locality_identity,
+        through=boundary,
+    )
     try:
         if not ledger.append_boundary_precedes_occurrence(
             boundary, act_occurrence.identity

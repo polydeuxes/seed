@@ -422,9 +422,7 @@ def test_current_coordinates_carry_only_exact_yielded_result_identities():
             "completeness_boundary_identity": measurement_act.material[
                 "completeness_boundary_identity"
             ],
-            "through_event_occurrence_identity": measurement_act.material[
-                "through_event_occurrence_identity"
-            ],
+            "through_event_occurrence_identity": source.identity,
         },
     }
     assert all(
