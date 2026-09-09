@@ -4,6 +4,8 @@ from io import BytesIO
 from pathlib import Path
 import base64
 import gzip
+import shutil
+import subprocess
 import tarfile
 
 from seed_runtime.byte_measurement import BYTE_PAIR_MEASUREMENT_RECORDED_KIND
@@ -12,6 +14,9 @@ from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
+from seed_runtime.supplied_invocation_material import (
+    SuppliedWitnessMaterialOccurrence,
 )
 
 
@@ -40,14 +45,43 @@ def test_anonymous_gzip_material_does_not_imply_inner_material_or_host_invocatio
     assert len(ANONYMOUS_GZIP) == 157
     assert b"\n" not in ANONYMOUS_GZIP
     assert gzip.decompress(ANONYMOUS_GZIP) == tar_material
+    gzip_executable = shutil.which("gzip")
+    assert gzip_executable is not None
+    assert subprocess.run(
+        (gzip_executable, "-dc"),
+        input=ANONYMOUS_GZIP,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout == tar_material
+
+    provider_calls = []
+
+    def provided_gzip(exact_command, supply):
+        provider_calls.append(exact_command)
+        completed = subprocess.run(
+            (gzip_executable, "-dc"),
+            input=ANONYMOUS_GZIP,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        supply(
+            SuppliedWitnessMaterialOccurrence(
+                exact_bytes=completed.stdout,
+                source_boundary="provided gzip output",
+            )
+        )
 
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="opaque-material",
         input_stream=BytesIO(ANONYMOUS_GZIP),
+        operator_invocation_provider=provided_gzip,
     )
 
+    assert provider_calls == []
     events = ledger.list()
     material_results = [
         event

@@ -42,7 +42,7 @@ bytes as one exact material occurrence.
 Only those 157 bytes enter `run_persistent_operator_console()`. The call has:
 
 ```text
-operator invocation provider   absent
+operator command               absent
 filename supplied to Seed      absent
 archive kind supplied to Seed  absent
 decoder supplied to Seed       absent
@@ -51,6 +51,12 @@ expected inner bytes supplied  absent
 
 The tar bytes and contained bytes remain outside Seed and are used only after
 the run to compare exact material occurrences.
+
+The experiment supplies an invocation provider that can run the real
+`/usr/bin/gzip -dc` over the 157-byte specimen and return its output as exact
+Witness material. Before the Seed run, that executable independently returns
+the exact 10,240-byte tar material. The provider records every call it
+receives; Seed receives no command naming gzip.
 
 ## Observed Seed behavior
 
@@ -68,6 +74,13 @@ occurrence containing the 43-byte material  0
 
 The run ends through occurrence `evt_001567`: 1,567 Ledger occurrences were
 recorded from the single 157-byte input occurrence.
+
+The gzip-capable provider receives zero calls:
+
+```text
+gzip executable     /usr/bin/gzip
+provider calls      []
+```
 
 The two initial Measurement results expose the supplied representation as
 follows:
@@ -128,8 +141,10 @@ remain absent from the Ledger.
 
 ## Current host-invocation boundary
 
-The process entry supplies `invoke_operator_host` to the console, but this does
-not presently let Seed explore an environment using a prior material result.
+The live probe shows that passing a capable provider does not make its
+capability addressable by Seed. The process entry similarly supplies
+`invoke_operator_host` to the console, but this does not presently let Seed
+explore an environment using a prior material result.
 
 The provider is reached only when the exact operator material begins with
 `!`. The operator bytes name a program from a fixed host whitelist:
@@ -165,6 +180,16 @@ The operator has selected the program before the provider runs, and the prior
 Seed material result is not supplied to that program's input. Adding `gzip` to
 the whitelist would therefore prove only that host code can run a decoder the
 operator already chose.
+
+This is not a negative result about `/usr/bin/gzip`; the external control
+proves that executable transforms the specimen into the exact tar material.
+It is a result about the existing Seed/provider boundary:
+
+```text
+callable capability present in the host
+!=
+capability addressable by Seed
+```
 
 ## Two separate ceilings
 
@@ -230,6 +255,7 @@ inner tar material recorded                     no
 contained material recorded                     no
 prior material usable as host invocation input  no
 environmental interfaces explorable by Seed     no
+provided gzip capability addressed               no
 ```
 
 Seed is not presently decompiling the archive. It is exhaustively producing
