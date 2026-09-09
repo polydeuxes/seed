@@ -1,0 +1,54 @@
+{
+  "assembled_binary": {
+    "byte_count": 73728,
+    "path": "Luminary099/MAIN.agc.bin",
+    "sha256": "1f5326e038de5b741b2f27b01ec949dbd688cf1906994e997402587c8628f40e",
+    "window_hex": "045c7cee025e0d50fffeffb2018e244000d21518fffeffea"
+  },
+  "binary_coordinates": {
+    "bank_byte_offset": 61440,
+    "bank_octal": "36",
+    "bank_position": 30,
+    "first_address_octal": "2000",
+    "last_address_octal": "2013",
+    "window_byte_count": 24,
+    "window_byte_offset": 61440
+  },
+  "listing": {
+    "path": "Luminary099/Luminary099.lst",
+    "rows": [
+      {"address_octal": "2000", "bank_octal": "36", "global_line": 1547, "label": "FDPS", "source_line": 40, "words_octal": ["01056", "37167"]},
+      {"address_octal": "2002", "bank_octal": "36", "global_line": 1548, "label": "MDOTDPS", "source_line": 41, "words_octal": ["00457", "03250"]},
+      {"address_octal": "2004", "bank_octal": "36", "global_line": 1549, "label": "DTDECAY", "source_line": 42, "words_octal": ["77777", "77731"]},
+      {"address_octal": "2006", "bank_octal": "36", "global_line": 1550, "label": "FAPS", "source_line": 43, "words_octal": ["00307", "11040"]},
+      {"address_octal": "2010", "bank_octal": "36", "global_line": 1551, "label": "MDOTAPS", "source_line": 44, "words_octal": ["00151", "05214"]},
+      {"address_octal": "2012", "bank_octal": "36", "global_line": 1552, "label": "ATDECAY", "source_line": 45, "words_octal": ["77777", "77765"]}
+    ],
+    "word_count": 12,
+    "words_octal": ["01056", "37167", "00457", "03250", "77777", "77731", "00307", "11040", "00151", "05214", "77777", "77765"]
+  },
+  "reference_binary": {
+    "byte_count": 73728,
+    "path": "Luminary099/Luminary099.bin",
+    "sha256": "1f5326e038de5b741b2f27b01ec949dbd688cf1906994e997402587c8628f40e",
+    "window_hex": "045c7cee025e0d50fffeffb2018e244000d21518fffeffea"
+  },
+  "source": {
+    "first_line": 40,
+    "last_line": 45,
+    "lines": [
+      "FDPS\t\t2DEC\t4.3670 B-7\t\t# 9817.5 LBS FORCE IN NEWTONS",
+      "MDOTDPS\t\t2DEC\t0.1480 B-3\t\t# 32.62 LBS/SEC IN KGS/CS.",
+      "DTDECAY\t\t2DEC\t-38",
+      "FAPS\t\t2DEC\t1.5569 B-7\t\t# 3500 LBS FORCE IN NEWTONS",
+      "MDOTAPS\t\t2DEC\t0.05135 B-3\t\t# 11.32 LBS/SEC IN KGS/CS",
+      "ATDECAY\t\t2DEC\t-10"
+    ],
+    "path": "Luminary099/CONTROLLED_CONSTANTS.agc"
+  },
+  "upstream": {
+    "program": "Luminary099",
+    "repository": "https://github.com/virtualagc/virtualagc",
+    "revision": "ebd8695d23bde6eb9f26933ddf244b8d18987f21"
+  }
+}
