@@ -8,7 +8,11 @@ import shutil
 import subprocess
 import tarfile
 
-from seed_runtime.byte_measurement import BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+from scripts.operator_host_provider import invoke_operator_host
+from seed_runtime.byte_measurement import (
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    result_positions_of_recorded_byte_measurement,
+)
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
@@ -122,37 +126,19 @@ def test_anonymous_gzip_material_does_not_invoke_an_unaddressed_host_callback():
     assert result_kinds.count("recurrence") == 1
 
 
-def test_gzip_interface_material_at_prior_boundary_is_compared_with_new_gzip_material():
+def test_gzip_path_result_at_prior_boundary_enters_later_measurement_comparison():
     gzip_executable = shutil.which("gzip")
     assert gzip_executable is not None
-    gzip_interface_material = subprocess.run(
-        (gzip_executable, "--help"),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    ).stdout[:64]
     contained_material = b"A"
     anonymous_gzip = gzip.compress(contained_material, compresslevel=9, mtime=0)
     assert b"\n" not in anonymous_gzip
-
-    provider_calls = []
-
-    def supply_gzip_interface(exact_command, supply):
-        provider_calls.append(exact_command)
-        supply(
-            SuppliedWitnessMaterialOccurrence(
-                exact_bytes=gzip_interface_material,
-                source_boundary=f"{gzip_executable} --help stdout through byte 64",
-                output_byte_count_boundary_reached=True,
-            )
-        )
 
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="operator",
-        input_stream=BytesIO(b"!gzip --help\n"),
-        operator_invocation_provider=supply_gzip_interface,
+        input_stream=BytesIO(b"!ls " + gzip_executable.encode() + b"\n"),
+        operator_invocation_provider=invoke_operator_host,
     )
     relation = next(
         event
@@ -163,15 +149,42 @@ def test_gzip_interface_material_at_prior_boundary_is_compared_with_new_gzip_mat
     prior_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=gzip_locality
     )
+    prior_pair_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        and event.locality_identity == gzip_locality
+    )
+    assert prior_pair_measurements
+    prior_material_results = tuple(
+        iter_exact_material_results(ledger, gzip_locality)
+    )
+    prior_pair_source_reference = prior_pair_measurements[-1].material[
+        "source_result_position_reference"
+    ]
+    prior_byte_positions = result_positions_of_recorded_byte_measurement(
+        ledger,
+        prior_pair_source_reference["recorded_occurrence_identity"],
+    )
+    assert prior_byte_positions is not None
+    prior_pair_source = next(
+        position
+        for position in prior_byte_positions
+        if position["dimensions"]["position"]
+        == prior_pair_source_reference["result_position"]
+    )
+    assert prior_pair_source["dimensions"]["content"]["source_material"] == [
+        {"material_result_occurrence_identity": result.identity}
+        for result in prior_material_results
+    ]
 
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity=gzip_locality,
         input_stream=BytesIO(anonymous_gzip),
-        operator_invocation_provider=supply_gzip_interface,
+        operator_invocation_provider=invoke_operator_host,
     )
 
-    assert provider_calls == [b"!gzip --help\n"]
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=gzip_locality
     )
@@ -181,7 +194,9 @@ def test_gzip_interface_material_at_prior_boundary_is_compared_with_new_gzip_mat
     )
     material_results = tuple(iter_exact_material_results(ledger, gzip_locality))
     assert [event.exact_material for event in material_results] == [
-        gzip_interface_material,
+        gzip_executable.encode() + b"\n",
+        b"",
+        b"",
         anonymous_gzip,
     ]
     assert all(
@@ -200,14 +215,13 @@ def test_gzip_interface_material_at_prior_boundary_is_compared_with_new_gzip_mat
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
         and event.locality_identity == gzip_locality
     )
-    assert len(pair_measurements) == 2
     assert len(comparisons) == 1
     subjects = get_recorded_pair_measurement_comparison(
         ledger, comparisons[0].identity
     )["subject_reference"]
     assert subjects["earlier_measurement_reference"][
         "recorded_occurrence_identity"
-    ] == pair_measurements[0].identity
+    ] == prior_pair_measurements[-1].identity
     assert subjects["later_measurement_reference"][
         "recorded_occurrence_identity"
-    ] == pair_measurements[1].identity
+    ] == pair_measurements[-1].identity
