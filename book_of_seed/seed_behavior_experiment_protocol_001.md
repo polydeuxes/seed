@@ -39,7 +39,7 @@ How can an observer demonstrate the expected transformation?
 instead of:
 
 ```text
-What exact Seed occurrence addresses the material and the operation?
+What exact Seed coordinates precede and follow the operation?
 ```
 
 ## Success can be subtraction
@@ -92,9 +92,14 @@ filesystem does not make its behavior internal to Seed, and its presence does
 not prove that Seed has found or invoked it.
 
 Using that executable does not require translating its implementation into
-Python or admitting its ordinary name into the Book. It requires an actual
-Seed road that addresses the relevant filesystem coordinates and records the
-Act and result occurrences that cross that road.
+Python or admitting its ordinary name into the Book. It first requires an
+exact Seed reading `B` that addresses the relevant filesystem coordinates and
+an exact later reading `C` that addresses the resulting coordinates.
+
+Do not insert a new Act occurrence between `B` and `C` merely to explain the
+change. If an existing Act physiology independently addresses the operation,
+its occurrence remains. Otherwise the experiment records only the exact
+boundary distinction it can carry.
 
 ## Required experiment boundary
 
@@ -214,27 +219,32 @@ The decisive operation must move, not its name.
 
 ## Positive evidence required
 
-A positive Seed-behavior experiment must show the complete recorded chain:
+A positive Seed-behavior experiment must begin with the boundary shape Seed
+already has:
 
 ```text
-exact subject coordinate(s)
--> exact Act occurrence
--> exact result occurrence or exact refusal
+exact reading B
+-> operating-system change
+-> exact reading C
+-> exact comparison of B with C
 ```
 
-For an operating-system executable, the test must additionally show:
+For an operating-system executable, the test must show:
 
 ```text
-the executable file coordinate addressed by the Act
-the exact input coordinate addressed by the Act
-the exact destination or output boundary addressed by the Act
-the operating-system operation occurring after the Act
-the result addressing that exact Act occurrence
+the executable-file coordinate addressed through B
+the exact input coordinate addressed through B
+the exact destination or output boundary addressed through B
+the operating-system operation occurring after B
+the exact output coordinate addressed through C
+the exact B-to-C distinction read by Seed
 ```
 
-This does not require an operating-system Witness occurrence. The operating
-system supplies mechanics. Seed must supply and record the exact physiological
-coordinates.
+This does not require an operating-system Witness occurrence or a newly minted
+Act occurrence. The operating system supplies mechanics. Seed must carry the
+exact coordinates before and after them. If an existing Act occurrence is
+independently part of that road, the experiment must preserve it; otherwise it
+must not invent one.
 
 The first experiment may supply the executable coordinate directly. That tests
 use of supplied filesystem material, not filesystem discovery.
@@ -244,11 +254,11 @@ use of supplied filesystem material, not filesystem discovery.
 Any positive executable-file experiment must include, at minimum:
 
 ```text
-no Act occurrence
--> no operation and no result
+no B-to-C operation
+-> no output coordinate at C
 
 missing executable file
--> refusal before Act or an exact failure result, as declared by the road
+-> exact refusal or no changed output coordinate
 
 changed executable coordinate
 -> refusal or a distinguishable Act/result chain
@@ -266,10 +276,10 @@ external execution performed only by the test
 -> no claim that Seed performed it
 ```
 
-Tests must enter through Seed's public runtime road and inspect durable Ledger
-occurrences. Calling a helper directly is insufficient evidence unless that
-helper is itself the public road under investigation and records the required
-occurrences.
+Tests must enter through Seed's public runtime road and inspect the exact
+coordinates at `B` and `C`. Calling a helper directly is insufficient evidence
+unless that helper is itself the public road under investigation and the
+resulting boundary coordinates cross into Seed.
 
 ## Discovery and use remain separate
 
@@ -294,7 +304,7 @@ Before committing an experiment:
 
 1. Record the initial Seed coordinates and observer-only knowledge.
 2. Identify the public Seed entry point exercised by the test.
-3. Identify the exact Act and result occurrences expected.
+3. Identify the exact `B` and `C` coordinates expected.
 4. Name every line of new code that performs transformation mechanics.
 5. If experiment code performs the target transformation, stop.
 6. Run the negative controls before accepting the positive control.
@@ -313,10 +323,10 @@ The next implementation experiment is blocked until the current filesystem and
 process roads can answer this census:
 
 ```text
-Can Seed address an executable file as an exact subject?
-Can Seed address exact input and destination coordinates with it?
-Can an Act occurrence precede the operating-system operation?
-Can the output address that Act occurrence without arriving as Witness material?
+Can an exact reading B address an executable file?
+Can B address exact input and destination coordinates with it?
+Can an exact reading C address the output after operating-system mechanics?
+Can Seed compare the exact B and C coordinates?
 ```
 
 If the current runtime cannot do those things, that negative result identifies

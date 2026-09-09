@@ -132,17 +132,17 @@ The missing lower crossing is no longer accurately described as “teach Seed
 LZ77.” The mechanism is present. The vacancy is:
 
 ```text
-exact prior material result G
-+ exact internal behavior F
-+ exact input position of F
-+ exact output boundary
--> F occurs with G as its exact subject
--> exact output result
+exact reading B contains material result G
++ exact input and destination coordinates
+-> mechanics occur
+-> exact reading C contains the output
+-> Seed compares B with C
 ```
 
-At present `F` is neither an exact current coordinate nor an Act addressed by
-`G`. It is implementation machinery selected by the Ledger reader because the
-bytes occupy the private `events.material` storage coordinate.
+At present the zlib behavior applies only because bytes occupy the private
+`events.material` storage coordinate. An exact material result `G` does not
+cross that input coordinate, and no later exact reading `C` contains its
+expanded result.
 
 Moving G into that private column would not solve the vacancy. It would corrupt
 the occurrence representation and confuse exact external material with the
@@ -157,7 +157,7 @@ same bytes
 ```
 
 `placement` is not proposed as a Book word here. It is shorthand for the exact
-input and destination coordinates that a later Act would have to carry.
+input and destination coordinates required at `B` and `C`.
 
 ## Relation to B and the later result boundary
 
@@ -169,15 +169,15 @@ But boundary-relative availability does not place either material into
 `zlib.decompress`:
 
 ```text
-F's behavior occurs inside the Ledger
-F is not a current coordinate through B
-G is a current exact material result through the later boundary
-F and G never become subjects of one Act
+zlib behavior occurs on the Ledger's private storage coordinate
+G is current as an exact material result through B
+G does not reach that behavior's input coordinate
+no expanded result is current through later reading C
 ```
 
-Completeness and exhaustive comparison cannot bridge an absent subject-to-Act
-coordinate. They can determine whether every member of an exact bounded set
-was addressed only after that set and Act are exact.
+The current `B`-to-`C` physiology can compare exact earlier and later
+coordinates. It does not presently include a filesystem or private-storage
+change that places `G` at the decoder input and its output in `C`.
 
 ## Disposition
 
@@ -190,14 +190,14 @@ behind a new wrapper.
 
 The next work must first census the real filesystem and process roads. A
 positive experiment must address an executable file, exact input, and exact
-destination through a Seed Act occurrence before the operating-system
-operation, with the output addressing that Act occurrence rather than arriving
-as Witness material.
+destination through an exact reading `B`, then address the output through an
+exact later reading `C` and compare their coordinates.
 
 The first experiment may be given an exact executable-file coordinate. That
-would test use of supplied filesystem material, not discovery. If the current
-runtime cannot record that chain, the result is a missing lower road; observer
-code must not impersonate it.
+would test use of supplied filesystem material, not discovery. It must not add
+an Act occurrence merely to explain the `B`-to-`C` change. If the current
+runtime cannot carry those boundary coordinates, the result is a missing lower
+road; observer code must not impersonate it.
 
 The rejection gates for that work are recorded in
 `seed_behavior_experiment_protocol_001.md`.
