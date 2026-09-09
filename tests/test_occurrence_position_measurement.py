@@ -9,13 +9,10 @@ from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     OCCURRENCE_POSITION_RECORDED_KIND,
-    OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_COORDINATES,
     OccurrencePositionFinding,
-    get_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
-    record_occurrence_position_measurement_subject_to_act_binding,
     record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
@@ -58,23 +55,13 @@ def _current_coordinates(ledger, locality="measurement"):
     )
 
 
-def _record_binding(ledger, finding, locality="measurement"):
-    return record_occurrence_position_measurement_subject_to_act_binding(
+def _record_act(ledger, finding, locality="measurement"):
+    return record_occurrence_position_measurement_act_occurrence(
         ledger,
         recording_locality_identity=locality,
         finding=finding,
         current_coordinates=_current_coordinates(ledger, locality),
     )
-
-
-def _record_act(ledger, finding, locality="measurement"):
-    binding = _record_binding(ledger, finding, locality)
-    act = record_occurrence_position_measurement_act_occurrence(
-        ledger,
-        binding_event_identity=binding.identity,
-        current_coordinates=_current_coordinates(ledger, locality),
-    )
-    return binding, act
 
 
 def recorded_road():
@@ -84,7 +71,7 @@ def recorded_road():
         source_locality_identity="a",
         through=boundary,
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
@@ -161,7 +148,7 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
         ValueError,
         match="differs from the exact boundary",
     ):
-        record_occurrence_position_measurement_subject_to_act_binding(
+        record_occurrence_position_measurement_act_occurrence(
             ledger,
             recording_locality_identity="measurement",
             finding=reversed_finding,
@@ -181,7 +168,7 @@ def test_subclass_finding_cannot_replace_the_exact_measurement_type():
     )
 
     with pytest.raises(TypeError, match="one exact finding"):
-        record_occurrence_position_measurement_subject_to_act_binding(
+        record_occurrence_position_measurement_act_occurrence(
             ledger,
             recording_locality_identity="measurement",
             finding=subclass_finding,
@@ -199,7 +186,7 @@ def test_corrupted_source_cannot_enter_act_occurrence_after_measurement():
     ledger.corrupted.add(occurrences[1].identity)
 
     with pytest.raises(ValueError, match="requires intact occurrences"):
-        record_occurrence_position_measurement_subject_to_act_binding(
+        record_occurrence_position_measurement_act_occurrence(
             ledger,
             recording_locality_identity="measurement",
             finding=finding,
@@ -232,81 +219,42 @@ def test_recorded_position_measurement_has_exact_act_and_result():
     ) == finding
 
 
-def test_binding_act_and_result_remain_separate_exact_occurrences():
-    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    reference = recorded.material["subject_to_act_binding_reference"]
-    binding = get_occurrence_position_measurement_subject_to_act_binding(
-        ledger, reference["recorded_occurrence_identity"]
-    )
+def test_binding_coordinates_are_carried_by_the_act_occurrence():
+    ledger, occurrences, boundary, _finding, recorded = recorded_road()
     act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
 
-    assert binding.kind == (
-        OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    )
-    assert set(binding.material) == {
+    assert set(act_occurrence.material) == {
+        "act",
         "subject_reference",
-        "book_clause_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
     }
-    assert reference == {
-        "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": binding.material["book_clause_identity"],
-        "subject_reference": binding.material["subject_reference"],
+    assert act_occurrence.material["subject_reference"] == {
+        "source_occurrence_references": [
+            {"occurrence_identity": occurrence.identity}
+            for occurrence in occurrences
+        ]
     }
-    assert binding.identity in _current_coordinates(ledger)[
-        "subject_to_act_binding_occurrences"
-    ]
-    assert len({binding.identity, act_occurrence.identity, recorded.identity}) == 3
-    assert "exact_act_identity" not in binding.material
+    assert act_occurrence.material["completeness_boundary_identity"] == boundary.identity
+    assert len({act_occurrence.identity, recorded.identity}) == 2
     assert "addressed_act_identity" not in act_occurrence.material
     assert "addressed_act_identity" not in recorded.material
-    assert "act_occurrence_identity" not in binding.material
-    assert "measurement_result_identity" not in binding.material
     assert "result_identity" not in recorded.material
+    assert all("subject_to_act_binding" not in event.kind for event in ledger.list())
 
 
-def test_act_requires_current_coordinates_carrying_the_binding():
-    ledger, _occurrences, boundary = occurrence_road()
-    finding = measure_occurrence_position(
-        ledger, source_locality_identity="a", through=boundary
-    )
-    before_binding = _current_coordinates(ledger)
-    binding = record_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-        current_coordinates=before_binding,
-    )
-    before = ledger.append_boundary()
-
-    with pytest.raises(ValueError, match="exact current coordinates"):
-        record_occurrence_position_measurement_act_occurrence(
-            ledger,
-            binding_event_identity=binding.identity,
-            current_coordinates=before_binding,
-        )
-
-    assert ledger.append_boundary() == before
-    assert record_occurrence_position_measurement_act_occurrence(
-        ledger,
-        binding_event_identity=binding.identity,
-        current_coordinates=_current_coordinates(ledger),
-    ).kind == OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
-
-
-def test_binding_refuses_stale_current_coordinates_without_appending():
+def test_act_requires_exact_current_coordinates():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger, source_locality_identity="a", through=boundary
     )
     stale = _current_coordinates(ledger)
-    _record_binding(ledger, finding)
+    stale["event_count"] += 1
     before = ledger.append_boundary()
 
     with pytest.raises(ValueError, match="exact current coordinates"):
-        record_occurrence_position_measurement_subject_to_act_binding(
+        record_occurrence_position_measurement_act_occurrence(
             ledger,
             recording_locality_identity="measurement",
             finding=finding,
@@ -314,21 +262,29 @@ def test_binding_refuses_stale_current_coordinates_without_appending():
         )
 
     assert ledger.append_boundary() == before
+    assert record_occurrence_position_measurement_act_occurrence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+        current_coordinates=_current_coordinates(ledger),
+    ).kind == OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
 
 
-def test_one_binding_cannot_record_two_act_occurrences():
+def test_act_refuses_stale_current_coordinates_without_appending():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger, source_locality_identity="a", through=boundary
     )
-    binding, _act = _record_act(ledger, finding)
+    stale = _current_coordinates(ledger)
+    stale["event_count"] += 1
     before = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="already carries an Act"):
+    with pytest.raises(ValueError, match="exact current coordinates"):
         record_occurrence_position_measurement_act_occurrence(
             ledger,
-            binding_event_identity=binding.identity,
-            current_coordinates=_current_coordinates(ledger),
+            recording_locality_identity="measurement",
+            finding=finding,
+            current_coordinates=stale,
         )
 
     assert ledger.append_boundary() == before
@@ -356,7 +312,7 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         counted_position_results,
     )
 
-    binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
@@ -367,9 +323,7 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
     ) == finding
 
     assert len(result_position_calls) == 2
-    assert act_occurrence.material["subject_to_act_binding_reference"][
-        "recorded_occurrence_identity"
-    ] == binding.identity
+    assert act_occurrence.material["source_locality_identity"] == "a"
     assert len(recorded.material["result_positions"]) == len(finding.occurrences)
 
 
@@ -394,19 +348,16 @@ def test_act_occurrence_is_observed_before_result_without_reconstructing_finding
         counted_measure,
     )
 
-    binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
 
     assert [
         event.kind for event in ledger.list_locality("measurement")
     ] == [
-        OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     ]
     assert "result_identity" not in act_occurrence.material
     assert "occurrences" not in act_occurrence.material
-    assert act_occurrence.material["subject_to_act_binding_reference"][
-        "recorded_occurrence_identity"
-    ] == binding.identity
+    assert act_occurrence.material["subject_reference"]
     observed = ledger.append(
         "test.act_occurrence_observed",
         {"act_occurrence_event_identity": act_occurrence.identity},
@@ -420,7 +371,6 @@ def test_act_occurrence_is_observed_before_result_without_reconstructing_finding
 
     events = ledger.list_locality("measurement")
     assert [event.kind for event in events] == [
-        OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
         observed.kind,
         OCCURRENCE_POSITION_RECORDED_KIND,
@@ -459,20 +409,20 @@ def test_result_refuses_arbitrary_act_occurrence_event_identity_without_appendin
     assert ledger.append_boundary() == before
 
 
-def test_result_refuses_substituted_binding_without_appending_yield():
+def test_result_refuses_substituted_act_subject_without_appending_yield():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger,
         source_locality_identity="a",
         through=boundary,
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
-    act_occurrence.material["subject_to_act_binding_reference"][
-        "recorded_occurrence_identity"
-    ] = "substituted-binding"
+    act_occurrence = _record_act(ledger, finding)
+    act_occurrence.material["subject_reference"] = {
+        "source_occurrence_references": [{"occurrence_identity": "substituted"}]
+    }
     before = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="exact intact Act occurrence"):
+    with pytest.raises(ValueError, match="Act coordinates are not exact"):
         record_occurrence_position_measurement_result(
             ledger,
             act_occurrence_event_identity=act_occurrence.identity,
@@ -493,7 +443,7 @@ def test_result_refuses_wrong_kind_and_corrupted_act_occurrence():
         {},
         locality_identity="measurement",
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
 
     with pytest.raises(ValueError, match="exact intact Act occurrence"):
         record_occurrence_position_measurement_result(
@@ -516,7 +466,7 @@ def test_one_measurement_act_cannot_record_two_results():
         source_locality_identity="a",
         through=boundary,
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
@@ -539,7 +489,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         source_locality_identity="a",
         through=boundary,
     )
-    binding, act_occurrence = _record_act(ledger, finding, locality="a")
+    act_occurrence = _record_act(ledger, finding, locality="a")
 
     def history_scan_is_not_available(*_args, **_kwargs):
         raise AssertionError(
@@ -551,7 +501,6 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         position_measurement._record_occurrence_position_measurement_result_from_carried_act_occurrence(
             ledger,
             act_occurrence=act_occurrence,
-            binding=binding,
             finding=finding,
         )
     )
@@ -562,7 +511,6 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
             position_measurement._record_occurrence_position_measurement_result_from_carried_act_occurrence(
                 ledger,
                 act_occurrence=act_occurrence,
-                binding=binding,
                 finding=finding,
             )
         )
@@ -687,7 +635,7 @@ def test_durable_locality_positions_read_through_their_exact_yield(tmp_path):
         ledger,
         source_locality_identity="a",
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
@@ -711,7 +659,7 @@ def test_actual_position_occurrences_remain_exact_after_reopen(tmp_path):
         ledger,
         source_locality_identity="a",
     )
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
@@ -731,7 +679,7 @@ def test_actual_position_occurrences_remain_exact_after_reopen(tmp_path):
         reopened.close()
 
 
-def test_binding_act_and_result_remain_exact_across_separate_restarts(tmp_path):
+def test_act_and_result_remain_exact_across_separate_restarts(tmp_path):
     path = tmp_path / "occurrence-position-restarts.sqlite"
     ledger = SQLiteEventLedger(path)
     first = ledger.append(
@@ -740,17 +688,10 @@ def test_binding_act_and_result_remain_exact_across_separate_restarts(tmp_path):
     finding = measure_occurrence_position(
         ledger, source_locality_identity="a"
     )
-    binding = _record_binding(ledger, finding)
-    binding_identity = binding.identity
-    ledger.close()
-
-    ledger = SQLiteEventLedger(path)
-    binding = get_occurrence_position_measurement_subject_to_act_binding(
-        ledger, binding_identity
-    )
     act_occurrence = record_occurrence_position_measurement_act_occurrence(
         ledger,
-        binding_event_identity=binding.identity,
+        recording_locality_identity="measurement",
+        finding=finding,
         current_coordinates=_current_coordinates(ledger),
     )
     act_identity = act_occurrence.identity
@@ -774,7 +715,7 @@ def test_reopened_public_result_refuses_a_second_result(tmp_path):
     ledger = SQLiteEventLedger(path)
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
     finding = measure_occurrence_position(ledger, source_locality_identity="a")
-    _binding, act_occurrence = _record_act(ledger, finding)
+    act_occurrence = _record_act(ledger, finding)
     record_occurrence_position_measurement_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,

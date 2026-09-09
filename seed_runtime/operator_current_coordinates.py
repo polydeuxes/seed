@@ -57,11 +57,9 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_KIND,
-    OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     _occurrence_position_result_material,
     _position_results,
-    _require_carried_occurrence_position_binding,
-    get_occurrence_position_measurement_subject_to_act_binding,
+    _read_occurrence_position_measurement_act_occurrence,
     get_recorded_occurrence_position_measurement,
 )
 from seed_runtime.yield_relation import (
@@ -211,7 +209,6 @@ _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
 }
 _MEASUREMENT_BINDING_KINDS = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RESULT_POSITION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -399,11 +396,6 @@ _DIRECT_BINDING_COORDINATES_WITH_RESULT = (
     _REQUIRED_DIRECT_BINDING_COORDINATES | {"result_identity"}
 )
 
-_OCCURRENCE_POSITION_BINDING_COORDINATES = (
-    _REQUIRED_DIRECT_BINDING_COORDINATES - {"exact_act_identity"}
-)
-
-
 _NO_RESULT_COORDINATE = object()
 
 
@@ -525,17 +517,30 @@ def _subject_to_act_binding_of_exact_result(
                 exact_act.material["source_coordinate_reference"]
             ),
         }
+    if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
+        exact_act, _finding = _read_occurrence_position_measurement_act_occurrence(
+            ledger, act_occurrence.identity
+        )
+        return {
+            "act_occurrence_event_identity": exact_act.identity,
+            "subject_reference": deepcopy(exact_act.material["subject_reference"]),
+            "source_locality_identity": exact_act.material[
+                "source_locality_identity"
+            ],
+            "completeness_boundary_identity": exact_act.material[
+                "completeness_boundary_identity"
+            ],
+            "through_event_occurrence_identity": exact_act.material[
+                "through_event_occurrence_identity"
+            ],
+        }
     if reference is None:
         return None
     if ledger.integrity_of(act_occurrence.identity) == CORRUPTED:
         raise ValueError(
             "recorded subject-to-Act binding requires its intact Act occurrence"
         )
-    required_binding_coordinates = (
-        _OCCURRENCE_POSITION_BINDING_COORDINATES
-        if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
-        else _REQUIRED_DIRECT_BINDING_COORDINATES
-    )
+    required_binding_coordinates = _REQUIRED_DIRECT_BINDING_COORDINATES
     direct_shape = (
         type(reference) is dict
         and frozenset(reference)
@@ -1175,15 +1180,6 @@ def advance_operator_current_coordinates(
             result_position_locality_movement_occurrences[event.identity] = (
                 _result_position_locality_movement_occurrence_coordinates(ledger, event)
             )
-            continue
-        if (
-            event.kind
-            == OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        ):
-            get_occurrence_position_measurement_subject_to_act_binding(
-                ledger, event.identity
-            )
-            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
             get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
@@ -1891,63 +1887,18 @@ def _carry_result_position_locality_movement_result_into_current_coordinates(
     return current_coordinates, exact
 
 
-def _carry_occurrence_position_measurement_binding_into_current_coordinates(
-    ledger: EventLedger,
-    current_coordinates: dict[str, Any],
-    event,
-    finding,
-    *,
-    prior_through_event_occurrence_identity: str,
-) -> dict[str, Any]:
-    """Carry the occurrence-position binding into current coordinates."""
-
-    if (
-        type(current_coordinates) is not dict
-        or current_coordinates.get("locality_identity") != event.locality_identity
-        or current_coordinates.get("through_event_occurrence_identity")
-        != prior_through_event_occurrence_identity
-    ):
-        raise ValueError(
-            "occurrence position binding must follow its carried finding"
-        )
-    _require_carried_occurrence_position_binding(
-        ledger,
-        binding=event,
-        finding=finding,
-    )
-    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
-    event_count = current_coordinates.get("event_count")
-    if (
-        type(bindings) is not dict
-        or event.identity in bindings
-        or type(event_count) is not int
-        or event_count < 0
-    ):
-        raise ValueError("occurrence position binding coordinates are not exact")
-    bindings[event.identity] = None
-    current_coordinates["through_event_occurrence_identity"] = event.identity
-    current_coordinates["event_count"] = event_count + 1
-    return current_coordinates
-
-
 def _carry_occurrence_position_measurement_result_into_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
     *,
     act_occurrence,
-    binding,
     finding,
 ) -> dict[str, Any]:
     """Carry the occurrence-position result produced by its exact Act."""
 
     measurements = (
         current_coordinates.get("measurement_occurrences")
-        if type(current_coordinates) is dict
-        else None
-    )
-    bindings = (
-        current_coordinates.get("subject_to_act_binding_occurrences")
         if type(current_coordinates) is dict
         else None
     )
@@ -1964,7 +1915,6 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     result_positions = _position_results(finding)
     result_material = _occurrence_position_result_material(
         finding,
-        binding=binding,
         result_positions=result_positions,
     )
     expected = {
@@ -1973,15 +1923,13 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     }
     if (
         event.kind != OCCURRENCE_POSITION_RECORDED_KIND
-        or event.locality_identity != binding.locality_identity
+        or event.locality_identity != act_occurrence.locality_identity
         or event.material != expected
         or current_coordinates.get("locality_identity") != event.locality_identity
         or current_coordinates.get("through_event_occurrence_identity")
         != act_occurrence.identity
         or type(measurements) is not dict
         or event.identity in measurements
-        or type(bindings) is not dict
-        or binding.identity not in bindings
         or type(exact_results) is not dict
         or event.identity in exact_results
         or ledger.integrity_of(event.identity) == CORRUPTED

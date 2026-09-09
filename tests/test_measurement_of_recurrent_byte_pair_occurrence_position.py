@@ -33,7 +33,7 @@ from seed_runtime.operator_current_coordinates import (
 )
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
-    record_occurrence_position_measurement_subject_to_act_binding,
+    record_occurrence_position_measurement_act_occurrence,
 )
 from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
@@ -240,12 +240,12 @@ def test_changed_coordinates_cannot_address_the_act():
         )
 
 
-def test_act_recording_refuses_a_corrupted_unrelated_coordinate_carrier():
+def test_unrelated_unresulted_measurement_act_does_not_enter_current_results():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     occurrence_finding = measure_occurrence_position(
         ledger, source_locality_identity=locality
     )
-    unrelated = record_occurrence_position_measurement_subject_to_act_binding(
+    unrelated = record_occurrence_position_measurement_act_occurrence(
         ledger,
         recording_locality_identity=locality,
         finding=occurrence_finding,
@@ -253,18 +253,17 @@ def test_act_recording_refuses_a_corrupted_unrelated_coordinate_carrier():
             ledger, locality_identity=locality
         ),
     )
-    unrelated.material["responsibility"] = "corrupted unrelated Responsibility"
+    unrelated.material["subject_reference"] = {
+        "source_occurrence_references": [{"occurrence_identity": "corrupted"}]
+    }
 
-    with pytest.raises(ValueError, match="coordinates are not exact"):
-        read_operator_current_coordinates(ledger, locality_identity=locality)
-    with pytest.raises(ValueError, match="coordinates are not exact"):
-        record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
-            ledger,
-            finding=finding,
-            current_coordinates=read_operator_current_coordinates(
-                ledger, locality_identity=locality
-            ),
-        )
+    current = read_operator_current_coordinates(ledger, locality_identity=locality)
+    assert unrelated.identity not in current["exact_result_occurrences"]
+    assert record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        current_coordinates=current,
+    )
 
 
 def test_act_and_result_cross_distinct_durable_restarts(tmp_path):

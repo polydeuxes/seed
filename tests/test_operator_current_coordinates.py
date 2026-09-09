@@ -29,7 +29,6 @@ from seed_runtime.material_source import MaterialSourceError
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
-    record_occurrence_position_measurement_subject_to_act_binding,
     record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
@@ -118,15 +117,10 @@ def _record_measurement(ledger, measurement_kind):
         ledger,
         source_locality_identity="s",
     )
-    binding = record_occurrence_position_measurement_subject_to_act_binding(
+    act_occurrence = record_occurrence_position_measurement_act_occurrence(
         ledger,
         recording_locality_identity="s",
         finding=finding,
-        current_coordinates=_standing(ledger),
-    )
-    act_occurrence = record_occurrence_position_measurement_act_occurrence(
-        ledger,
-        binding_event_identity=binding.identity,
         current_coordinates=_standing(ledger),
     )
     return record_occurrence_position_measurement_result(

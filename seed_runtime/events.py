@@ -450,6 +450,17 @@ class EventLedger:
             prior_position = position
         return identities
 
+    def append_boundary_precedes_occurrence(
+        self, boundary: EventLedgerBoundary, event_identity: str
+    ) -> bool:
+        """Return whether one exact append boundary precedes one occurrence."""
+
+        boundary_position = self._position_through(boundary)
+        occurrence_position = self._by_identity_position.get(event_identity)
+        if occurrence_position is None:
+            raise ValueError("the supplied occurrence is absent")
+        return boundary_position < occurrence_position
+
     def _position_through(self, through: EventLedgerBoundary | None) -> int:
         if through is None:
             return len(self._events)
@@ -962,6 +973,32 @@ class SQLiteEventLedger(EventLedger):
                 raise ValueError("the supplied occurrences are not in append order")
             prior_rowid = rowid
         return identities
+
+    def append_boundary_precedes_occurrence(
+        self, boundary: EventLedgerBoundary, event_identity: str
+    ) -> bool:
+        """Return whether one exact append boundary precedes one occurrence."""
+
+        if not isinstance(boundary, EventLedgerBoundary):
+            raise TypeError("one exact append boundary is required")
+        if boundary.identity == _EMPTY_PREFIX_IDENTITY:
+            boundary_rowid = 0
+        else:
+            boundary_row = self._connection.execute(
+                "SELECT event_rowid FROM event_prefix_identities WHERE identity = ?",
+                (boundary.identity,),
+            ).fetchone()
+            if boundary_row is None:
+                raise InvalidLedgerBoundary(
+                    "boundary does not denote an append prefix of this ledger"
+                )
+            boundary_rowid = int(boundary_row["event_rowid"])
+        occurrence = self._connection.execute(
+            "SELECT rowid FROM events WHERE identity = ?", (event_identity,)
+        ).fetchone()
+        if occurrence is None:
+            raise ValueError("the supplied occurrence is absent")
+        return boundary_rowid < int(occurrence["rowid"])
 
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:

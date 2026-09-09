@@ -137,6 +137,41 @@ def test_exact_occurrence_identities_have_one_append_order(tmp_path, durable):
 
 
 @pytest.mark.parametrize("durable", (False, True))
+def test_append_boundary_and_occurrence_have_one_exact_order(tmp_path, durable):
+    ledger = (
+        SQLiteEventLedger(str(tmp_path / "boundary-order.db"))
+        if durable
+        else EventLedger()
+    )
+    try:
+        empty = ledger.append_boundary()
+        first = ledger.append("first", locality_identity="source")
+        through_first = ledger.append_boundary()
+        second = ledger.append("second", locality_identity="elsewhere")
+        through_second = ledger.append_boundary()
+
+        assert ledger.append_boundary_precedes_occurrence(empty, first.identity)
+        assert ledger.append_boundary_precedes_occurrence(
+            through_first, second.identity
+        )
+        assert not ledger.append_boundary_precedes_occurrence(
+            through_first, first.identity
+        )
+        assert not ledger.append_boundary_precedes_occurrence(
+            through_second, second.identity
+        )
+        with pytest.raises(ValueError, match="absent"):
+            ledger.append_boundary_precedes_occurrence(through_first, "missing")
+        with pytest.raises(InvalidLedgerBoundary):
+            ledger.append_boundary_precedes_occurrence(
+                EventLedgerBoundary("missing-boundary"), second.identity
+            )
+    finally:
+        if durable:
+            ledger.close()
+
+
+@pytest.mark.parametrize("durable", (False, True))
 def test_locality_occurrence_interval_includes_every_occurrence_between_boundaries(
     tmp_path, durable
 ):
