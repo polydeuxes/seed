@@ -514,6 +514,54 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     assert isinstance(stored[plain.identity], str)
 
 
+def test_equal_compressed_bytes_are_read_by_their_storage_coordinate(tmp_path):
+    """The byte coordinate determines whether internal behavior reads them."""
+
+    from seed_runtime.events import _stored_material
+
+    path = str(tmp_path / "ledger.db")
+    coordinate_material = {
+        "coordinates": {
+            "content": "ABC" * 2000,
+            "positions": list(range(200)),
+        }
+    }
+    stored_bytes = _stored_material(json.dumps(coordinate_material))
+    assert type(stored_bytes) is bytes
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        event = ledger.append(
+            "internal-compression-coordinate-control",
+            coordinate_material,
+            exact_material=stored_bytes,
+            locality_identity="internal-compression-coordinate-control",
+        )
+    finally:
+        ledger.close()
+
+    connection = sqlite3.connect(path)
+    stored_material, exact_material = connection.execute(
+        "SELECT events.material, event_exact_materials.exact_material "
+        "FROM events JOIN event_exact_materials "
+        "ON event_exact_materials.material_identity = "
+        "events.exact_material_identity WHERE events.identity = ?",
+        (event.identity,),
+    ).fetchone()
+    connection.close()
+    assert stored_material == exact_material == stored_bytes
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        read = reopened.get(event.identity)
+    finally:
+        reopened.close()
+
+    assert read is not None
+    assert read.material == coordinate_material
+    assert read.exact_material == stored_bytes
+
+
 def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_path):
 
     import zlib
