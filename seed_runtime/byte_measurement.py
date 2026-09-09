@@ -43,7 +43,6 @@ BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
 BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.measurement.byte_position_pair_measurement_subject_to_act_binding_recorded"
 )
-BYTE_OCCURRENCE_PRESERVATION = "exact byte Measurement result"
 BYTE_PAIR_OCCURRENCE_PRESERVATION = "exact byte-position-pair Measurement result"
 BYTE_RESULT_COORDINATES = frozenset(
     {
@@ -2361,7 +2360,6 @@ def _record_byte_measurement_result_from_exact_inputs(
         {
             **result_material,
             "act_occurrence_event_identity": act_occurrence.identity,
-            "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
         locality_identity=act_occurrence.locality_identity,
     )
@@ -2473,19 +2471,14 @@ def _result_positions_of_recorded_byte_measurement(
         "completeness_boundary",
     }) | {
         "act_occurrence_event_identity",
-        "occurrence_preservation",
     }:
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact byte result and recording surfaces"
         )
-    if (
-        material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("dimensions")
-        != {
+    if material.get("dimensions") != {
                 "identity": "byte-count-measurement-occurrence",
                 "content": "exact source material, byte count, and same content",
-        }
-    ):
+    }:
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact Measurement result"
         )

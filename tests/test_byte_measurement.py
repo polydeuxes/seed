@@ -1039,16 +1039,35 @@ def test_changed_plain_byte_result_position_address_is_refused():
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_recording_occurrence_is_validated_exactly():
+def test_byte_measurement_reader_refuses_reintroduced_occurrence_preservation():
     ledger = _ledger(b"a\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    event.material["occurrence_preservation"] = "something else"
-    with pytest.raises(ByteMeasurementError, match="exact Measurement result"):
+    event.material["occurrence_preservation"] = "exact byte Measurement result"
+    with pytest.raises(ByteMeasurementError, match="recording surfaces"):
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
+
+
+def test_byte_measurement_reader_refuses_two_results_for_one_act():
+    ledger = _ledger(b"a\n")
+    event = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    duplicate = ledger.append(
+        BYTE_MEASUREMENT_RECORDED_KIND,
+        deepcopy(event.material),
+        locality_identity=event.locality_identity,
+    )
+
+    with pytest.raises(ByteMeasurementError, match="single exact"):
+        result_positions_of_recorded_byte_measurement(ledger, event.identity)
+    with pytest.raises(ByteMeasurementError, match="single exact"):
+        result_positions_of_recorded_byte_measurement(ledger, duplicate.identity)
 
 
 def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement():
@@ -2622,7 +2641,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_source_result_position_subject_is_the_exact_material_results,
         test_recorded_results_replay_the_complete_bounded_source_read,
         test_a_self_consistent_truncated_source_result_position_is_refused,
-        test_recording_occurrence_is_validated_exactly,
+        test_byte_measurement_reader_refuses_reintroduced_occurrence_preservation,
         test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement,
         test_a_missing_declared_locality_is_refused,
         test_acquisition_result_must_match_its_exact_byte_coordinates,
