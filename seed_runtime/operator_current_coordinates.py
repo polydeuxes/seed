@@ -541,7 +541,8 @@ def _subject_to_act_binding_of_exact_result(
             "recorded subject-to-Act binding requires its intact Act occurrence"
         )
     required_binding_coordinates = (
-        _REQUIRED_DIRECT_BINDING_COORDINATES - {"exact_act_identity"}
+        _REQUIRED_DIRECT_BINDING_COORDINATES
+        - {"book_clause_identity", "exact_act_identity"}
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         else _REQUIRED_DIRECT_BINDING_COORDINATES
     )
@@ -570,6 +571,11 @@ def _subject_to_act_binding_of_exact_result(
         binding_event is None
         or binding_event.locality_identity != event.locality_identity
         or ledger.integrity_of(binding_event.identity) == CORRUPTED
+        or (
+            event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+            and binding_event.kind
+            != BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        )
     ):
         raise ValueError(
             "recorded subject-to-Act binding requires its exact occurrence"

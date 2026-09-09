@@ -1930,7 +1930,6 @@ def _byte_measurement_source_material(
 def _byte_measurement_binding_reference(binding: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": binding.identity,
-        "book_clause_identity": binding.material["book_clause_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
     }
 
@@ -1948,7 +1947,6 @@ def _byte_measurement_binding_material(
                 dict(reference) for reference in source_material
             ],
         },
-        "book_clause_identity": "01.Source.D",
         "source_localities": list(source_localities),
         "completeness_boundary_identity": completeness_boundary_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -2518,7 +2516,6 @@ def _measurement_of_act_occurrence(
         or set(binding_reference)
             != {
                 "recorded_occurrence_identity",
-                "book_clause_identity",
                 "subject_reference",
             }
         or type(event.locality_identity) is not str

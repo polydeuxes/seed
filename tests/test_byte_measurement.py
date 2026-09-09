@@ -363,7 +363,6 @@ def test_exact_byte_binding_enters_current_coordinates_without_a_future_result_i
     assert "yield_relation_identity" not in result.material
     assert result.material["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
         "subject_reference": assignment.material["subject_reference"],
     }
     assert "result_boundary_identity" not in assignment.material
@@ -1898,7 +1897,6 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
 
     assert set(binding) == {
         "subject_reference",
-        "book_clause_identity",
         "source_localities",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
@@ -1911,6 +1909,20 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
     assert binding["completeness_boundary_identity"] == source.material[
         "completeness_boundary"
     ]["identity"]
+
+
+def test_byte_measurement_reader_refuses_reintroduced_book_clause_copy():
+    ledger = _ledger(b"ta\n")
+    source = _byte_source(ledger)
+    binding = ledger.get(
+        source.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    binding.material["book_clause_identity"] = "01.Source.D"
+
+    with pytest.raises(ByteMeasurementError, match="coordinates are not exact"):
+        result_positions_of_recorded_byte_measurement(ledger, source.identity)
 
 
 def test_locality_movement_binding_addresses_the_exact_source():
