@@ -581,6 +581,7 @@ def _subject_to_act_binding_of_exact_result(
             WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
             RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
             LOCALITY_CONTINUATION_RECORDED_KIND,
+            OCCURRENCE_POSITION_RECORDED_KIND,
         }
         and not declared_results
         and result_identity is None

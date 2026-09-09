@@ -247,7 +247,6 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
         "subject_reference",
         "exact_act_identity",
         "act_occurrence_identity",
-        "measurement_result_identity",
         "book_clause_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
@@ -266,12 +265,13 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
         {
             binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
-            binding.material["measurement_result_identity"],
             binding.identity,
             act_occurrence.identity,
             recorded.identity,
         }
-    ) == 6
+    ) == 5
+    assert "measurement_result_identity" not in binding.material
+    assert "result_identity" not in recorded.material
 
 
 def test_act_requires_current_coordinates_carrying_the_binding():
@@ -608,7 +608,6 @@ def test_result_has_one_ordered_result_position_per_exact_position():
     ]
     assert _current_coordinates(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
-        "result_identity": recorded.material["result_identity"],
         "act_occurrence_event_identity": recorded.material["act_occurrence_event_identity"],
         "act_occurrence_identity": recorded.material[
             "act_occurrence_identity"
@@ -734,9 +733,6 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
         ],
         "occurrence_position_measurement_occurrence": recorded.material[
             "act_occurrence_identity"
-        ],
-        "occurrence_position_measurement_result": recorded.material[
-            "result_identity"
         ],
     }
     ledger.close()
