@@ -249,6 +249,7 @@ def test_binding_coordinates_are_carried_by_the_act_occurrence():
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
     }
+    assert act_occurrence.material["act"] == "Measurement"
     assert act_occurrence.material["subject_reference"] == {
         "source_occurrence_references": [
             {"occurrence_identity": occurrence.identity}

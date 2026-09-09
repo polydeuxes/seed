@@ -13,7 +13,7 @@ OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.locality_occurrence_position_act_occurrence_recorded"
 )
 OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
-OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
+MEASUREMENT_ACT = "Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
         "result_positions",
@@ -125,7 +125,7 @@ def _occurrence_position_act_occurrence_material(
     through_event_occurrence_identity: str | None,
 ) -> dict[str, Any]:
     return {
-        "act": OCCURRENCE_POSITION_ACT,
+        "act": MEASUREMENT_ACT,
         "subject_reference": {
             "source_occurrence_references": [
                 {"occurrence_identity": identity}
