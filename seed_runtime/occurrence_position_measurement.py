@@ -20,7 +20,6 @@ OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
         "addressed_act_identity",
-        "act_occurrence_identity",
         "exact_act",
         "subject_to_act_binding_reference",
         "source_localities",
@@ -127,7 +126,6 @@ def _occurrence_position_result_material(
 ) -> dict[str, Any]:
     return {
         "addressed_act_identity": binding.material["exact_act_identity"],
-        "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "source_localities": [finding.source_locality_identity],
@@ -152,7 +150,6 @@ def _binding_material(
     *,
     through_event_occurrence_identity: str | None,
     exact_act_identity: str,
-    act_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -162,7 +159,6 @@ def _binding_material(
             ],
         },
         "exact_act_identity": exact_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
         "book_clause_identity": "01.Source.D",
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -230,7 +226,6 @@ def _occurrence_position_act_occurrence_material(
 ) -> dict[str, Any]:
     return {
         "addressed_act_identity": binding.material["exact_act_identity"],
-        "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "source_locality_identity": finding.source_locality_identity,
@@ -370,12 +365,7 @@ def _record_occurrence_position_measurement_subject_to_act_binding(
         "exact_act_identity": ledger.mint_identity(
             "occurrence_position_measurement_act"
         ),
-        "act_occurrence_identity": ledger.mint_identity(
-            "occurrence_position_measurement_occurrence"
-        ),
     }
-    if len(set(identities.values())) != len(identities):
-        raise ValueError("occurrence position Measurement identities collapsed")
     return ledger.append(
         OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
@@ -449,7 +439,6 @@ def _read_occurrence_position_measurement_subject_to_act_binding(
         coordinate: material.get(coordinate)
         for coordinate in (
             "exact_act_identity",
-            "act_occurrence_identity",
         )
     }
     source_locality_identity = material.get("source_locality_identity")
@@ -561,8 +550,6 @@ def _record_occurrence_position_measurement_act_occurrence(
         if (
             prior_act.material.get("subject_to_act_binding_reference")
             == _binding_reference(binding)
-            or prior_act.material.get("act_occurrence_identity")
-            == binding.material["act_occurrence_identity"]
         ):
             raise ValueError(
                 "the occurrence position binding already carries an Act"
@@ -617,7 +604,6 @@ def _require_carried_occurrence_position_binding(
         coordinate: material.get(coordinate)
         for coordinate in (
             "exact_act_identity",
-            "act_occurrence_identity",
         )
     }
     through_event_occurrence_identity = material.get(
@@ -668,8 +654,6 @@ def _record_occurrence_position_measurement_act_occurrence_from_current_coordina
         if (
             prior_act.material.get("subject_to_act_binding_reference")
             == _binding_reference(binding)
-            or prior_act.material.get("act_occurrence_identity")
-            == binding.material["act_occurrence_identity"]
         ):
             raise ValueError(
                 "the occurrence position binding already carries an Act"
@@ -747,7 +731,6 @@ def _refuse_existing_occurrence_position_measurement_result(
     ledger: EventLedger,
     *,
     act_occurrence: Event,
-    act_occurrence_identity: str,
 ) -> None:
     for prior_result in ledger.iter_locality_kind(
         act_occurrence.locality_identity,
@@ -756,8 +739,6 @@ def _refuse_existing_occurrence_position_measurement_result(
         if (
             prior_result.material.get("act_occurrence_event_identity")
             == act_occurrence.identity
-            or prior_result.material.get("act_occurrence_identity")
-            == act_occurrence_identity
         ):
             raise ValueError(
                 "the occurrence position Measurement Act already has a result"
@@ -771,8 +752,6 @@ def _record_occurrence_position_measurement_result(
     binding: Event,
     finding: OccurrencePositionFinding,
 ) -> Event:
-    act_occurrence_identity = binding.material["act_occurrence_identity"]
-
     result_positions = _position_results(finding)
     result_material = _occurrence_position_result_material(
         finding,
@@ -781,7 +760,6 @@ def _record_occurrence_position_measurement_result(
     )
     recorded_material = {
         "addressed_act_identity": result_material["addressed_act_identity"],
-        "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
@@ -813,7 +791,6 @@ def record_occurrence_position_measurement_result(
     _refuse_existing_occurrence_position_measurement_result(
         ledger,
         act_occurrence=act_occurrence,
-        act_occurrence_identity=binding.material["act_occurrence_identity"],
     )
     return _record_occurrence_position_measurement_result(
         ledger,
@@ -882,7 +859,6 @@ def get_recorded_occurrence_position_measurement(
         )
     material = event.material
     if set(material) != OCCURRENCE_POSITION_RESULT_COORDINATES | {
-        "act_occurrence_identity",
         "act_occurrence_event_identity",
     }:
         raise ValueError(
@@ -903,10 +879,6 @@ def get_recorded_occurrence_position_measurement(
         or type(material.get("result_positions")) is not list
         or type(material.get("addressed_act_identity")) is not str
         or not material["addressed_act_identity"]
-        or type(material.get("act_occurrence_identity")) is not str
-        or not material["act_occurrence_identity"]
-        or material["addressed_act_identity"]
-        == material["act_occurrence_identity"]
     ):
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"

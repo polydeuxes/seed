@@ -213,9 +213,9 @@ def test_recorded_position_measurement_has_exact_act_and_result():
 
     assert recorded.kind == OCCURRENCE_POSITION_RECORDED_KIND
     assert act_occurrence.kind == OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
-    assert act_occurrence.material["act_occurrence_identity"] == recorded.material[
-        "act_occurrence_identity"
-    ]
+    assert act_occurrence.identity != recorded.identity
+    assert "act_occurrence_identity" not in act_occurrence.material
+    assert "act_occurrence_identity" not in recorded.material
     assert "yield_relation_identity" not in recorded.material
     assert not tuple(
         event
@@ -246,7 +246,6 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
     assert set(binding.material) == {
         "subject_reference",
         "exact_act_identity",
-        "act_occurrence_identity",
         "book_clause_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
@@ -264,12 +263,12 @@ def test_binding_act_and_result_keep_distinct_exact_identities():
     assert len(
         {
             binding.material["exact_act_identity"],
-            binding.material["act_occurrence_identity"],
             binding.identity,
             act_occurrence.identity,
             recorded.identity,
         }
-    ) == 5
+    ) == 4
+    assert "act_occurrence_identity" not in binding.material
     assert "measurement_result_identity" not in binding.material
     assert "result_identity" not in recorded.material
 
@@ -443,11 +442,11 @@ def test_act_occurrence_is_observed_before_result_without_reconstructing_finding
 
 
 @pytest.mark.parametrize(
-    "act_occurrence_identity",
+    "act_occurrence_event_identity",
     (None, "", "absent_act_occurrence", StringSubclass("absent_act_occurrence")),
 )
-def test_result_refuses_arbitrary_act_occurrence_identity_without_appending(
-    act_occurrence_identity,
+def test_result_refuses_arbitrary_act_occurrence_event_identity_without_appending(
+    act_occurrence_event_identity,
 ):
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
@@ -460,7 +459,7 @@ def test_result_refuses_arbitrary_act_occurrence_identity_without_appending(
     with pytest.raises(ValueError, match="Act occurrence"):
         record_occurrence_position_measurement_result(
             ledger,
-            act_occurrence_event_identity=act_occurrence_identity,
+            act_occurrence_event_identity=act_occurrence_event_identity,
         )
 
     assert ledger.append_boundary() == before
@@ -587,7 +586,6 @@ def test_result_has_one_ordered_result_position_per_exact_position():
     ledger, occurrences, boundary, _finding, recorded = recorded_road()
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
-        "act_occurrence_identity",
         "act_occurrence_event_identity",
     }
     assert recorded.material["source_localities"] == ["a"]
@@ -609,9 +607,6 @@ def test_result_has_one_ordered_result_position_per_exact_position():
     assert _current_coordinates(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
         "act_occurrence_event_identity": recorded.material["act_occurrence_event_identity"],
-        "act_occurrence_identity": recorded.material[
-            "act_occurrence_identity"
-        ],
     }
     assert all(
         set(item)
@@ -730,9 +725,6 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
     carried = {
         "occurrence_position_measurement_act": recorded.material[
             "addressed_act_identity"
-        ],
-        "occurrence_position_measurement_occurrence": recorded.material[
-            "act_occurrence_identity"
         ],
     }
     ledger.close()

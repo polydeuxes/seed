@@ -149,11 +149,13 @@ def _measurement_ledger():
 def _measurement_coordinates(event):
     coordinates = {
         "recorded_occurrence_identity": event.identity,
-        "act_occurrence_identity": event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
     }
+    act_occurrence_identity = event.material.get("act_occurrence_identity")
+    if type(act_occurrence_identity) is str:
+        coordinates["act_occurrence_identity"] = act_occurrence_identity
     result_identity = event.material.get("result_identity")
     if type(result_identity) is str:
         coordinates["result_identity"] = result_identity
@@ -292,7 +294,8 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
     )
     assert (
         set(standing["measurement_occurrences"][positions.identity])
-        == exact_measurement_coordinates - {"result_identity"}
+        == exact_measurement_coordinates
+        - {"result_identity", "act_occurrence_identity"}
     )
     assert "result_positions" not in str(standing["measurement_occurrences"])
     assert "occurrences" not in {
